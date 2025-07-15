@@ -23,7 +23,7 @@ import {
 // Import authentication
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import PermissionGuard, { usePermissions } from './components/PermissionGuard';
+import PermissionGuard, { usePermissions } from './PermissionGuard';
 
 // Import page components
 import HomePage from './pages/HomePage';
@@ -32,9 +32,9 @@ import ForumPage from './pages/ForumPage';
 import DiscussionDetail from './pages/DiscussionDetail';
 import AssistantPage from './pages/AssistantPage';
 import LoginPage from './pages/LoginPage';
-import ProfilePage from './pages/ProfilePage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import NotificationBell from './components/NotificationBell';
+import ProfilePage from './ProfilePage';
+import AdminDashboardPage from './AdminDashboardPage';
+import NotificationBell from './NotificationBell';
 import ChatWidget from './components/ChatWidget';
 
 import './App.css';

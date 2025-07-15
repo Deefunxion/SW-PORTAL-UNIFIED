@@ -1,21 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { 
   Download, 
-  Grid3X3, 
-  List,
-  FileText,
-  Image,
-  Video,
-  Music,
-  Archive,
   ChevronDown,
   ChevronRight,
   Folder,
-  File as FileIcon
 } from 'lucide-react';
+import api from '@/lib/api'; // Import the new api client
 
 const getFileIcon = (fileType) => {
   const iconMap = {
@@ -90,8 +83,15 @@ const FileItem = ({ file, viewMode, handleDragStart, category }) => {
   );
 };
 
-const FolderTree = ({ categories, viewMode, handleDragStart, handleDrop, dropTarget, handleDragEnter, handleDragLeave, level = 0 }) => {
+const FolderTree = ({ viewMode, handleDragStart, handleDrop, dropTarget, handleDragEnter, handleDragLeave, level = 0 }) => {
+  const [categories, setCategories] = useState([]);
   const [collapsedFolders, setCollapsedFolders] = useState(new Set());
+
+  useEffect(() => {
+    api.get('/api/files/structure')
+       .then(res => setCategories(res.data.categories))
+       .catch(console.error);
+  }, []);
 
   const toggleFolder = (folderId) => {
     const newCollapsed = new Set(collapsedFolders);
@@ -102,79 +102,74 @@ const FolderTree = ({ categories, viewMode, handleDragStart, handleDrop, dropTar
     }
     setCollapsedFolders(newCollapsed);
   };
+  
+  const renderFolders = (folderData, currentLevel) => {
+    return (
+        <div className={`space-y-4 ${currentLevel > 0 ? 'ml-6' : ''}`}>
+        {folderData.map((category) => (
+            <Card key={category.id} className="overflow-hidden">
+            <CardHeader
+                className={`cursor-pointer transition-colors duration-200 ${
+                dropTarget === category.path ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
+                }`}
+                onClick={() => toggleFolder(category.id)}
+                onDragOver={(e) => e.preventDefault()}
+                onDragEnter={(e) => handleDragEnter(e, category.path)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, category.path)}
+            >
+                <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                    {collapsedFolders.has(category.id) ? (
+                    <ChevronRight className="w-5 h-5 text-gray-500" />
+                    ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-500" />
+                    )}
+                    <Folder className="w-6 h-6 text-yellow-600" />
+                    <div>
+                    <CardTitle className="text-lg">{category.category}</CardTitle>
+                    <CardDescription>
+                        {category.files.length} αρχεί{category.files.length === 1 ? 'ο' : 'α'}
+                        {category.subfolders.length > 0 && `, ${category.subfolders.length} υποφάκελ${category.subfolders.length === 1 ? 'ος' : 'οι'}`}
+                    </CardDescription>
+                    </div>
+                </div>
+                <Badge variant="secondary">
+                    {category.files.length}
+                </Badge>
+                </div>
+            </CardHeader>
 
-  return (
-    <div className={`space-y-4 ${level > 0 ? 'ml-6' : ''}`}>
-      {categories.map((category) => (
-        <Card key={category.id} className="overflow-hidden">
-          <CardHeader
-            className={`cursor-pointer transition-colors duration-200 ${
-              dropTarget === category.path ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
-            }`}
-            onClick={() => toggleFolder(category.id)}
-            onDragOver={(e) => e.preventDefault()}
-            onDragEnter={(e) => handleDragEnter(e, category.path)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, category.path)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {collapsedFolders.has(category.id) ? (
-                  <ChevronRight className="w-5 h-5 text-gray-500" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-500" />
+            {!collapsedFolders.has(category.id) && (
+                <CardContent className="p-4">
+                {/* Render subfolders */}
+                {category.subfolders && category.subfolders.length > 0 && (
+                    renderFolders(category.subfolders, currentLevel + 1)
                 )}
-                <Folder className="w-6 h-6 text-yellow-600" />
-                <div>
-                  <CardTitle className="text-lg">{category.category}</CardTitle>
-                  <CardDescription>
-                    {category.files.length} αρχεί{category.files.length === 1 ? 'ο' : 'α'}
-                    {category.subfolders.length > 0 && `, ${category.subfolders.length} υποφάκελ${category.subfolders.length === 1 ? 'ος' : 'οι'}`}
-                  </CardDescription>
-                </div>
-              </div>
-              <Badge variant="secondary">
-                {category.files.length}
-              </Badge>
-            </div>
-          </CardHeader>
 
-          {!collapsedFolders.has(category.id) && (
-            <CardContent className="p-4">
-              {/* Render subfolders */}
-              {category.subfolders && category.subfolders.length > 0 && (
-                <FolderTree
-                  categories={category.subfolders}
-                  viewMode={viewMode}
-                  handleDragStart={handleDragStart}
-                  handleDrop={handleDrop}
-                  dropTarget={dropTarget}
-                  handleDragEnter={handleDragEnter}
-                  handleDragLeave={handleDragLeave}
-                  level={level + 1}
-                />
-              )}
+                {/* Render files */}
+                {viewMode === 'grid' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
+                    {category.files.map((file) => (
+                        <FileItem key={file.id} file={file} viewMode={viewMode} handleDragStart={handleDragStart} category={category.path} />
+                    ))}
+                    </div>
+                ) : (
+                    <div className="space-y-2 mt-4">
+                    {category.files.map((file) => (
+                        <FileItem key={file.id} file={file} viewMode={viewMode} handleDragStart={handleDragStart} category={category.path} />
+                    ))}
+                    </div>
+                )}
+                </CardContent>
+            )}
+            </Card>
+        ))}
+        </div>
+    );
+  }
 
-              {/* Render files */}
-              {viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
-                  {category.files.map((file) => (
-                    <FileItem key={file.id} file={file} viewMode={viewMode} handleDragStart={handleDragStart} category={category.path} />
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-2 mt-4">
-                  {category.files.map((file) => (
-                    <FileItem key={file.id} file={file} viewMode={viewMode} handleDragStart={handleDragStart} category={category.path} />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          )}
-        </Card>
-      ))}
-    </div>
-  );
+  return renderFolders(categories, level);
 };
 
 export default FolderTree;

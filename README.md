@@ -1,353 +1,199 @@
-# 🏛️ SW Portal - Ενιαίο Σύστημα Περιφέρειας Αττικής
+# SW Portal Extensions v2.0.0
 
-## 📋 Επισκόπηση
+Επεκτάσεις για το SW Portal που προσθέτουν προηγμένες λειτουργίες διαχείρισης χρηστών, ασφάλειας και ειδοποιήσεων.
 
-Το **SW Portal** είναι ένα ενιαίο, τοπικά εκτελέσιμο σύστημα που συνδυάζει:
+## 🚀 Νέες Λειτουργίες
 
-- 📁 **Apothecary Enhanced** - Σύστημα διαχείρισης αρχείων με drag & drop, upload και folder management
-- 💬 **Forum Module** - Επαγγελματικό φόρουμ συζητήσεων με κατηγοριοποίηση
-- 🤖 **AI Assistant** - Έξυπνος βοηθός για νομικές συμβουλές και υποστήριξη
+### 1. Granular Role-Based Access Control (RBAC)
+- **Προστασία API endpoints** βάσει ρόλου χρήστη (admin, staff, guest)
+- **Frontend permission guards** για conditional rendering
+- **Ιεραρχία ρόλων** με διαφορετικά δικαιώματα
+- **Αυτόματη προστασία** κρίσιμων λειτουργιών
 
-## 🏗️ Αρχιτεκτονική
+### 2. User Profile & Admin Dashboard
+- **Διαχείριση προφίλ** με αλλαγή email και password
+- **Admin dashboard** για διαχείριση χρηστών
+- **Στατιστικά συστήματος** και χρηστών
+- **CRUD operations** για χρήστες (admin only)
 
-```
-sw-portal-unified/
-├── backend/          # Flask API Server
-│   ├── app.py        # Κύρια εφαρμογή Flask
-│   ├── requirements.txt
-│   └── .env.example
-├── frontend/         # React Application
-│   ├── src/
-│   │   ├── pages/    # Σελίδες εφαρμογής
-│   │   ├── components/ # React components
-│   │   └── App.jsx   # Κύρια εφαρμογή
-│   ├── package.json
-│   └── index.html
-├── content/          # Downloadable Files
-│   ├── NEWS_FEEDS_SOURCES/
-│   ├── ΑΠΟΦΑΣΕΙΣ_ΑΔΕΙΟΔΟΤΗΣΗΣ/
-│   └── ...
-└── README.md         # Αυτό το αρχείο
-```
+### 3. Real-Time Notification System
+- **Αυτόματες ειδοποιήσεις** για forum posts και file uploads
+- **Real-time polling** κάθε 30 δευτερόλεπτα
+- **Notification management** (mark as read, delete)
+- **Καμπανάκι ειδοποιήσεων** στη navigation bar
 
-## 🚀 Γρήγορη Εκκίνηση
-
-### Προαπαιτούμενα
-
-- **Python 3.8+** (για το backend)
-- **Node.js 18+** (για το frontend)
-- **Git** (για κλωνοποίηση του project)
-
-### 1️⃣ Κλωνοποίηση του Project
-
-```bash
-git clone <repository-url>
-cd sw-portal-unified
-```
-
-### 2️⃣ Εκκίνηση Backend (Flask)
-
-```bash
-# Μετάβαση στον φάκελο backend
-cd backend
-
-# Εγκατάσταση dependencies
-pip install -r requirements.txt
-
-# Αντιγραφή και επεξεργασία environment variables
-cp .env.example .env
-
-# Εκκίνηση server
-python app.py
-```
-
-Το backend θα τρέχει στο: `http://localhost:5000`
-
-### 3️⃣ Εκκίνηση Frontend (React)
-
-```bash
-# Άνοιγμα νέου terminal
-# Μετάβαση στον φάκελο frontend
-cd frontend
-
-# Εγκατάσταση dependencies
-npm install
-
-# Εκκίνηση development server
-npm run dev
-```
-
-Το frontend θα τρέχει στο: `http://localhost:5173`
-
-### 4️⃣ Πρόσβαση στην Εφαρμογή
-
-Ανοίξτε το browser και πηγαίνετε στο: `http://localhost:5173`
-
-## 📖 Αναλυτικές Οδηγίες Εγκατάστασης
-
-### 🪟 Windows
-
-#### Βήμα 1: Εγκατάσταση Python
-
-1. Κατεβάστε το Python από: https://www.python.org/downloads/
-2. Κατά την εγκατάσταση, επιλέξτε "Add Python to PATH"
-3. Ανοίξτε Command Prompt και ελέγξτε: `python --version`
-
-#### Βήμα 2: Εγκατάσταση Node.js
-
-1. Κατεβάστε το Node.js από: https://nodejs.org/
-2. Εγκαταστήστε με τις προεπιλεγμένες ρυθμίσεις
-3. Ανοίξτε Command Prompt και ελέγξτε: `node --version`
-
-#### Βήμα 3: Εγκατάσταση Git (προαιρετικό)
-
-1. Κατεβάστε το Git από: https://git-scm.com/download/win
-2. Εγκαταστήστε με τις προεπιλεγμένες ρυθμίσεις
-
-#### Βήμα 4: Εκκίνηση Εφαρμογής
-
-1. **Εκκίνηση Backend:**
-   ```cmd
-   cd backend
-   pip install -r requirements.txt
-   copy .env.example .env
-   python app.py
-   ```
-
-2. **Εκκίνηση Frontend (νέο Command Prompt):**
-   ```cmd
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-### 🐧 Linux (Ubuntu/Debian)
-
-#### Βήμα 1: Εγκατάσταση Python
-
-```bash
-sudo apt update
-sudo apt install python3 python3-pip python3-venv
-python3 --version
-```
-
-#### Βήμα 2: Εγκατάσταση Node.js
-
-```bash
-# Μέθοδος 1: Από τα repositories
-sudo apt install nodejs npm
-
-# Μέθοδος 2: Από NodeSource (συνιστάται)
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-node --version
-npm --version
-```
-
-#### Βήμα 3: Εγκατάσταση Git
-
-```bash
-sudo apt install git
-```
-
-#### Βήμα 4: Εκκίνηση Εφαρμογής
-
-1. **Εκκίνηση Backend:**
-   ```bash
-   cd backend
-   pip3 install -r requirements.txt
-   cp .env.example .env
-   python3 app.py
-   ```
-
-2. **Εκκίνηση Frontend (νέο terminal):**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-## ⚙️ Ρυθμίσεις
-
-### Environment Variables (.env)
-
-Επεξεργαστείτε το αρχείο `backend/.env`:
-
-```env
-# Flask Configuration
-SECRET_KEY=sw-portal-secret-key-2025
-FLASK_ENV=development
-
-# OpenAI Configuration (Προαιρετικό - για AI Assistant)
-OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_ASSISTANT_ID=your_assistant_id_here
-
-# Database Configuration
-# DATABASE_URL=sqlite:///sw_portal.db  # Προεπιλογή
-
-# File Upload Configuration
-MAX_CONTENT_LENGTH=16777216  # 16MB
-```
-
-### Ρύθμιση AI Assistant (Προαιρετικό)
-
-Για να λειτουργήσει πλήρως το AI Assistant:
-
-1. Δημιουργήστε λογαριασμό στο OpenAI
-2. Αποκτήστε API key από: https://platform.openai.com/api-keys
-3. Δημιουργήστε έναν Assistant στο OpenAI platform
-4. Προσθέστε τα στοιχεία στο `.env` αρχείο
-
-**Σημείωση:** Το AI Assistant θα λειτουργεί με mock responses χωρίς OpenAI configuration.
-
-## 🗂️ Διαχείριση Αρχείων
-
-### Προσθήκη Αρχείων στο Apothecary
-
-1. Τοποθετήστε αρχεία στον φάκελο `content/`
-2. Οργανώστε τα σε κατηγορίες (φακέλους)
-3. Τα αρχεία θα εμφανιστούν αυτόματα στο Apothecary
-
-### Δομή Φακέλων
+## 📁 Δομή Αρχείων
 
 ```
-content/
-├── NEWS_FEEDS_SOURCES/
-├── ΑΠΟΦΑΣΕΙΣ_ΑΔΕΙΟΔΟΤΗΣΗΣ/
-│   ├── ΚΑΑ - ΚΔΗΦ/
-│   ├── ΚΔΑΠ - ΚΔΑΠ ΑμεΑ/
-│   └── ...
-├── ΕΚΠΑΙΔΕΥΤΙΚΟ_ΥΛΙΚΟ/
-├── ΕΝΤΥΠΑ_ΑΙΤΗΣΕΩΝ/
-└── ΝΟΜΟΘΕΣΙΑ_ΚΟΙΝΩΝΙΚΗΣ_ΜΕΡΙΜΝΑΣ/
+sw-portal-extensions/
+├── backend/
+│   ├── roles.py                    # RBAC decorators και utilities
+│   ├── user_management.py          # User management endpoints
+│   ├── notifications.py            # Notification system
+│   └── app.py                      # Τροποποιημένο κύριο αρχείο
+├── frontend/
+│   ├── PermissionGuard.jsx         # Permission-based rendering
+│   ├── ProfilePage.jsx             # User profile page
+│   ├── AdminDashboardPage.jsx      # Admin dashboard
+│   ├── NotificationBell.jsx        # Notification component
+│   ├── AuthContext.jsx             # Τροποποιημένο auth context
+│   └── App.jsx                     # Τροποποιημένο main app
+├── CHANGELOG_MANUS.md              # Λεπτομερείς αλλαγές
+├── INSTALLATION_GUIDE.md           # Οδηγός εγκατάστασης
+└── README.md                       # Αυτό το αρχείο
 ```
 
-## 🔧 Συντήρηση
+## 🔧 Εγκατάσταση
 
-### Backup Database
+Δείτε το [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) για λεπτομερείς οδηγίες εγκατάστασης.
 
-```bash
-# Backup της βάσης δεδομένων
-cp backend/sw_portal.db backup/sw_portal_$(date +%Y%m%d).db
-```
+### Γρήγορη Εγκατάσταση
 
-### Ενημέρωση Dependencies
+1. **Backup** του υπάρχοντος συστήματος
+2. **Αντιγραφή** των νέων αρχείων
+3. **Ενημέρωση** των υπάρχοντων αρχείων
+4. **Εκκίνηση** του συστήματος
 
 ```bash
 # Backend
-cd backend
-pip install -r requirements.txt --upgrade
+cd backend && python app.py
 
-# Frontend
-cd frontend
-npm update
+# Frontend  
+cd frontend && npm run dev
 ```
 
-### Logs και Debugging
+## 🛡️ Ασφάλεια
 
-- **Backend logs:** Εμφανίζονται στο terminal όπου τρέχει το `python app.py`
-- **Frontend logs:** Εμφανίζονται στο browser console (F12)
-- **Database:** SQLite αρχείο στο `backend/sw_portal.db`
+### Role Hierarchy
+- **Admin**: Πλήρη δικαιώματα, διαχείριση χρηστών
+- **Staff**: Δημιουργία content, upload αρχείων
+- **Guest**: Μόνο ανάγνωση
 
-## 🚨 Αντιμετώπιση Προβλημάτων
+### Protected Endpoints
+- `/api/discussions` (POST) - Admin/Staff only
+- `/api/files/upload` (POST) - Admin/Staff only
+- `/api/admin/*` - Admin only
+- `/api/user/profile` (PUT) - Authenticated users
 
-### Συνήθη Προβλήματα
+## 📊 API Endpoints
 
-#### 1. Port Already in Use
+### User Management
+```
+GET    /api/user/profile           # Προφίλ χρήστη
+PUT    /api/user/profile           # Ενημέρωση προφίλ
+GET    /api/user/permissions       # Δικαιώματα χρήστη
+```
 
+### Admin Dashboard
+```
+GET    /api/admin/users            # Λίστα χρηστών
+POST   /api/admin/users            # Δημιουργία χρήστη
+PUT    /api/admin/users/:id        # Ενημέρωση χρήστη
+DELETE /api/admin/users/:id        # Διαγραφή χρήστη
+GET    /api/admin/stats            # Στατιστικά
+```
+
+### Notifications
+```
+GET    /api/notifications          # Λίστα ειδοποιήσεων
+POST   /api/notifications/mark-as-read  # Σήμανση ως αναγνωσμένες
+DELETE /api/notifications/:id      # Διαγραφή ειδοποίησης
+```
+
+## 🎨 Frontend Components
+
+### PermissionGuard
+```jsx
+<PermissionGuard permission="can_upload_files">
+  <UploadButton />
+</PermissionGuard>
+```
+
+### usePermissions Hook
+```jsx
+const permissions = usePermissions();
+if (permissions.canAccessAdminDashboard()) {
+  // Show admin content
+}
+```
+
+### NotificationBell
+Αυτόματα εμφανίζεται στη navigation bar για authenticated users.
+
+## 🔄 Συμβατότητα
+
+- **100% Backward Compatible**: Δεν αλλοιώνει υπάρχουσες λειτουργίες
+- **Προαιρετικές επεκτάσεις**: Μπορούν να ενεργοποιηθούν σταδιακά
+- **Υπάρχοντα accounts**: Συνεχίζουν να λειτουργούν (default guest role)
+
+## 🧪 Testing
+
+### Test Credentials
+```
+Admin:  admin / admin123
+Staff:  staff / staff123
+Guest:  guest / guest123
+```
+
+### Test Scenarios
+1. **RBAC**: Δοκιμάστε πρόσβαση με διαφορετικούς ρόλους
+2. **Profile**: Αλλάξτε email και password
+3. **Admin Dashboard**: Διαχειριστείτε χρήστες
+4. **Notifications**: Δημιουργήστε forum post και ελέγξτε ειδοποιήσεις
+
+## 📈 Performance
+
+- **Minimal overhead**: Οι νέες λειτουργίες δεν επηρεάζουν την απόδοση
+- **Efficient polling**: Notifications polling κάθε 30s
+- **Database optimization**: Indexes στα κρίσιμα πεδία
+- **Frontend optimization**: Lazy loading και conditional rendering
+
+## 🐛 Troubleshooting
+
+### Συχνά Προβλήματα
+
+1. **Import Errors**: Ελέγξτε τα paths των αρχείων
+2. **Permission Denied**: Ελέγξτε τους ρόλους χρηστών
+3. **Database Errors**: Τρέξτε migrations ή recreate database
+4. **Frontend Errors**: Ελέγξτε τα component imports
+
+### Debug Mode
 ```bash
-# Εύρεση και τερματισμός διεργασίας
-# Windows
-netstat -ano | findstr :5000
-taskkill /PID <PID> /F
+# Backend debug
+export FLASK_DEBUG=1
+python app.py
 
-# Linux
-lsof -ti:5000 | xargs kill -9
+# Frontend debug
+npm run dev -- --debug
 ```
 
-#### 2. Python Module Not Found
+## 📝 Changelog
 
-```bash
-# Εγκατάσταση ξανά των dependencies
-cd backend
-pip install -r requirements.txt --force-reinstall
-```
+Δείτε το [CHANGELOG_MANUS.md](CHANGELOG_MANUS.md) για λεπτομερείς αλλαγές.
 
-#### 3. Node Modules Issues
+## 🤝 Συνεισφορά
 
-```bash
-# Καθαρισμός και επανεγκατάσταση
-cd frontend
-rm -rf node_modules package-lock.json
-npm install
-```
+Για προσθήκη νέων λειτουργιών:
 
-#### 4. Database Issues
+1. Δημιουργήστε νέα modules αντί να τροποποιείτε υπάρχοντα
+2. Χρησιμοποιήστε τα υπάρχοντα patterns (decorators, hooks)
+3. Προσθέστε documentation και tests
+4. Ενημερώστε το CHANGELOG_MANUS.md
 
-```bash
-# Reset της βάσης δεδομένων
-cd backend
-rm sw_portal.db
-python app.py  # Θα δημιουργηθεί νέα βάση
-```
+## 📞 Υποστήριξη
 
-### Επικοινωνία για Υποστήριξη
+- **Documentation**: Ανατρέξτε στα .md αρχεία
+- **Code Comments**: Inline documentation στον κώδικα
+- **Error Messages**: Φιλικά μηνύματα στα ελληνικά
 
-- 📧 **Email:** support@swportal.gr
-- 📱 **Τηλέφωνο:** +30 210 1234567
-- 🏢 **Διεύθυνση:** Περιφέρεια Αττικής
+## 📄 Άδεια
 
-## 📊 Χαρακτηριστικά
-
-### ✅ Apothecary Enhanced
-- Drag & drop functionality
-- File upload με progress tracking
-- Folder creation και management
-- Αναζήτηση αρχείων σε πραγματικό χρόνο
-- Grid/List view modes
-- Responsive design
-
-### ✅ Forum Module
-- Κατηγοριοποιημένες συζητήσεις
-- Real-time post tracking
-- User management
-- Responsive interface
-- Greek language support
-
-### ✅ AI Assistant
-- 24/7 διαθεσιμότητα
-- Νομικές συμβουλές
-- Floating widget σε όλες τις σελίδες
-- Thread-based conversations
-- Fallback responses χωρίς OpenAI
-
-## 🔒 Ασφάλεια
-
-- Τοπική εγκατάσταση (δεν απαιτείται cloud)
-- SQLite database για απλότητα
-- File validation για uploads
-- CORS protection
-- Environment variables για sensitive data
-
-## 📈 Μελλοντικές Βελτιώσεις
-
-- [ ] User authentication system
-- [ ] Advanced file permissions
-- [ ] Email notifications
-- [ ] Mobile app
-- [ ] Advanced analytics
-- [ ] Multi-language support
-- [ ] API documentation
-- [ ] Docker containerization
-
-## 📄 Άδεια Χρήσης
-
-Αυτό το project προορίζεται για χρήση από την Περιφέρεια Αττικής και τις υπηρεσίες της.
+Αυτές οι επεκτάσεις ακολουθούν την ίδια άδεια με το κύριο SW Portal project.
 
 ---
 
-**Δημιουργήθηκε με ❤️ για την Περιφέρεια Αττικής**
-
-*Τελευταία ενημέρωση: 5 Ιουλίου 2025*
+**Έκδοση**: 2.0.0  
+**Ημερομηνία**: 14 Ιουλίου 2025  
+**Developer**: Manus AI Assistant  
+**Συμβατότητα**: SW Portal v1.x και νεότερες
 
