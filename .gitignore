@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Environment & secrets
+*.env
+*.env.*
+!.env.example
+
+# Flask instance folder (αν χρησιμοποιείς)
+instance/
+
+# Node.js (frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build output
+dist/
+build/
+*.tgz
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VSCode settings (optional)
+.vscode/
+
+# Πιθανά μεγάλα ή ευαίσθητα αρχεία περιεχομένου
+content/*
+!content/.gitkeep
+
+# Εξαίρεση για παράδειγμα .env
+!.env.example
