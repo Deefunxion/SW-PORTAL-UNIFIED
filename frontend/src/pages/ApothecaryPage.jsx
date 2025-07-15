@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import FolderTree from '@/components/FolderTree.jsx';
+import api from '@/lib/api';
 
 function ApothecaryPage() {
   const [files, setFiles] = useState([]);
@@ -29,8 +30,7 @@ function ApothecaryPage() {
   const fetchFiles = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:5000/api/files/structure');
-      const data = await response.json();
+      const { data } = await api.get('/api/files/structure');
       setFiles(data.categories || []);
     } catch (error) {
       console.error('Error fetching files:', error);
@@ -85,21 +85,13 @@ function ApothecaryPage() {
 
     try {
       setUploadProgress(0);
-      const response = await fetch('http://localhost:5000/api/files/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        setUploadProgress(100);
-        setTimeout(() => {
-          setShowUploadModal(false);
-          setUploadProgress(0);
-          fetchFiles();
-        }, 1000);
-      } else {
-        throw new Error('Upload failed');
-      }
+      await api.post('/api/files/upload', formData);
+      setUploadProgress(100);
+      setTimeout(() => {
+        setShowUploadModal(false);
+        setUploadProgress(0);
+        fetchFiles();
+      }, 1000);
     } catch (error) {
       console.error('Upload error:', error);
       alert('Σφάλμα κατά το ανέβασμα του αρχείου');
@@ -110,24 +102,13 @@ function ApothecaryPage() {
     if (!newFolderName.trim()) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/folders/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: newFolderName,
-          parentFolder: '', // Creating at root for now
-        }),
+      await api.post('/api/folders/create', {
+        name: newFolderName,
+        parentFolder: '', // Creating at root for now
       });
-
-      if (response.ok) {
-        setShowFolderModal(false);
-        setNewFolderName('');
-        fetchFiles();
-      } else {
-        throw new Error('Folder creation failed');
-      }
+      setShowFolderModal(false);
+      setNewFolderName('');
+      fetchFiles();
     } catch (error) {
       console.error('Create folder error:', error);
       alert('Σφάλμα κατά τη δημιουργία του φακέλου');

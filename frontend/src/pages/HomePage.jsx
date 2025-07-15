@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
-import { 
+import {
   Files, 
   MessageSquare, 
   Bot, 
@@ -14,6 +14,7 @@ import {
   FileText,
   ArrowRight
 } from 'lucide-react';
+import api from '@/lib/api';
 
 function HomePage() {
   const [stats, setStats] = useState({
@@ -28,16 +29,13 @@ function HomePage() {
     const fetchStats = async () => {
       try {
         // Fetch file structure
-        const filesResponse = await fetch('http://localhost:5000/api/files/structure');
-        const filesData = await filesResponse.json();
-        
+        const { data: filesData } = await api.get('/api/files/structure');
+
         // Fetch forum discussions
-        const discussionsResponse = await fetch('http://localhost:5000/api/discussions');
-        const discussionsData = await discussionsResponse.json();
-        
+        const { data: discussionsData } = await api.get('/api/discussions');
+
         // Fetch categories
-        const categoriesResponse = await fetch('http://localhost:5000/api/categories');
-        const categoriesData = await categoriesResponse.json();
+        const { data: categoriesData } = await api.get('/api/categories');
 
         setStats({
           totalFiles: filesData.metadata?.total_files || 0,
