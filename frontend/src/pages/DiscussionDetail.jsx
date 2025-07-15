@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
+import api from '@/lib/api';
 import { 
   ArrowLeft, 
   MessageCircle, 
@@ -30,9 +31,7 @@ function DiscussionDetail() {
   const fetchDiscussionDetails = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:5000/api/discussions/${discussionId}/posts`);
-      const data = await response.json();
-      
+      const { data } = await api.get(`/api/discussions/${discussionId}/posts`);
       setDiscussion(data.discussion);
       setPosts(data.posts || []);
     } catch (error) {
@@ -49,20 +48,12 @@ function DiscussionDetail() {
 
     try {
       setIsSubmitting(true);
-      const response = await fetch(`http://localhost:5000/api/discussions/${discussionId}/posts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: newPost
-        }),
+      await api.post(`/api/discussions/${discussionId}/posts`, {
+        content: newPost
       });
 
-      if (response.ok) {
-        setNewPost('');
-        fetchDiscussionDetails(); // Refresh posts
-      }
+      setNewPost('');
+      fetchDiscussionDetails(); // Refresh posts
     } catch (error) {
       console.error('Error submitting post:', error);
       alert('Σφάλμα κατά την αποστολή του μηνύματος');

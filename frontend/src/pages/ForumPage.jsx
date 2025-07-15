@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
+import api from '@/lib/api';
 import { 
   MessageSquare, 
   Plus, 
@@ -36,8 +37,7 @@ function ForumPage() {
 
   const fetchDiscussions = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/discussions');
-      const data = await response.json();
+      const { data } = await api.get('/api/discussions');
       setDiscussions(data);
     } catch (error) {
       console.error('Error fetching discussions:', error);
@@ -47,8 +47,7 @@ function ForumPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/categories');
-      const data = await response.json();
+      const { data } = await api.get('/api/categories');
       setCategories(data);
       setIsLoading(false);
     } catch (error) {
@@ -62,19 +61,10 @@ function ForumPage() {
     if (!newDiscussion.title.trim() || !newDiscussion.category_id) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/discussions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newDiscussion),
-      });
-
-      if (response.ok) {
-        setShowCreateModal(false);
-        setNewDiscussion({ title: '', description: '', category_id: '' });
-        fetchDiscussions(); // Refresh discussions
-      }
+      await api.post('/api/discussions', newDiscussion);
+      setShowCreateModal(false);
+      setNewDiscussion({ title: '', description: '', category_id: '' });
+      fetchDiscussions(); // Refresh discussions
     } catch (error) {
       console.error('Create discussion error:', error);
       alert('Σφάλμα κατά τη δημιουργία της συζήτησης');

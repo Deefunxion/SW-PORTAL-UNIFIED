@@ -47,7 +47,7 @@ const FileItem = ({ file, viewMode, handleDragStart, category }) => {
           <Button
             size="sm"
             className="w-full"
-            onClick={() => window.open(`http://localhost:5000${file.downloadUrl}`, '_blank')}
+            onClick={() => window.open(file.downloadUrl, '_blank')}
           >
             <Download className="w-3 h-3 mr-1" />
             Κατέβασμα
@@ -74,7 +74,7 @@ const FileItem = ({ file, viewMode, handleDragStart, category }) => {
       </div>
       <Button
         size="sm"
-        onClick={() => window.open(`http://localhost:5000${file.downloadUrl}`, '_blank')}
+        onClick={() => window.open(file.downloadUrl, '_blank')}
       >
         <Download className="w-4 h-4 mr-1" />
         Κατέβασμα
