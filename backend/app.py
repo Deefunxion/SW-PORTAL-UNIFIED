@@ -29,7 +29,6 @@ from notifications import create_notification_model, create_notification_routes,
 # Load environment variables
 load_dotenv()
 http_client = httpx.Client()
-from openai import OpenAI
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
     default_headers={"OpenAI-Beta": "assistants=v2"}
