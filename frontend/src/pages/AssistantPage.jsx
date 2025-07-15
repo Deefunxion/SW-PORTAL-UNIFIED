@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
+import api from '@/lib/api';
 import { 
   Bot, 
   Send, 
@@ -56,32 +57,20 @@ function AssistantPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: inputMessage,
-          thread_id: threadId
-        }),
+      const { data } = await api.post('/api/chat', {
+        message: inputMessage,
+        thread_id: threadId
       });
 
-      const data = await response.json();
+      const assistantMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: data.response,
+        timestamp: new Date().toISOString()
+      };
 
-      if (response.ok) {
-        const assistantMessage = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: data.response,
-          timestamp: new Date().toISOString()
-        };
-
-        setMessages(prev => [...prev, assistantMessage]);
-        setThreadId(data.thread_id);
-      } else {
-        throw new Error(data.error || 'Σφάλμα επικοινωνίας');
-      }
+      setMessages(prev => [...prev, assistantMessage]);
+      setThreadId(data.thread_id);
     } catch (error) {
       console.error('Chat error:', error);
       const errorMessage = {
