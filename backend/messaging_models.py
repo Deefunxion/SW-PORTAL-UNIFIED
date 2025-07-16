@@ -7,12 +7,7 @@ Provides database models for private messaging functionality
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Index
 from sqlalchemy.orm import relationship
-
-def create_messaging_models(db):
-    """
-    Create messaging-related database models
-    Returns dictionary with model classes
-    """
+from extensions import db
     
     class Conversation(db.Model):
         """
