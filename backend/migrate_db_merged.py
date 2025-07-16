@@ -26,7 +26,7 @@ def add_user_columns(engine):
     with engine.connect() as conn:
         for col_name, col_def in columns:
             try:
-                conn.execute(text(f"ALTER TABLE user ADD COLUMN {col_name} {col_def}"))
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}"))
                 conn.commit()
                 print(f"Column {col_name} added")
             except Exception as e:

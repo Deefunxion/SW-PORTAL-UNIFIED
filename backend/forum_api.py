@@ -531,9 +531,9 @@ def create_enhanced_forum_routes(app, db, User, Post, Discussion, enhanced_model
         except Exception as e:
             return jsonify({'error': f'Σφάλμα κατά τη λήψη κατάταξης: {str(e)}'}), 500
     
-    @app.route('/api/users/search', methods=['GET'])
-    def search_users():
-        """Search users for mentions"""
+    @app.route('/api/forum/users/search', methods=['GET'])
+    def search_forum_users():
+        """Search users for mentions in forum"""
         try:
             query = request.args.get('q', '').strip()
             if len(query) < 2:

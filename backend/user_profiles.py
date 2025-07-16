@@ -169,7 +169,7 @@ def create_user_profile_routes(app, db, User):
     
     @app.route('/api/users/<int:user_id>/profile', methods=['GET'])
     @jwt_required()
-    def get_user_profile(user_id):
+    def get_enhanced_user_profile(user_id):
         """
         Get user profile information
         """
@@ -219,7 +219,7 @@ def create_user_profile_routes(app, db, User):
     
     @app.route('/api/users/profile', methods=['PUT'])
     @jwt_required()
-    def update_user_profile():
+    def update_enhanced_user_profile():
         """
         Update current user's profile
         """
