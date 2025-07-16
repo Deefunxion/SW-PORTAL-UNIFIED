@@ -90,7 +90,7 @@ class AnalyticsManager:
         try:
             with self.db.engine.connect() as conn:
                 # Get user statistics
-                total_users = conn.execute(text("SELECT COUNT(*) FROM user")).fetchone()[0]
+                total_users = conn.execute(text("SELECT COUNT(*) FROM users")).fetchone()[0]
                 
                 # Active users (logged in today)
                 active_users = conn.execute(
@@ -104,7 +104,7 @@ class AnalyticsManager:
                 # New users (registered today)
                 new_users = conn.execute(
                     text("""
-                        SELECT COUNT(*) FROM user 
+                        SELECT COUNT(*) FROM users 
                         WHERE DATE(created_at) = :date
                     """),
                     {"date": date}

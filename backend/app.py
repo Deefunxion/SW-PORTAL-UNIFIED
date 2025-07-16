@@ -8,14 +8,16 @@ import os
 import json
 from datetime import datetime, timezone
 from flask import Flask, jsonify, request, send_from_directory, send_file
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import openai
 from dotenv import load_dotenv
 import httpx
 from openai import OpenAI
+
+# Import extensions and models
+from extensions import db
+from models import User, Category, Discussion, Post, FileItem
 
 # Custom module imports
 from auth import init_auth, create_auth_routes, jwt_required, admin_required, get_current_user_info
@@ -28,9 +30,7 @@ from notifications import create_notification_model, create_notification_routes,
 # from pii_redactor import redact_pii_in_file  # Temporarily disabled until PyMuPDF is installed
 
 # New Enhanced Module Imports
-from forum_models import create_enhanced_forum_models, enhance_post_model
-from messaging_models import create_messaging_models
-from user_profiles import create_user_profile_models
+from forum_models import enhance_post_model
 from forum_api import create_enhanced_forum_routes
 from messaging_api import create_messaging_routes
 from user_profiles import create_user_profile_routes
@@ -66,85 +66,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Initialize extensions
-db = SQLAlchemy(app)
+db.init_app(app)
 CORS(app, origins="*")  # Allow all origins for local development
-
-# ============================================================================
-# DATABASE MODELS
-# ============================================================================
-
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(120), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
-    presence_status = db.Column(db.String(50), default='offline')
-    
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-    
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-class Category(db.Model):
-    __tablename__ = 'categories'
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    discussions = db.relationship('Discussion', backref='category', lazy=True)
-
-class Discussion(db.Model):
-    __tablename__ = 'discussions'
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text)
-    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    posts = db.relationship('Post', backref='discussion', lazy=True, cascade='all, delete-orphan')
-    
-    @property
-    def post_count(self):
-        return len(self.posts)
-    
-    @property
-    def last_post(self):
-        return self.posts[-1] if self.posts else None
-
-class Post(db.Model):
-    __tablename__ = 'posts'
-    id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text, nullable=False)
-    discussion_id = db.Column(db.Integer, db.ForeignKey('discussions.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    user = db.relationship('User', backref='posts')
-    
-    # Placeholder for enhancements
-    parent_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=True)
-    content_type = db.Column(db.String(20), default='text')
-    edited_at = db.Column(db.DateTime, nullable=True)
-    edit_count = db.Column(db.Integer, default=0)
-
-class FileItem(db.Model):
-    __tablename__ = 'file_items'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
-    original_name = db.Column(db.String(255), nullable=False)
-    path = db.Column(db.String(500), nullable=False)
-    category = db.Column(db.String(200), nullable=False)
-    file_type = db.Column(db.String(50), nullable=False)
-    file_size = db.Column(db.Integer)
-    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-# Create new models from imported modules
-enhanced_forum_models = create_enhanced_forum_models(db)
 
 # Enhance the existing Post model with new relationships and methods
 Post = enhance_post_model(Post)
@@ -179,7 +102,7 @@ def initialize_modules(app, db, User):
     create_notification_routes(app, db, User, Notification)
     
     # Register new enhanced module blueprints
-    create_enhanced_forum_routes(app, db, User, Post, Discussion, enhanced_forum_models)
+    create_enhanced_forum_routes(app, db, User, Post, Discussion)
     create_messaging_routes(app, db, User)
     create_user_profile_routes(app, db, User)
 

@@ -14,6 +14,9 @@ import mimetypes
 from auth import get_current_user_info
 from roles import role_required
 
+# Import models directly
+from forum_models import PostAttachment, PostReaction, PostMention, UserReputation
+
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {
     'images': {'png', 'jpg', 'jpeg', 'gif', 'webp'},
@@ -53,18 +56,12 @@ def extract_mentions(content):
     mentions = re.findall(mention_pattern, content)
     return list(set(mentions))  # Remove duplicates
 
-def create_enhanced_forum_routes(app, db, User, Post, Discussion, enhanced_models):
+def create_enhanced_forum_routes(app, db, User, Post, Discussion):
     """
     Create enhanced forum routes
     """
-    PostAttachment = enhanced_models['PostAttachment']
-    PostReaction = enhanced_models['PostReaction']
-    UserReputation = enhanced_models['UserReputation']
-    PostMention = enhanced_models['PostMention']
-    
-    # Import reputation update function
-    from forum_models import create_reputation_triggers
-    update_user_reputation = create_reputation_triggers(db, UserReputation, PostReaction)
+    # Models are imported directly at the top of the file
+    # PostAttachment, PostReaction, UserReputation, PostMention are available
     
     @app.route('/api/posts/<int:post_id>', methods=['PUT'])
     @role_required(['admin', 'staff'])
