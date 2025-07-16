@@ -25,7 +25,7 @@ from api_docs import init_api_docs
 from roles import role_required, admin_only, staff_and_admin, user_can
 from user_management import create_user_management_routes
 from notifications import create_notification_model, create_notification_routes, create_notification, notify_new_forum_post, notify_new_file_upload
-from pii_redactor import redact_pii_in_file
+# from pii_redactor import redact_pii_in_file  # Temporarily disabled until PyMuPDF is installed
 
 # New Enhanced Module Imports
 from forum_models import create_enhanced_forum_models, enhance_post_model
@@ -38,11 +38,18 @@ from user_profiles import create_user_profile_routes
 # Load environment variables
 load_dotenv()
 http_client = httpx.Client()
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
-    default_headers={"OpenAI-Beta": "assistants=v2"}
-)
-assistant_id = os.getenv("OPENAI_ASSISTANT_ID")
+
+# Initialize OpenAI client if API key is provided
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if openai_api_key:
+    client = OpenAI(
+        api_key=openai_api_key,
+        default_headers={"OpenAI-Beta": "assistants=v2"}
+    )
+    assistant_id = os.getenv("OPENAI_ASSISTANT_ID")
+else:
+    client = None
+    assistant_id = None
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -454,12 +461,13 @@ def upload_file():
         file.save(file_path)
 
         # Redact PII from the file if it's a supported format
-        try:
-            redact_pii_in_file(file_path)
-        except Exception as e:
-            app.logger.error(f"Error during PII redaction for {file_path}: {e}")
-            # Decide if you want to fail the upload or just log the error
-            # For now, we'll just log it and continue.
+        # Temporarily disabled until PyMuPDF is installed
+        # try:
+        #     redact_pii_in_file(file_path)
+        # except Exception as e:
+        #     app.logger.error(f"Error during PII redaction for {file_path}: {e}")
+        #     # Decide if you want to fail the upload or just log the error
+        #     # For now, we'll just log it and continue.
         
         # Save file info to database
         file_item = FileItem(
@@ -536,6 +544,12 @@ def chat():
     if not message:
         return jsonify({'error': 'Message is required'}), 400
 
+    # Check if OpenAI client is available
+    if client is None:
+        return jsonify({
+            'response': 'AI Assistant is not configured. Please set OPENAI_API_KEY in your environment.'
+        })
+
     print(f"Received user message: {message}")
     print(f"Using API Key: {client.api_key}")
     print(f"Using Assistant ID: {assistant_id}")
@@ -584,7 +598,7 @@ def health_check():
         'components': {
             'database': 'connected',
             'files': 'accessible',
-            'ai_assistant': 'configured' if client.api_key and assistant_id else 'not_configured'
+            'ai_assistant': 'configured' if client and client.api_key and assistant_id else 'not_configured'
         }
     })
 
@@ -633,7 +647,7 @@ if __name__ == '__main__':
     print("SW Portal Backend Starting...")
     print(f"Content directory: {app.config['UPLOAD_FOLDER']}")
     print(f"Database: {app.config['SQLALCHEMY_DATABASE_URI']}")
-    print(f"AI Assistant: {'Configured' if client.api_key and assistant_id else 'Not configured'}")
+    print(f"AI Assistant: {'Configured' if client and client.api_key and assistant_id else 'Not configured'}")
     print("Server running on http://localhost:5000")
     
     # Run the Flask development server

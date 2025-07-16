@@ -93,8 +93,8 @@ def enhance_existing_tables(session):
         'user': [
             # User profile fields will be in a separate table as per new models
             # but we can add presence status here for simplicity if needed.
-            "ALTER TABLE user ADD COLUMN last_seen TIMESTAMP",
-            "ALTER TABLE user ADD COLUMN presence_status VARCHAR(50) DEFAULT 'offline'",
+                    "ALTER TABLE users ADD COLUMN last_seen TIMESTAMP",
+        "ALTER TABLE users ADD COLUMN presence_status VARCHAR(50) DEFAULT 'offline'",
         ]
     }
     

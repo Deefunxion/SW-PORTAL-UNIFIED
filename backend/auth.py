@@ -27,24 +27,24 @@ class AuthUser:
         try:
             # Check if role column exists
             with self.db.engine.connect() as conn:
-                result = conn.execute(text("PRAGMA table_info(user)"))
+                result = conn.execute(text("PRAGMA table_info(users)"))
                 columns = [row[1] for row in result]
                 
                 if 'role' not in columns:
                     # Add role column with default value
-                    conn.execute(text("ALTER TABLE user ADD COLUMN role VARCHAR(20) DEFAULT 'guest'"))
+                    conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'guest'"))
                     conn.commit()
                     print("Added role column to User table")
                 
                 if 'is_active' not in columns:
                     # Add is_active column
-                    conn.execute(text("ALTER TABLE user ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+                    conn.execute(text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
                     conn.commit()
                     print("Added is_active column to User table")
                     
                 if 'last_login' not in columns:
                     # Add last_login column
-                    conn.execute(text("ALTER TABLE user ADD COLUMN last_login TIMESTAMP"))
+                    conn.execute(text("ALTER TABLE users ADD COLUMN last_login TIMESTAMP"))
                     conn.commit()
                     print("Added last_login column to User table")
                     

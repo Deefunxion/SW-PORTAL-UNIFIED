@@ -32,9 +32,9 @@ def add_user_columns(engine):
     # script, raw SQL is sufficient.
     
     column_commands = [
-        "ALTER TABLE user ADD COLUMN role VARCHAR(20) DEFAULT 'guest'",
-        "ALTER TABLE user ADD COLUMN is_active BOOLEAN DEFAULT 1",
-        "ALTER TABLE user ADD COLUMN last_login TIMESTAMP"
+        "ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'guest'",
+        "ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1",
+        "ALTER TABLE users ADD COLUMN last_login TIMESTAMP"
     ]
     
     with engine.connect() as conn:
