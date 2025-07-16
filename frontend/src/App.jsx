@@ -20,6 +20,9 @@ import {
   Shield
 } from 'lucide-react';
 
+// Import Sonner for toast notifications
+import { Toaster } from 'sonner';
+
 // Import authentication
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -36,6 +39,11 @@ import ProfilePage from './pages/ProfilePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import NotificationBell from './components/NotificationBell';
 import ChatWidget from './components/ChatWidget';
+
+// New Enhanced Forum Imports
+import EnhancedForumPage from './pages/EnhancedForumPage';
+import EnhancedDiscussionDetail from './pages/EnhancedDiscussionDetail';
+import PrivateMessagingPage from './pages/PrivateMessagingPage';
 
 import './App.css';
 
@@ -378,16 +386,40 @@ function AppContent() {
               <ApothecaryPage />
             </ProtectedRoute>
           } />
+          {/* New Enhanced Forum Routes */}
           <Route path="/forum" element={
             <ProtectedRoute>
-              <ForumPage />
+              <EnhancedForumPage />
             </ProtectedRoute>
           } />
           <Route path="/forum/:discussionId" element={
             <ProtectedRoute>
-              <DiscussionDetail />
+              <EnhancedDiscussionDetail />
             </ProtectedRoute>
           } />
+          <Route path="/messaging" element={
+            <ProtectedRoute>
+              <PrivateMessagingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/messaging/:conversationId" element={
+            <ProtectedRoute>
+              <PrivateMessagingPage />
+            </ProtectedRoute>
+          } />
+
+          {/* Old Forum Routes - Commented out for now */}
+          {/* <Route path="/forum-legacy" element={
+            <ProtectedRoute>
+              <ForumPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/forum-legacy/:discussionId" element={
+            <ProtectedRoute>
+              <DiscussionDetail />
+            </ProtectedRoute>
+          } /> */}
+          
           <Route path="/assistant" element={
             <ProtectedRoute>
               <AssistantPage />
@@ -417,6 +449,23 @@ function AppContent() {
       
       {/* Floating AI Assistant Widget - only show when authenticated */}
       {isAuthenticated && <ChatWidget />}
+      
+      {/* Toast notifications */}
+      <Toaster 
+        position="top-right"
+        expand={false}
+        richColors
+        closeButton
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: 'white',
+            color: '#1f2937',
+            border: '1px solid #e5e7eb',
+            fontSize: '14px',
+          },
+        }}
+      />
     </div>
   );
 }

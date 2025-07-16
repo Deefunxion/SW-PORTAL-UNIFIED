@@ -11,7 +11,10 @@ import {
   File as FileIcon,
   X,
 } from 'lucide-react';
+import { toast } from "sonner";
 import FolderTree from '@/components/FolderTree.jsx';
+import ApothecaryPageSkeleton from '@/components/skeletons/ApothecaryPageSkeleton.jsx';
+import DropZone from '@/components/DropZone.jsx';
 import api from '@/lib/api';
 
 function ApothecaryPage() {
@@ -71,7 +74,7 @@ function ApothecaryPage() {
 
     if (draggedItem && draggedItem.category !== targetCategory) {
       console.log(`Moving ${draggedItem.file.name} from ${draggedItem.category} to ${targetCategory}`);
-      alert(`Μετακίνηση αρχείου "${draggedItem.file.name}" στον φάκελο "${targetCategory}" (Not implemented)`);
+      toast.info(`Μετακίνηση αρχείου "${draggedItem.file.name}" στον φάκελο "${targetCategory}" (Not implemented)`);
     }
 
     setDraggedItem(null);
@@ -79,15 +82,18 @@ function ApothecaryPage() {
 
   const handleFileUpload = async (uploadedFiles) => {
     const formData = new FormData();
+    const target = uploadTargetFolder || 'General Documents'; // Default to 'General Documents'
+
     Array.from(uploadedFiles).forEach(file => {
       formData.append('file', file);
     });
-    formData.append('targetFolder', uploadTargetFolder);
+    formData.append('targetFolder', target);
 
     try {
       setUploadProgress(0);
       await api.post('/api/files/upload', formData);
       setUploadProgress(100);
+      toast.success(`Το αρχείο ανέβηκε με επιτυχία στον φάκελο "${target}"!`);
       setTimeout(() => {
         setShowUploadModal(false);
         setUploadProgress(0);
@@ -95,7 +101,7 @@ function ApothecaryPage() {
       }, 1000);
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Σφάλμα κατά το ανέβασμα του αρχείου');
+      toast.error('Σφάλμα κατά το ανέβασμα του αρχείου');
     }
   };
 
@@ -107,12 +113,13 @@ function ApothecaryPage() {
         name: newFolderName,
         parentFolder: '',
       });
+      toast.success("Ο φάκελος δημιουργήθηκε με επιτυχία!");
       setShowFolderModal(false);
       setNewFolderName('');
       fetchFiles();
     } catch (error) {
       console.error('Create folder error:', error);
-      alert('Σφάλμα κατά τη δημιουργία του φακέλου');
+      toast.error('Σφάλμα κατά τη δημιουργία του φακέλου');
     }
   };
 
@@ -145,14 +152,7 @@ function ApothecaryPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Φόρτωση αρχείων...</p>
-        </div>
-      </div>
-    );
+    return <ApothecaryPageSkeleton />;
   }
 
   return (
@@ -233,24 +233,7 @@ function ApothecaryPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-2">
-                    Σύρετε αρχεία εδώ ή κάντε κλικ για επιλογή
-                  </p>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={(e) => handleFileUpload(e.target.files)}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <label htmlFor="file-upload">
-                    <Button variant="outline" className="cursor-pointer">
-                      Επιλογή Αρχείων
-                    </Button>
-                  </label>
-                </div>
+                <DropZone onDrop={handleFileUpload} />
                 {uploadProgress > 0 && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">

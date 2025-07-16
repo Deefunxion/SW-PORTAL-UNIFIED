@@ -64,8 +64,8 @@ def main():
     with app.app_context():
         print("Migration started")
         add_user_columns(db.engine)
-        migrate_passwords()
         create_new_tables()
+        migrate_passwords()
         seed_default_acl()
         print("Migration complete – DB ready for v2.0")
 
