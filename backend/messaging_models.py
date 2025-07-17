@@ -7,32 +7,30 @@ Provides database models for private messaging functionality
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Index
 from sqlalchemy.orm import relationship
-
-# Import db from app.py
-from app import db # Import db from app.py
+from .extensions import db
 
 class Conversation(db.Model):
     """
     Conversation model - represents a private conversation between users
     """
     __tablename__ = 'conversations'
-    
+
     id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=True)  # Optional conversation title
     is_group = Column(Boolean, default=False)  # True for group conversations
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relationships
     participants = relationship('ConversationParticipant', back_populates='conversation', cascade='all, delete-orphan')
     messages = relationship('PrivateMessage', back_populates='conversation', cascade='all, delete-orphan')
-    
+
     # Indexes for performance
     __table_args__ = (
         Index('idx_conversation_updated', 'updated_at'),
         Index('idx_conversation_created', 'created_at'),
     )
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -49,7 +47,7 @@ class ConversationParticipant(db.Model):
     Conversation participants - many-to-many relationship between users and conversations
     """
     __tablename__ = 'conversation_participants'
-    
+
     id = Column(Integer, primary_key=True)
     conversation_id = Column(Integer, ForeignKey('conversations.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
@@ -57,11 +55,11 @@ class ConversationParticipant(db.Model):
     last_read_at = Column(DateTime, nullable=True)  # For unread message tracking
     is_active = Column(Boolean, default=True)  # False if user left the conversation
     role = Column(String(50), default='member')  # member, admin (for group conversations)
-    
+
     # Relationships
     conversation = relationship('Conversation', back_populates='participants')
     user = relationship('User')
-    
+
     # Indexes for performance
     __table_args__ = (
         Index('idx_participant_conversation', 'conversation_id'),
@@ -69,7 +67,7 @@ class ConversationParticipant(db.Model):
         Index('idx_participant_active', 'is_active'),
         Index('idx_participant_last_read', 'last_read_at'),
     )
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -87,7 +85,7 @@ class PrivateMessage(db.Model):
     Private message model - individual messages within conversations
     """
     __tablename__ = 'private_messages'
-    
+
     id = Column(Integer, primary_key=True)
     conversation_id = Column(Integer, ForeignKey('conversations.id'), nullable=False)
     sender_id = Column(Integer, ForeignKey('users.id'), nullable=False)
@@ -97,18 +95,18 @@ class PrivateMessage(db.Model):
     created_at = Column(DateTime, default=datetime.utcnow)
     edited_at = Column(DateTime, nullable=True)
     is_deleted = Column(Boolean, default=False)
-    
+
     # Message status tracking
     is_system_message = Column(Boolean, default=False)  # System messages (user joined, etc.)
     reply_to_id = Column(Integer, ForeignKey('private_messages.id'), nullable=True)  # For message replies
-    
+
     # Relationships
     conversation = relationship('Conversation', back_populates='messages')
     sender = relationship('User')
     reply_to = relationship('PrivateMessage', remote_side=[id])
     attachments = relationship('MessageAttachment', back_populates='message', cascade='all, delete-orphan')
     read_receipts = relationship('MessageReadReceipt', back_populates='message', cascade='all, delete-orphan')
-    
+
     # Indexes for performance
     __table_args__ = (
         Index('idx_message_conversation', 'conversation_id'),
@@ -117,7 +115,7 @@ class PrivateMessage(db.Model):
         Index('idx_message_type', 'message_type'),
         Index('idx_message_deleted', 'is_deleted'),
     )
-    
+
     def to_dict(self, include_read_receipts=False):
         result = {
             'id': self.id,
@@ -135,10 +133,10 @@ class PrivateMessage(db.Model):
             'reply_to': self.reply_to.to_dict() if self.reply_to and not self.reply_to.is_deleted else None,
             'attachment_count': len(self.attachments) if self.attachments else 0
         }
-        
+
         if include_read_receipts:
             result['read_receipts'] = [receipt.to_dict() for receipt in self.read_receipts]
-        
+
         return result
 
 class MessageAttachment(db.Model):
@@ -146,7 +144,7 @@ class MessageAttachment(db.Model):
     Message attachments - files attached to private messages
     """
     __tablename__ = 'message_attachments'
-    
+
     id = Column(Integer, primary_key=True)
     message_id = Column(Integer, ForeignKey('private_messages.id'), nullable=False)
     original_filename = Column(String(255), nullable=False)
@@ -158,17 +156,17 @@ class MessageAttachment(db.Model):
     is_image = Column(Boolean, default=False)
     thumbnail_path = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     # Relationships
     message = relationship('PrivateMessage', back_populates='attachments')
-    
+
     # Indexes for performance
     __table_args__ = (
         Index('idx_attachment_message', 'message_id'),
         Index('idx_attachment_type', 'file_type'),
         Index('idx_attachment_image', 'is_image'),
     )
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -188,23 +186,23 @@ class MessageReadReceipt(db.Model):
     Message read receipts - track when users read messages
     """
     __tablename__ = 'message_read_receipts'
-    
+
     id = Column(Integer, primary_key=True)
     message_id = Column(Integer, ForeignKey('private_messages.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     read_at = Column(DateTime, default=datetime.utcnow)
-    
+
     # Relationships
     message = relationship('PrivateMessage', back_populates='read_receipts')
     user = relationship('User')
-    
+
     # Indexes for performance
     __table_args__ = (
         Index('idx_receipt_message', 'message_id'),
         Index('idx_receipt_user', 'user_id'),
         Index('idx_receipt_read_at', 'read_at'),
     )
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -219,24 +217,24 @@ class UserPresence(db.Model):
     User presence tracking - online/offline status
     """
     __tablename__ = 'user_presence'
-    
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False, unique=True)
     status = Column(String(50), default='offline')  # online, away, busy, offline
     last_seen = Column(DateTime, default=datetime.utcnow)
     last_activity = Column(DateTime, default=datetime.utcnow)
     custom_status = Column(String(255), nullable=True)  # Custom status message
-    
+
     # Relationships
     user = relationship('User')
-    
+
     # Indexes for performance
     __table_args__ = (
         Index('idx_presence_user', 'user_id'),
         Index('idx_presence_status', 'status'),
         Index('idx_presence_last_seen', 'last_seen'),
     )
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -249,23 +247,35 @@ class UserPresence(db.Model):
             'is_online': self.status in ['online', 'away', 'busy']
         }
 
+def create_messaging_models(db):
+    """
+    Return all messaging models as a dictionary
+    """
+    return {
+        'Conversation': Conversation,
+        'ConversationParticipant': ConversationParticipant,
+        'PrivateMessage': PrivateMessage,
+        'MessageAttachment': MessageAttachment,
+        'MessageReadReceipt': MessageReadReceipt,
+        'UserPresence': UserPresence
+    }
+
 def create_messaging_helper_functions():
     """
     Create helper functions for messaging operations
     """
-    
+
     def get_or_create_conversation(db, user1_id, user2_id, title=None):
         """
         Get existing conversation between two users or create a new one
         """
         from sqlalchemy import and_, or_
-        
-        # Get models - these should now be directly imported in app.py
-        # and passed or accessed globally if needed by helper functions
-        # For now, I'll keep the local import for the helper function's scope
-        # but this might need further adjustment if circular imports become an issue.
-        from app import Conversation, ConversationParticipant, PrivateMessage, MessageReadReceipt, UserPresence
-        
+
+        # Get models
+        models = create_messaging_models(db)
+        Conversation = models['Conversation']
+        ConversationParticipant = models['ConversationParticipant']
+
         # Find existing conversation between these two users
         existing_conversation = db.session.query(Conversation).join(
             ConversationParticipant
@@ -277,10 +287,10 @@ def create_messaging_helper_functions():
         ).group_by(Conversation.id).having(
             db.func.count(ConversationParticipant.user_id) == 2
         ).first()
-        
+
         if existing_conversation:
             return existing_conversation
-        
+
         # Create new conversation
         conversation = Conversation(
             title=title,
@@ -288,7 +298,7 @@ def create_messaging_helper_functions():
         )
         db.session.add(conversation)
         db.session.flush()  # Get the ID
-        
+
         # Add participants
         participant1 = ConversationParticipant(
             conversation_id=conversation.id,
@@ -298,28 +308,31 @@ def create_messaging_helper_functions():
             conversation_id=conversation.id,
             user_id=user2_id
         )
-        
+
         db.session.add(participant1)
         db.session.add(participant2)
         db.session.commit()
-        
+
         return conversation
-    
+
     def mark_messages_as_read(db, conversation_id, user_id, up_to_message_id=None):
         """
         Mark messages as read for a user in a conversation
         """
-        from app import ConversationParticipant, PrivateMessage, MessageReadReceipt
-        
+        models = create_messaging_models(db)
+        ConversationParticipant = models['ConversationParticipant']
+        PrivateMessage = models['PrivateMessage']
+        MessageReadReceipt = models['MessageReadReceipt']
+
         # Update participant's last_read_at
         participant = db.session.query(ConversationParticipant).filter_by(
             conversation_id=conversation_id,
             user_id=user_id
         ).first()
-        
+
         if participant:
             participant.last_read_at = datetime.utcnow()
-        
+
         # Create read receipts for unread messages
         query = db.session.query(PrivateMessage).filter(
             and_(
@@ -333,28 +346,30 @@ def create_messaging_helper_functions():
                 ).exists()
             )
         )
-        
+
         if up_to_message_id:
             query = query.filter(PrivateMessage.id <= up_to_message_id)
-        
+
         unread_messages = query.all()
-        
+
         for message in unread_messages:
             receipt = MessageReadReceipt(
                 message_id=message.id,
                 user_id=user_id
             )
             db.session.add(receipt)
-        
+
         db.session.commit()
-    
+
     def get_unread_count(db, user_id):
         """
         Get total unread message count for a user
         """
-        from sqlalchemy import and_, or_
-        from app import ConversationParticipant, PrivateMessage
-        
+        models = create_messaging_models(db)
+        ConversationParticipant = models['ConversationParticipant']
+        PrivateMessage = models['PrivateMessage']
+        MessageReadReceipt = models['MessageReadReceipt']
+
         # Count unread messages across all conversations
         unread_count = db.session.query(PrivateMessage).join(
             ConversationParticipant,
@@ -370,31 +385,32 @@ def create_messaging_helper_functions():
                 )
             )
         ).count()
-        
+
         return unread_count
-    
+
     def update_user_presence(db, user_id, status='online', custom_status=None):
         """
         Update user presence status
         """
-        from app import UserPresence # Import here to avoid circular imports
-        
+        models = create_messaging_models(db)
+        UserPresence = models['UserPresence']
+
         presence = db.session.query(UserPresence).filter_by(user_id=user_id).first()
-        
+
         if not presence:
             presence = UserPresence(user_id=user_id)
             db.session.add(presence)
-        
+
         presence.status = status
         presence.last_activity = datetime.utcnow()
         if status == 'online':
             presence.last_seen = datetime.utcnow()
         if custom_status is not None:
             presence.custom_status = custom_status
-        
+
         db.session.commit()
         return presence
-    
+
     return {
         'get_or_create_conversation': get_or_create_conversation,
         'mark_messages_as_read': mark_messages_as_read,

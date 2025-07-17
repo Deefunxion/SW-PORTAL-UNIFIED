@@ -1,7 +1,13 @@
-from extensions import db
+#!/usr/bin/env python3
+"""
+Core Database Models for SW Portal
+Contains the main database models (User, Category, Discussion, Post, FileItem)
+"""
+
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy.orm import relationship
+from .extensions import db
+
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -19,17 +25,6 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'username': self.username,
-            'email': self.email,
-            'role': getattr(self, 'role', 'guest'), # Assuming role will be added by migration
-            'is_active': getattr(self, 'is_active', True), # Assuming is_active will be added by migration
-            'last_login': self.last_seen.isoformat() if self.last_seen else None,
-            'presence_status': self.presence_status
-        }
-
 
 class Category(db.Model):
     __tablename__ = 'categories'
@@ -38,6 +33,7 @@ class Category(db.Model):
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     discussions = db.relationship('Discussion', backref='category', lazy=True)
+
 
 class Discussion(db.Model):
     __tablename__ = 'discussions'
@@ -58,6 +54,7 @@ class Discussion(db.Model):
     def last_post(self):
         return self.posts[-1] if self.posts else None
 
+
 class Post(db.Model):
     __tablename__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
@@ -72,6 +69,7 @@ class Post(db.Model):
     content_type = db.Column(db.String(20), default='text')
     edited_at = db.Column(db.DateTime, nullable=True)
     edit_count = db.Column(db.Integer, default=0)
+
 
 class FileItem(db.Model):
     __tablename__ = 'file_items'
