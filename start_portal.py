@@ -22,7 +22,7 @@ def run_command(command, name, cwd):
         ])
 
 def main():
-    print("🚀 Starting SW Portal...")
+    print("Starting SW Portal...")
 
     # --- Commands ---
     backend_command = "python -m backend.app"
@@ -38,7 +38,7 @@ def main():
     print(f"-> Starting Frontend Server in '{frontend_dir}'...")
     frontend_process = run_command(frontend_command, "SW Portal - Frontend", frontend_dir)
 
-    print("\n✅ Both servers have been launched in separate windows.")
+    print("\nBoth servers have been launched in separate windows.")
     print("   - Backend is starting on http://127.0.0.1:5000")
     print("   - Frontend is starting on http://localhost:5173")
     print("\nTo stop the servers, simply close their respective terminal windows.")
