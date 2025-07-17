@@ -11,8 +11,8 @@ from flask import request, jsonify, send_file
 from werkzeug.utils import secure_filename
 from PIL import Image
 import mimetypes
-from auth import get_current_user_info
-from roles import role_required
+from .auth import get_current_user_info
+from .roles import role_required
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {
@@ -63,7 +63,7 @@ def create_enhanced_forum_routes(app, db, User, Post, Discussion, enhanced_model
     PostMention = enhanced_models['PostMention']
     
     # Import reputation update function
-    from forum_models import create_reputation_triggers
+    from .forum_models import create_reputation_triggers
     update_user_reputation = create_reputation_triggers(db, UserReputation, PostReaction)
     
     @app.route('/api/posts/<int:post_id>', methods=['PUT'])

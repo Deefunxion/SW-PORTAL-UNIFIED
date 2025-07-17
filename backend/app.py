@@ -18,22 +18,22 @@ import httpx
 from openai import OpenAI
 
 # Custom module imports
-from auth import init_auth, create_auth_routes, jwt_required, admin_required, get_current_user_info
-from acl import init_acl, create_acl_routes
-from analytics import init_analytics, create_analytics_routes
-from api_docs import init_api_docs
-from roles import role_required, admin_only, staff_and_admin, user_can
-from user_management import create_user_management_routes
-from notifications import create_notification_model, create_notification_routes, create_notification, notify_new_forum_post, notify_new_file_upload
+from .auth import init_auth, create_auth_routes, jwt_required, admin_required, get_current_user_info
+from .acl import init_acl, create_acl_routes
+from .analytics import init_analytics, create_analytics_routes
+from .api_docs import init_api_docs
+from .roles import role_required, admin_only, staff_and_admin, user_can
+from .user_management import create_user_management_routes
+from .notifications import create_notification_model, create_notification_routes, create_notification, notify_new_forum_post, notify_new_file_upload
 # from pii_redactor import redact_pii_in_file  # Temporarily disabled until PyMuPDF is installed
 
 # New Enhanced Module Imports
-from forum_models import create_enhanced_forum_models, enhance_post_model
-from messaging_models import create_messaging_models
-from user_profiles import create_user_profile_models
-from forum_api import create_enhanced_forum_routes
-from messaging_api import create_messaging_routes
-from user_profiles import create_user_profile_routes
+from .forum_models import create_enhanced_forum_models, enhance_post_model
+from .messaging_models import create_messaging_models
+from .user_profiles import create_user_profile_models
+from .forum_api import create_enhanced_forum_routes
+from .messaging_api import create_messaging_routes
+from .user_profiles import create_user_profile_routes
 
 # Load environment variables
 load_dotenv()
@@ -522,7 +522,7 @@ def get_user_permissions():
     user_info = get_current_user_info()
     user_role = user_info.get('role', 'guest')
     
-    from roles import get_role_permissions
+    from .roles import get_role_permissions
     permissions = get_role_permissions().get(user_role, {})
     
     return jsonify({

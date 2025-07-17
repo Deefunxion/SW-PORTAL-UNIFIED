@@ -10,7 +10,7 @@ from datetime import datetime
 from flask import request, jsonify, current_app
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
-from auth import jwt_required, admin_required, staff_required, get_current_user_info
+from .auth import jwt_required, admin_required, staff_required, get_current_user_info
 
 class ACLManager:
     """Advanced Access Control List Manager"""

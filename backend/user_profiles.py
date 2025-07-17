@@ -9,7 +9,7 @@ from flask import request, jsonify
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
-from auth import jwt_required, get_current_user_info
+from .auth import jwt_required, get_current_user_info
 
 def create_user_profile_models(db):
     """

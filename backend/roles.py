@@ -7,7 +7,7 @@ Provides decorators and utilities for granular permission control
 from functools import wraps
 from flask import jsonify
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from auth import get_current_user_info
+from .auth import get_current_user_info
 
 def role_required(allowed_roles):
     """

@@ -13,8 +13,8 @@ from sqlalchemy import and_, or_, desc, func
 from PIL import Image
 import mimetypes
 
-from messaging_models import create_messaging_models, create_messaging_helper_functions
-from auth import jwt_required, get_current_user_info
+from .messaging_models import create_messaging_models, create_messaging_helper_functions
+from .auth import jwt_required, get_current_user_info
 
 def create_messaging_routes(app, db, User):
     """

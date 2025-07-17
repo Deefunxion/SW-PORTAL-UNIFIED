@@ -7,7 +7,7 @@ Provides real-time notification system for user activities
 from datetime import datetime
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required
-from auth import get_current_user_info
+from .auth import get_current_user_info
 from sqlalchemy import desc
 
 # Notification model will be added to the main database models

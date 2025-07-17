@@ -11,7 +11,7 @@ from collections import defaultdict, Counter
 from flask import request, jsonify, current_app
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
-from auth import admin_required, staff_required, get_current_user_info
+from .auth import admin_required, staff_required, get_current_user_info
 
 class AnalyticsManager:
     """Analytics and statistics manager"""

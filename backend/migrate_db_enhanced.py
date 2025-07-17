@@ -45,8 +45,8 @@ class Discussion(db.Model):
     title = db.Column(db.String(200), nullable=False)
 
 # Import and create new models
-from forum_models import create_enhanced_forum_models
-from messaging_models import create_messaging_models
+from .forum_models import create_enhanced_forum_models
+from .messaging_models import create_messaging_models
 
 enhanced_forum_models = create_enhanced_forum_models(db)
 messaging_models = create_messaging_models(db)

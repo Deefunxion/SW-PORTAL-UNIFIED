@@ -8,8 +8,8 @@ import bcrypt
 from datetime import datetime
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required
-from auth import get_current_user_info
-from roles import admin_only, role_required
+from .auth import get_current_user_info
+from .roles import admin_only, role_required
 
 def create_user_management_routes(app, db, User):
     """

@@ -7,7 +7,7 @@ Adds threading, attachments, reactions, and reputation features
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
-from extensions import db
+from .extensions import db
 
 
 class PostAttachment(db.Model):
@@ -28,42 +28,46 @@ class PostAttachment(db.Model):
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
-    post = db.relationship('Post', backref='attachments')
+    post = db.relationship('Post', back_populates='attachments')
     uploader = db.relationship('User')
+    
+    def __repr__(self):
+        return f'<PostAttachment {self.filename}>'
     
     def to_dict(self):
         return {
             'id': self.id,
+            'post_id': self.post_id,
             'filename': self.filename,
             'original_filename': self.original_filename,
             'file_type': self.file_type,
             'file_size': self.file_size,
             'mime_type': self.mime_type,
             'is_image': self.is_image,
-            'thumbnail_path': self.thumbnail_path,
             'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None,
             'uploaded_by': self.uploaded_by
         }
 
 
 class PostReaction(db.Model):
-    """Model for post reactions (like, love, etc.)"""
+    """Model for post reactions (like, dislike, etc.)"""
     __tablename__ = 'post_reaction'
     
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id', ondelete='CASCADE'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    reaction_type = db.Column(db.String(50), nullable=False)  # like, love, laugh, angry, etc.
+    reaction_type = db.Column(db.String(50), nullable=False)  # 'like', 'dislike', 'love', 'laugh', etc.
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Ensure one reaction per user per post
+    __table_args__ = (UniqueConstraint('post_id', 'user_id', name='unique_user_post_reaction'),)
+    
     # Relationships
-    post = db.relationship('Post', backref='reactions')
+    post = db.relationship('Post', back_populates='reactions')
     user = db.relationship('User')
     
-    # Unique constraint to prevent duplicate reactions
-    __table_args__ = (
-        UniqueConstraint('post_id', 'user_id', 'reaction_type', name='unique_post_user_reaction'),
-    )
+    def __repr__(self):
+        return f'<PostReaction {self.reaction_type} by {self.user_id} on {self.post_id}>'
     
     def to_dict(self):
         return {
@@ -87,9 +91,12 @@ class PostMention(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     
     # Relationships
-    post = db.relationship('Post', backref='mentions')
+    post = db.relationship('Post', back_populates='mentions')
     mentioned_user = db.relationship('User', foreign_keys=[mentioned_user_id])
     mentioning_user = db.relationship('User', foreign_keys=[mentioning_user_id])
+    
+    def __repr__(self):
+        return f'<PostMention {self.mentioned_user_id} in {self.post_id}>'
     
     def to_dict(self):
         return {
@@ -103,18 +110,23 @@ class PostMention(db.Model):
 
 
 class UserReputation(db.Model):
-    """Model for user reputation system"""
+    """Model for user reputation tracking"""
     __tablename__ = 'user_reputation'
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     reputation_score = db.Column(db.Integer, default=0)
     posts_count = db.Column(db.Integer, default=0)
-    helpful_posts_count = db.Column(db.Integer, default=0)
-    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    likes_received = db.Column(db.Integer, default=0)
+    dislikes_received = db.Column(db.Integer, default=0)
+    best_answers = db.Column(db.Integer, default=0)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
-    user = db.relationship('User', backref='reputation')
+    user = db.relationship('User', back_populates='reputation')
+    
+    def __repr__(self):
+        return f'<UserReputation {self.user_id}: {self.reputation_score}>'
     
     def to_dict(self):
         return {
@@ -122,7 +134,9 @@ class UserReputation(db.Model):
             'user_id': self.user_id,
             'reputation_score': self.reputation_score,
             'posts_count': self.posts_count,
-            'helpful_posts_count': self.helpful_posts_count,
+            'likes_received': self.likes_received,
+            'dislikes_received': self.dislikes_received,
+            'best_answers': self.best_answers,
             'last_updated': self.last_updated.isoformat() if self.last_updated else None
         }
 
@@ -180,4 +194,42 @@ def enhance_post_model(Post):
     Post.get_thread_depth = get_thread_depth
     
     return Post
+
+
+def create_enhanced_forum_models(db):
+    """
+    Create and return enhanced forum models
+    """
+    return {
+        'PostAttachment': PostAttachment,
+        'PostReaction': PostReaction,
+        'PostMention': PostMention,
+        'UserReputation': UserReputation
+    }
+
+
+def create_reputation_triggers(db, UserReputation, PostReaction):
+    """
+    Create reputation update triggers
+    """
+    def update_user_reputation(user_id):
+        """Update user reputation based on reactions and posts"""
+        user_reputation = UserReputation.query.filter_by(user_id=user_id).first()
+        if not user_reputation:
+            user_reputation = UserReputation(user_id=user_id)
+            db.session.add(user_reputation)
+        
+        # Count likes and dislikes
+        likes = PostReaction.query.filter_by(user_id=user_id, reaction_type='like').count()
+        dislikes = PostReaction.query.filter_by(user_id=user_id, reaction_type='dislike').count()
+        
+        # Update reputation score (likes +1, dislikes -1)
+        user_reputation.likes_received = likes
+        user_reputation.dislikes_received = dislikes
+        user_reputation.reputation_score = likes - dislikes
+        user_reputation.last_updated = datetime.utcnow()
+        
+        db.session.commit()
+    
+    return update_user_reputation
 
