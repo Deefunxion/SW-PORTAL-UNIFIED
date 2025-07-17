@@ -16,12 +16,12 @@ import {
 } from 'lucide-react';
 
 // Import enhanced components
-import RichTextEditor from "../components/RichTextEditor";
-import PostThread from './PostThread';
-import AttachmentUploader from './AttachmentUploader';
-import AttachmentGallery from './AttachmentGallery';
-import ReputationBadge from './ReputationBadge';
-import { useAuth } from './AuthContext';
+import RichTextEditor from "@/components/RichTextEditor";
+import PostThread from '@/components/PostThread';
+import AttachmentUploader from '@/components/AttachmentUploader';
+import AttachmentGallery from '@/components/AttachmentGallery';
+import ReputationBadge from '@/components/ReputationBadge';
+import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 
 /**

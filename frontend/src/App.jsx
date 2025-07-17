@@ -24,26 +24,26 @@ import {
 import { Toaster } from 'sonner';
 
 // Import authentication
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import PermissionGuard, { usePermissions } from './components/PermissionGuard';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import PermissionGuard, { usePermissions } from '@/components/PermissionGuard';
 
 // Import page components
-import HomePage from './pages/HomePage';
-import ApothecaryPage from './pages/ApothecaryPage';
-import ForumPage from './pages/ForumPage';
-import DiscussionDetail from './pages/DiscussionDetail';
-import AssistantPage from './pages/AssistantPage';
-import LoginPage from './pages/LoginPage';
-import ProfilePage from './pages/ProfilePage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import NotificationBell from './components/NotificationBell';
-import ChatWidget from './components/ChatWidget';
+import HomePage from '@/pages/HomePage';
+import ApothecaryPage from '@/pages/ApothecaryPage';
+import ForumPage from '@/pages/ForumPage';
+import DiscussionDetail from '@/pages/DiscussionDetail';
+import AssistantPage from '@/pages/AssistantPage';
+import LoginPage from '@/pages/LoginPage';
+import ProfilePage from '@/pages/ProfilePage';
+import AdminDashboardPage from '@/pages/AdminDashboardPage';
+import NotificationBell from '@/components/NotificationBell';
+import ChatWidget from '@/components/ChatWidget';
 
 // New Enhanced Forum Imports
-import EnhancedForumPage from './pages/EnhancedForumPage';
-import EnhancedDiscussionDetail from './pages/EnhancedDiscussionDetail';
-import PrivateMessagingPage from './pages/PrivateMessagingPage';
+import EnhancedForumPage from '@/pages/EnhancedForumPage';
+import EnhancedDiscussionDetail from '@/pages/EnhancedDiscussionDetail';
+import PrivateMessagingPage from '@/pages/PrivateMessagingPage';
 
 import './App.css';
 

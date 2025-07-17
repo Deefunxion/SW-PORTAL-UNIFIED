@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
@@ -14,7 +14,7 @@ import {
   Info,
   AlertTriangle
 } from 'lucide-react';
-import authService from '../lib/auth';
+import authService from '@/lib/auth';
 
 const NotificationBell = () => {
   const { isAuthenticated } = useAuth();

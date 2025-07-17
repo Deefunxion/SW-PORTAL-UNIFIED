@@ -20,9 +20,9 @@ import {
 } from 'lucide-react';
 
 // Import enhanced components
-import RichTextEditor from './RichTextEditor';
-import ReputationBadge, { ReputationLeaderboard } from './ReputationBadge';
-import { useAuth } from './AuthContext';
+import RichTextEditor from '../components/RichTextEditor';
+import ReputationBadge, { ReputationLeaderboard } from '../components/ReputationBadge';
+import { useAuth } from '../contexts/AuthContext';
 import api from '@/lib/api';
 
 /**
@@ -501,4 +501,3 @@ function EnhancedForumPage() {
 }
 
 export default EnhancedForumPage;
-

@@ -19,7 +19,7 @@ import {
   Upload
 } from 'lucide-react';
 
-import { useAuth } from './AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import api from '@/lib/api';
 
 /**

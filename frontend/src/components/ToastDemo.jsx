@@ -8,7 +8,7 @@ import {
   showLoadingToast,
   showActionToast,
   dismissAllToasts 
-} from '@/utils/toast';
+} from '@/lib/toast';
 
 /**
  * Demo component to showcase toast notification functionality

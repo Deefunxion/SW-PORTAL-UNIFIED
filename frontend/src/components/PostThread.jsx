@@ -19,7 +19,7 @@ import {
   Download,
   Eye
 } from 'lucide-react';
-import RichTextEditor from './RichTextEditor';
+import RichTextEditor from '@/components/RichTextEditor';
 import api from '@/lib/api';
 
 /**

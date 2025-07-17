@@ -17,11 +17,11 @@ import {
   UserPlus
 } from 'lucide-react';
 
-import ConversationList from './ConversationList';
-import MessageThread from './MessageThread';
-import MessageComposer from './MessageComposer';
-import { UserAvatarWithPresence, OnlineUsersList, PresenceStatusSelector } from './UserPresenceIndicator';
-import { useAuth } from './AuthContext';
+import ConversationList from '../components/ConversationList';
+import MessageThread from '../components/MessageThread';
+import MessageComposer from '../components/MessageComposer';
+import { UserAvatarWithPresence, OnlineUsersList, PresenceStatusSelector } from '../components/UserPresenceIndicator';
+import { useAuth } from '../contexts/AuthContext';
 
 /**
  * Conversation Header Component

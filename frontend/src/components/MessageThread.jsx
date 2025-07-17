@@ -19,8 +19,8 @@ import {
   Quote
 } from 'lucide-react';
 
-import { UserAvatarWithPresence } from './UserPresenceIndicator';
-import { useAuth } from './AuthContext';
+import { UserAvatarWithPresence } from '@/components/UserPresenceIndicator';
+import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 
 /**
