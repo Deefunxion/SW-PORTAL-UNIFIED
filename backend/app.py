@@ -523,7 +523,7 @@ def get_user_permissions():
     user_role = user_info.get('role', 'guest')
     
     from .roles import get_role_permissions
-    permissions = get_role_permissions().get(user_role, {})
+``    permissions = get_role_permissions().get(user_role, {})
     
     return jsonify({
         'role': user_role,
