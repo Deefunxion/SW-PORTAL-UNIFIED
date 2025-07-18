@@ -3,6 +3,30 @@ import Cookies from 'js-cookie';
 
 // Enhanced authentication service
 export const authService = {
+  // Generic API method for authenticated requests
+  async api(url, options = {}) {
+    try {
+      const method = options.method || 'GET';
+      const config = {
+        method,
+        url,
+        ...options
+      };
+      
+      const response = await api(config);
+      return response.data;
+    } catch (error) {
+      console.error('API request failed:', error);
+      
+      // If unauthorized, logout user
+      if (error.response?.status === 401) {
+        this.logout();
+      }
+      
+      throw error;
+    }
+  },
+
   // Login function
   async login(username, password) {
     try {

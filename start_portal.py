@@ -25,15 +25,15 @@ def main():
     print("Starting SW Portal...")
 
     # --- Commands ---
-    backend_command = "python -m backend.app"
+    backend_command = "C:/Users/dee/Desktop/SW-PORTAL-UNIFIED/.venv/Scripts/python.exe app.py"
     frontend_command = "pnpm run dev"
 
     # --- Directories ---
-    project_root = "."  # Run backend from project root!
+    backend_dir = "backend"  # Run backend from backend directory!
     frontend_dir = "frontend"
 
-    print(f"-> Starting Backend Server from project root...")
-    backend_process = run_command(backend_command, "SW Portal - Backend", project_root)
+    print(f"-> Starting Backend Server from '{backend_dir}'...")
+    backend_process = run_command(backend_command, "SW Portal - Backend", backend_dir)
 
     print(f"-> Starting Frontend Server in '{frontend_dir}'...")
     frontend_process = run_command(frontend_command, "SW Portal - Frontend", frontend_dir)

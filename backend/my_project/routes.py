@@ -46,7 +46,9 @@ def scan_content_directory():
         return []
 
     def scan_recursive(path, relative_path=""):
-        items = []
+        folders = []
+        files = []
+        
         try:
             for item in os.listdir(path):
                 if item.startswith('.'):
@@ -56,12 +58,15 @@ def scan_content_directory():
                 relative_item_path = os.path.join(relative_path, item) if relative_path else item
                 
                 if os.path.isdir(item_path):
-                    items.append({
+                    # Recursively scan subfolder
+                    subfolder_result = scan_recursive(item_path, relative_item_path)
+                    
+                    folders.append({
                         'id': relative_item_path.replace(os.sep, '_').replace(' ', '_'),
                         'category': item,
                         'path': relative_item_path.replace('\\', '/'),
-                        'files': [],
-                        'subfolders': scan_recursive(item_path, relative_item_path)
+                        'files': [f for f in subfolder_result if 'name' in f],  # Files in this folder
+                        'subfolders': [f for f in subfolder_result if 'category' in f]  # Subfolders
                     })
                 else:
                     file_info = {
@@ -71,10 +76,12 @@ def scan_content_directory():
                         'modified': datetime.fromtimestamp(os.path.getmtime(item_path)).isoformat(),
                         'type': get_file_type(item)
                     }
-                    items.append(file_info)
+                    files.append(file_info)
         except PermissionError:
             pass
-        return items
+        
+        # Return both files and folders combined
+        return files + folders
 
     return scan_recursive(content_dir)
 
@@ -321,7 +328,11 @@ def get_reactions(post_id):
 @main_bp.route('/api/files/structure', methods=['GET'])
 def get_file_structure():
     """Get file directory structure"""
-    return jsonify(scan_content_directory())
+    structure = scan_content_directory()
+    return jsonify({
+        'categories': structure,
+        'status': 'success'
+    })
 
 
 @main_bp.route('/api/files/download/<path:file_path>', methods=['GET'])
