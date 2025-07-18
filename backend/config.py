@@ -14,3 +14,7 @@ class Config:
     # Celery settings
     CELERY_BROKER_URL = 'redis://localhost:6379/0'
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+    
+    # OpenAI settings
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    OPENAI_ASSISTANT_ID = os.getenv('OPENAI_ASSISTANT_ID')
