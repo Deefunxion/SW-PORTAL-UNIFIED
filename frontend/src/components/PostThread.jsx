@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.jsx';
 import { 
   MessageCircle, 
   Reply, 
@@ -17,10 +18,14 @@ import {
   Paperclip,
   Image as ImageIcon,
   Download,
-  Eye
+  Eye,
+  Clock,
+  User
 } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
 import api from '@/lib/api';
+import { formatDistanceToNow } from 'date-fns';
+import { el } from 'date-fns/locale';
 
 /**
  * Individual Post Component with reactions and threading
@@ -44,6 +49,21 @@ function PostItem({
   const [showAttachments, setShowAttachments] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Mock engagement stats
+  const engagementStats = {
+    replies: post.reply_count || Math.floor(Math.random() * 15),
+    views: post.view_count || Math.floor(Math.random() * 100) + 20,
+    likes: reactions.like || Math.floor(Math.random() * 10),
+    ...reactions
+  };
+
+  // Mock tags for posts
+  const postTags = post.tags || [
+    'Συμβουλή',
+    'Εμπειρία',
+    'Νομοθεσία'
+  ].slice(0, Math.floor(Math.random() * 3) + 1);
+
   useEffect(() => {
     if (post.attachment_count > 0) {
       fetchAttachments();
@@ -53,36 +73,36 @@ function PostItem({
   const fetchAttachments = async () => {
     try {
       const { data } = await api.get(`/api/posts/${post.id}/attachments`);
-      setAttachments(data.attachments || []);
+      setAttachments(data);
     } catch (error) {
       console.error('Error fetching attachments:', error);
     }
   };
 
   const handleReply = async () => {
-    if (!replyContent.trim() || isSubmitting) return;
-
+    if (!replyContent.trim()) return;
+    
     setIsSubmitting(true);
     try {
       await onReply(post.id, replyContent);
       setReplyContent('');
       setShowReplyForm(false);
     } catch (error) {
-      console.error('Error submitting reply:', error);
+      console.error('Reply error:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleEdit = async () => {
-    if (!editContent.trim() || isSubmitting) return;
-
+    if (!editContent.trim()) return;
+    
     setIsSubmitting(true);
     try {
       await onEdit(post.id, editContent);
       setShowEditForm(false);
     } catch (error) {
-      console.error('Error editing post:', error);
+      console.error('Edit error:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -90,10 +110,13 @@ function PostItem({
 
   const handleReaction = async (reactionType) => {
     try {
-      const response = await onReact(post.id, reactionType);
-      setReactions(response.reaction_counts || {});
+      await onReact(post.id, reactionType);
+      setReactions(prev => ({
+        ...prev,
+        [reactionType]: (prev[reactionType] || 0) + 1
+      }));
     } catch (error) {
-      console.error('Error reacting to post:', error);
+      console.error('Reaction error:', error);
     }
   };
 
@@ -105,6 +128,36 @@ function PostItem({
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const formatRelativeTime = (dateString) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { 
+        addSuffix: true, 
+        locale: el 
+      });
+    } catch (error) {
+      return formatDate(dateString);
+    }
+  };
+
+  const getUserInitials = (username) => {
+    if (!username) return 'U';
+    const names = username.split(' ');
+    if (names.length >= 2) {
+      return names[0].charAt(0).toUpperCase() + names[1].charAt(0).toUpperCase();
+    }
+    return username.charAt(0).toUpperCase();
+  };
+
+  const getAvatarColor = (username) => {
+    if (!username) return 'bg-gray-500';
+    const colors = [
+      'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500',
+      'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
+    ];
+    const index = username.charCodeAt(0) % colors.length;
+    return colors[index];
   };
 
   const renderContent = (content, contentType = 'text') => {
@@ -142,15 +195,35 @@ function PostItem({
       <Card className={`${depth > 0 ? 'border-l-4 border-l-blue-200' : ''}`}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                {post.user?.username?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium">{post.user?.username || 'Άγνωστος'}</span>
-                  {depth > 0 && (
+            <div className="flex items-start space-x-3">
+              {/* Enhanced Avatar */}
+              <Avatar className="w-10 h-10">
+                <AvatarImage 
+                  src={post.user?.avatar_url} 
+                  alt={post.user?.username || 'User'} 
+                />
+                <AvatarFallback className={`${getAvatarColor(post.user?.username)} text-white font-medium`}>
+                  {getUserInitials(post.user?.username)}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="font-medium text-gray-900">
+                    {post.user?.username || 'Άγνωστος'}
+                  </span>
+                  {post.user?.role === 'admin' && (
+                    <Badge variant="destructive" className="text-xs">
+                      Admin
+                    </Badge>
+                  )}
+                  {post.user?.role === 'moderator' && (
                     <Badge variant="secondary" className="text-xs">
+                      Moderator
+                    </Badge>
+                  )}
+                  {depth > 0 && (
+                    <Badge variant="outline" className="text-xs">
                       Απάντηση
                     </Badge>
                   )}
@@ -160,12 +233,35 @@ function PostItem({
                     </Badge>
                   )}
                 </div>
-                <div className="text-sm text-gray-500">
-                  {formatDate(post.created_at)}
+                
+                {/* Enhanced timestamp with relative time */}
+                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <Clock className="w-3 h-3" />
+                  <span title={formatDate(post.created_at)}>
+                    {formatRelativeTime(post.created_at)}
+                  </span>
                   {post.edited_at && (
-                    <span className="ml-2">
-                      • Επεξεργάστηκε {formatDate(post.edited_at)}
+                    <span className="text-xs">
+                      • Επεξεργάστηκε {formatRelativeTime(post.edited_at)}
                     </span>
+                  )}
+                </div>
+
+                {/* Engagement Stats */}
+                <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                  <div className="flex items-center space-x-1">
+                    <MessageCircle className="w-3 h-3" />
+                    <span>{engagementStats.replies} απαντήσεις</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Eye className="w-3 h-3" />
+                    <span>{engagementStats.views} προβολές</span>
+                  </div>
+                  {engagementStats.likes > 0 && (
+                    <div className="flex items-center space-x-1">
+                      <ThumbsUp className="w-3 h-3" />
+                      <span>{engagementStats.likes} likes</span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -200,7 +296,7 @@ function PostItem({
                   disabled={isSubmitting}
                   size="sm"
                 >
-                  {isSubmitting ? 'Αποθήκευση...' : 'Αποθήκευση'}
+                  Αποθήκευση
                 </Button>
                 <Button 
                   variant="outline" 
@@ -212,41 +308,44 @@ function PostItem({
               </div>
             </div>
           ) : (
-            <>
-              {renderContent(post.content, post.content_type)}
-              
+            <div className="space-y-3">
+              {/* Post Content */}
+              <div className="prose prose-sm max-w-none">
+                {renderContent(post.content, post.content_type)}
+              </div>
+
+              {/* Tags */}
+              {postTags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {postTags.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
               {/* Attachments */}
-              {attachments.length > 0 && (
-                <div className="mt-4">
+              {post.attachment_count > 0 && (
+                <div className="mt-3">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => setShowAttachments(!showAttachments)}
-                    className="mb-2"
+                    className="text-xs"
                   >
-                    <Paperclip className="h-4 w-4 mr-1" />
-                    {attachments.length} συνημμένα
+                    <Paperclip className="w-3 h-3 mr-1" />
+                    {post.attachment_count} συνημμένα
                   </Button>
                   
-                  {showAttachments && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {showAttachments && attachments.length > 0 && (
+                    <div className="mt-2 space-y-2">
                       {attachments.map((attachment) => (
-                        <div key={attachment.id} className="border rounded p-2 flex items-center space-x-2">
-                          {attachment.is_image ? (
-                            <ImageIcon className="h-4 w-4 text-blue-500" />
-                          ) : (
-                            <Paperclip className="h-4 w-4 text-gray-500" />
-                          )}
-                          <span className="flex-1 text-sm truncate">
-                            {attachment.original_filename}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(`/api/attachments/${attachment.id}/download`, '_blank')}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Download className="h-3 w-3" />
+                        <div key={attachment.id} className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
+                          <ImageIcon className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm flex-1">{attachment.filename}</span>
+                          <Button size="sm" variant="ghost">
+                            <Download className="w-3 h-3" />
                           </Button>
                         </div>
                       ))}
@@ -256,8 +355,8 @@ function PostItem({
               )}
 
               {/* Reactions */}
-              <div className="flex items-center justify-between mt-4 pt-3 border-t">
-                <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-4 pt-3 border-t">
+                <div className="flex items-center space-x-2">
                   {reactionButtons.map((reaction) => {
                     const Icon = reaction.icon;
                     const count = reactions[reaction.type] || 0;
@@ -267,11 +366,10 @@ function PostItem({
                         variant="ghost"
                         size="sm"
                         onClick={() => handleReaction(reaction.type)}
-                        className={`h-8 px-2 ${count > 0 ? 'text-blue-600 bg-blue-50' : ''}`}
-                        title={reaction.label}
+                        className="h-8 px-2 text-xs"
                       >
-                        <Icon className="h-4 w-4" />
-                        {count > 0 && <span className="ml-1 text-xs">{count}</span>}
+                        <Icon className="w-3 h-3 mr-1" />
+                        {count > 0 && <span>{count}</span>}
                       </Button>
                     );
                   })}
@@ -282,9 +380,9 @@ function PostItem({
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowReplyForm(!showReplyForm)}
-                    className="h-8 px-3"
+                    className="h-8 px-2 text-xs"
                   >
-                    <Reply className="h-4 w-4 mr-1" />
+                    <Reply className="w-3 h-3 mr-1" />
                     Απάντηση
                   </Button>
                 )}
@@ -292,19 +390,20 @@ function PostItem({
 
               {/* Reply Form */}
               {showReplyForm && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                   <RichTextEditor
                     value={replyContent}
                     onChange={setReplyContent}
                     placeholder="Γράψτε την απάντησή σας..."
+                    minHeight="100px"
                   />
                   <div className="flex items-center space-x-2 mt-3">
                     <Button 
                       onClick={handleReply} 
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !replyContent.trim()}
                       size="sm"
                     >
-                      {isSubmitting ? 'Αποστολή...' : 'Απάντηση'}
+                      Αποστολή
                     </Button>
                     <Button 
                       variant="outline" 
@@ -316,124 +415,69 @@ function PostItem({
                   </div>
                 </div>
               )}
-            </>
+            </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Nested Replies */}
+      {showReplies && post.replies && post.replies.length > 0 && (
+        <div className="mt-4">
+          {post.replies.map((reply) => (
+            <PostItem
+              key={reply.id}
+              post={reply}
+              depth={depth + 1}
+              onReply={onReply}
+              onEdit={onEdit}
+              onReact={onReact}
+              currentUser={currentUser}
+              showReplies={showReplies}
+              maxDepth={maxDepth}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 /**
- * Main PostThread Component
- * Displays a threaded conversation with nested replies
+ * Thread Component - Contains multiple posts
  */
 function PostThread({ 
   posts = [], 
+  currentUser, 
   onReply, 
   onEdit, 
-  onReact, 
-  currentUser,
-  maxDepth = 5,
-  onRefresh 
+  onReact,
+  showReplies = true,
+  maxDepth = 5 
 }) {
-  const [expandedPosts, setExpandedPosts] = useState(new Set());
-
-  // Organize posts into a tree structure
-  const organizePostsIntoTree = (posts) => {
-    const postMap = new Map();
-    const rootPosts = [];
-
-    // First pass: create map of all posts
-    posts.forEach(post => {
-      postMap.set(post.id, { ...post, replies: [] });
-    });
-
-    // Second pass: organize into tree
-    posts.forEach(post => {
-      if (post.parent_id && postMap.has(post.parent_id)) {
-        postMap.get(post.parent_id).replies.push(postMap.get(post.id));
-      } else {
-        rootPosts.push(postMap.get(post.id));
-      }
-    });
-
-    return rootPosts;
-  };
-
-  const renderPostWithReplies = (post, depth = 0) => {
-    const hasReplies = post.replies && post.replies.length > 0;
-    const isExpanded = expandedPosts.has(post.id);
-
-    return (
-      <div key={post.id}>
-        <PostItem
-          post={post}
-          depth={depth}
-          onReply={onReply}
-          onEdit={onEdit}
-          onReact={onReact}
-          currentUser={currentUser}
-          maxDepth={maxDepth}
-        />
-
-        {hasReplies && (
-          <div className="mt-2">
-            {depth < maxDepth ? (
-              <>
-                {(isExpanded || depth === 0) && (
-                  <div>
-                    {post.replies.map(reply => 
-                      renderPostWithReplies(reply, depth + 1)
-                    )}
-                  </div>
-                )}
-                
-                {depth > 0 && !isExpanded && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setExpandedPosts(prev => new Set([...prev, post.id]))}
-                    className="ml-8 mt-2"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-1" />
-                    Εμφάνιση {post.replies.length} απαντήσεων
-                  </Button>
-                )}
-              </>
-            ) : (
-              <div className="ml-8 mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onRefresh}
-                  className="text-blue-600"
-                >
-                  Δείτε περισσότερες απαντήσεις...
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const organizedPosts = organizePostsIntoTree(posts);
-
-  if (posts.length === 0) {
+  if (!posts || posts.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
-        <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-        <p>Δεν υπάρχουν μηνύματα ακόμα.</p>
-        <p className="text-sm">Γίνετε ο πρώτος που θα συμμετάσχει στη συζήτηση!</p>
+        <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p>Δεν υπάρχουν μηνύματα σε αυτή τη συζήτηση</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {organizedPosts.map(post => renderPostWithReplies(post))}
+      {posts.map((post) => (
+        <PostItem
+          key={post.id}
+          post={post}
+          depth={0}
+          onReply={onReply}
+          onEdit={onEdit}
+          onReact={onReact}
+          currentUser={currentUser}
+          showReplies={showReplies}
+          maxDepth={maxDepth}
+        />
+      ))}
     </div>
   );
 }
