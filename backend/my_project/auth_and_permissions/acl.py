@@ -8,9 +8,9 @@ import os
 import json
 from datetime import datetime
 from flask import request, jsonify, current_app
-from flask_sqlalchemy import SQLAlchemy
+from backend.my_project.extensions import db
 from sqlalchemy import text
-from .auth import jwt_required, admin_required, staff_required, get_current_user_info
+from backend.my_project.auth_and_permissions.auth import jwt_required, admin_required, staff_required, get_current_user_info
 
 class ACLManager:
     """Advanced Access Control List Manager"""

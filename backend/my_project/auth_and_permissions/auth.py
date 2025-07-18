@@ -10,8 +10,8 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import request, jsonify, current_app
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text
+from backend.my_project.extensions import db
+
 
 # Initialize JWT manager
 jwt = JWTManager()
@@ -160,7 +160,7 @@ def init_auth(app, db, User):
             # Update admin user with new fields using raw SQL
             with db.engine.connect() as conn:
                 conn.execute(
-                    text("UPDATE user SET role = 'admin', is_active = 1 WHERE username = 'admin'")
+                    text("UPDATE users SET role = 'admin', is_active = 1 WHERE username = 'admin'")
                 )
                 conn.commit()
                 print("Updated admin user with admin role")
@@ -200,7 +200,7 @@ def create_auth_routes(app, db, User):
             with db.engine.connect() as conn:
                 username_param = data['username']
                 result = conn.execute(
-                    text("SELECT id, username, email, password_hash, role, is_active FROM user WHERE username = :username"),
+                    text("SELECT id, username, email, password_hash, role, is_active FROM users WHERE username = :username"),
                     {"username": username_param}
                 )
                 user_data = result.fetchone()
@@ -224,7 +224,7 @@ def create_auth_routes(app, db, User):
                     return jsonify({'error': 'Invalid credentials'}), 401
                 
                 conn.execute(
-                    text("UPDATE user SET last_login = :last_login WHERE id = :id"),
+                    text("UPDATE users SET last_login = :last_login WHERE id = :id"),
                     {"last_login": datetime.utcnow(), "id": user_id}
                 )
                 conn.commit()
@@ -282,7 +282,7 @@ def create_auth_routes(app, db, User):
             # Insert user with raw SQL to handle new columns
             with db.engine.connect() as conn:
                 conn.execute(
-                    text("INSERT INTO user (username, email, password_hash, role, is_active, created_at) VALUES (:username, :email, :password_hash, :role, :is_active, :created_at)"),
+                    text("INSERT INTO users (username, email, password_hash, role, is_active, created_at) VALUES (:username, :email, :password_hash, :role, :is_active, :created_at)"),
                     {
                         "username": data['username'],
                         "email": data['email'],
@@ -327,7 +327,7 @@ def create_auth_routes(app, db, User):
         try:
             with db.engine.connect() as conn:
                 result = conn.execute(
-                    text("SELECT id, username, email, role, is_active, created_at, last_login FROM user ORDER BY created_at DESC")
+                    text("SELECT id, username, email, role, is_active, created_at, last_login FROM users ORDER BY created_at DESC")
                 )
                 users = []
                 for row in result:
@@ -360,7 +360,7 @@ def create_auth_routes(app, db, User):
         try:
             with db.engine.connect() as conn:
                 conn.execute(
-                    text("UPDATE user SET role = :role WHERE id = :id"),
+                    text("UPDATE users SET role = :role WHERE id = :id"),
                     {"role": new_role, "id": user_id}
                 )
                 conn.commit()
@@ -381,7 +381,7 @@ def create_auth_routes(app, db, User):
         try:
             with db.engine.connect() as conn:
                 conn.execute(
-                    text("UPDATE user SET is_active = :is_active WHERE id = :id"),
+                    text("UPDATE users SET is_active = :is_active WHERE id = :id"),
                     {"is_active": is_active, "id": user_id}
                 )
                 conn.commit()
