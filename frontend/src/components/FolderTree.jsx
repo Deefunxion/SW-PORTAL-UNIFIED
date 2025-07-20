@@ -126,73 +126,70 @@ const FolderTree = ({ viewMode, handleDragStart, handleDrop, dropTarget, handleD
     setCollapsedFolders(newCollapsed);
   };
   
-  const renderFolders = (folders, level = 0) => {
-    // Add safety check for undefined/null folders
-    if (!folders || !Array.isArray(folders)) {
-        return null;
-    }
-    
-    return folders.map((folder) => (
-        <div className={`space-y-4 ${level > 0 ? 'ml-6' : ''}`} key={folder.id}>
-        <Card key={folder.id} className="overflow-hidden">
+  const renderFolders = (folderData, currentLevel) => {
+    return (
+        <div className={`space-y-4 ${currentLevel > 0 ? 'ml-6' : ''}`}>
+        {folderData.map((category) => (
+            <Card key={category.id} className="overflow-hidden">
             <CardHeader
                 className={`cursor-pointer transition-colors duration-200 ${
-                dropTarget === folder.path ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
+                dropTarget === category.path ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
                 }`}
-                onClick={() => toggleFolder(folder.id)}
+                onClick={() => toggleFolder(category.id)}
                 onDragOver={(e) => e.preventDefault()}
-                onDragEnter={(e) => handleDragEnter(e, folder.path)}
+                onDragEnter={(e) => handleDragEnter(e, category.path)}
                 onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, folder.path)}
+                onDrop={(e) => handleDrop(e, category.path)}
             >
                 <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                    {collapsedFolders.has(folder.id) ? (
+                    {collapsedFolders.has(category.id) ? (
                     <ChevronRight className="w-5 h-5 text-gray-500" />
                     ) : (
                     <ChevronDown className="w-5 h-5 text-gray-500" />
                     )}
                     <Folder className="w-6 h-6 text-yellow-600" />
                     <div>
-                    <CardTitle className="text-lg">{folder.category}</CardTitle>
+                    <CardTitle className="text-lg">{category.category}</CardTitle>
                     <CardDescription>
-                        {(folder.files || []).length} αρχεί{(folder.files || []).length === 1 ? 'ο' : 'α'}
-                        {(folder.subfolders || []).length > 0 && `, ${(folder.subfolders || []).length} υποφάκελ${(folder.subfolders || []).length === 1 ? 'ος' : 'οι'}`}
+                        {category.files.length} αρχεί{category.files.length === 1 ? 'ο' : 'α'}
+                        {category.subfolders.length > 0 && `, ${category.subfolders.length} υποφάκελ${category.subfolders.length === 1 ? 'ος' : 'οι'}`}
                     </CardDescription>
                     </div>
                 </div>
                 <Badge variant="secondary">
-                    {(folder.files || []).length}
+                    {category.files.length}
                 </Badge>
                 </div>
             </CardHeader>
 
-            {!collapsedFolders.has(folder.id) && (
+            {!collapsedFolders.has(category.id) && (
                 <CardContent className="p-4">
                 {/* Render subfolders */}
-                {folder.subfolders && folder.subfolders.length > 0 && (
-                    renderFolders(folder.subfolders, level + 1)
+                {category.subfolders && category.subfolders.length > 0 && (
+                    renderFolders(category.subfolders, currentLevel + 1)
                 )}
 
                 {/* Render files */}
                 {viewMode === 'grid' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
-                    {(folder.files || []).map((file) => (
-                        <FileItem key={file.id} file={file} viewMode={viewMode} handleDragStart={handleDragStart} category={folder.path} />
+                    {category.files.map((file) => (
+                        <FileItem key={file.id} file={file} viewMode={viewMode} handleDragStart={handleDragStart} category={category.path} />
                     ))}
                     </div>
                 ) : (
                     <div className="space-y-2 mt-4">
-                    {(folder.files || []).map((file) => (
-                        <FileItem key={file.id} file={file} viewMode={viewMode} handleDragStart={handleDragStart} category={folder.path} />
+                    {category.files.map((file) => (
+                        <FileItem key={file.id} file={file} viewMode={viewMode} handleDragStart={handleDragStart} category={category.path} />
                     ))}
                     </div>
                 )}
                 </CardContent>
             )}
             </Card>
+        ))}
         </div>
-    ));
+    );
   }
 
   return renderFolders(categories, level);

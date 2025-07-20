@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import TextStyle from '@tiptap/extension-text-style';
-import Color from '@tiptap/extension-color';
-import ListItem from '@tiptap/extension-list-item';
-import TextAlign from '@tiptap/extension-text-align';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
+import { ListItem } from '@tiptap/extension-list-item';
+import { TextAlign } from '@tiptap/extension-text-align';
 import { Button } from '@/components/ui/button.jsx';
 import { 
   Bold, 
