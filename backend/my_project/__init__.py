@@ -17,12 +17,17 @@ def create_app():
     # Enable CORS for all origins (for development)
     CORS(app, origins="*")
     
-    # Load configuration
-    import sys
-    import os
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from config import Config
-    app.config.from_object(Config)
+    # Load configuration - simple and direct
+    app.config.update({
+        'SECRET_KEY': 'dev-secret-key-change-this',
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///sw_portal_dev.db',
+        'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+        'JWT_SECRET_KEY': 'dev-jwt-secret-key',
+        'CELERY_BROKER_URL': 'redis://localhost:6379/0',
+        'CELERY_RESULT_BACKEND': 'redis://localhost:6379/0',
+        'UPLOAD_FOLDER': '../content',
+        'MAX_CONTENT_LENGTH': 50 * 1024 * 1024
+    })
     
     # Initialize extensions
     from .extensions import db, celery

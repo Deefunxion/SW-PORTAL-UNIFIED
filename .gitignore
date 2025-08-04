@@ -43,4 +43,12 @@ content/*
 !content/.gitkeep
 
 # Εξαίρεση για παράδειγμα .env
-!.env.example
+!.env.example"# Claude and AI tools" 
+".claude/" 
+"ApothecaryPage_Modernization_Guide.md" 
+"SW-Portal-Components-For-AI-Redesign.md" 
+"High-priority-files/" 
+"*.txt" 
+"Screenshot*.png" 
+"*demo.zip" 
+"*demo/" 

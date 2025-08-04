@@ -1,20 +1,15 @@
+# Legacy config file - kept for compatibility
+# New configuration is in config/ directory
+
 import os
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
+load_dotenv('.env.development')  # Load development config if exists
 
-class Config:
-    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    SECRET_KEY = os.getenv('SECRET_KEY', 'sw-portal-secret-key-2025')
-    SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(BASE_DIR, "sw_portal.db")}'
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, '..', 'content') # Relative to backend/
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
-    
-    # Celery settings
-    CELERY_BROKER_URL = 'redis://localhost:6379/0'
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-    
-    # OpenAI settings
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    OPENAI_ASSISTANT_ID = os.getenv('OPENAI_ASSISTANT_ID')
+# Import new configuration system
+from config import config, DevelopmentConfig
+
+# Use the new config system
+Config = config.get(os.getenv('FLASK_ENV', 'development'), DevelopmentConfig)

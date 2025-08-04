@@ -23,24 +23,47 @@ main_bp = Blueprint('main', __name__)
 
 # Utility functions
 def get_file_type(filename):
-    """Determine file type based on extension."""
+    """Determine file type based on extension with enhanced categorization."""
     extension = filename.split('.')[-1].lower() if '.' in filename else ''
     type_map = {
         'pdf': 'pdf',
-        'doc': 'document', 'docx': 'document',
-        'txt': 'text', 'md': 'text',
-        'xlsx': 'spreadsheet', 'xls': 'spreadsheet',
-        'ppt': 'presentation', 'pptx': 'presentation',
-        'zip': 'archive', 'rar': 'archive', '7z': 'archive',
-        'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image',
-        'mp4': 'video', 'avi': 'video', 'mov': 'video',
-        'mp3': 'audio', 'wav': 'audio',
+        'doc': 'document', 'docx': 'document', 'odt': 'document', 'rtf': 'document',
+        'txt': 'text', 'md': 'text', 'rst': 'text', 'csv': 'text',
+        'xlsx': 'spreadsheet', 'xls': 'spreadsheet', 'ods': 'spreadsheet',
+        'ppt': 'presentation', 'pptx': 'presentation', 'odp': 'presentation',
+        'zip': 'archive', 'rar': 'archive', '7z': 'archive', 'tar': 'archive', 'gz': 'archive',
+        'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image', 'bmp': 'image', 'svg': 'image', 'webp': 'image',
+        'mp4': 'video', 'avi': 'video', 'mov': 'video', 'wmv': 'video', 'mkv': 'video', 'webm': 'video',
+        'mp3': 'audio', 'wav': 'audio', 'flac': 'audio', 'aac': 'audio', 'ogg': 'audio',
+        'html': 'web', 'htm': 'web', 'css': 'web', 'js': 'web', 'json': 'web',
+        'py': 'code', 'java': 'code', 'cpp': 'code', 'c': 'code', 'php': 'code',
     }
     return type_map.get(extension, 'file')
+
+def format_file_size(size_bytes):
+    """Format file size in human readable format."""
+    if size_bytes == 0:
+        return "0 B"
+    
+    size_names = ["B", "KB", "MB", "GB", "TB"]
+    import math
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return f"{s} {size_names[i]}"
 
 def scan_content_directory():
     """Scan content directory and return file structure"""
     content_dir = current_app.config['UPLOAD_FOLDER']
+    # Make sure we have absolute path
+    if not os.path.isabs(content_dir):
+        content_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), content_dir)
+    
+    print(f"DEBUG: Looking for content in: {content_dir}")
+    print(f"DEBUG: Path exists: {os.path.exists(content_dir)}")
+    if os.path.exists(content_dir):
+        print(f"DEBUG: Contents: {os.listdir(content_dir)}")
+    
     if not os.path.exists(content_dir):
         os.makedirs(content_dir)
         return []
@@ -149,14 +172,34 @@ def register():
 
 @main_bp.route('/api/auth/me', methods=['GET'])
 def get_current_user():
-    """Get current user info"""
+    """Get current user info with enhanced user data"""
     # Simplified - in a real app you'd validate JWT tokens
-    return jsonify({
-        'id': 1,
-        'username': 'admin',
-        'email': 'admin@portal.gr',
-        'role': 'admin'
-    })
+    user = User.query.get(1)  # Get actual user from database
+    if user:
+        user_data = user.to_dict()
+        # Add additional computed fields
+        user_data['permissions'] = get_user_permissions_list(user.role)
+        user_data['last_active'] = user.last_seen.isoformat() if user.last_seen else None
+        return jsonify(user_data)
+    else:
+        # Fallback for development
+        return jsonify({
+            'id': 1,
+            'username': 'admin',
+            'email': 'admin@portal.gr',
+            'role': 'admin',
+            'permissions': ['read', 'write', 'admin', 'can_access_admin_dashboard'],
+            'last_active': datetime.now().isoformat()
+        })
+
+def get_user_permissions_list(role):
+    """Get list of permissions based on user role."""
+    permission_map = {
+        'admin': ['read', 'write', 'admin', 'can_access_admin_dashboard', 'can_moderate', 'can_manage_users'],
+        'staff': ['read', 'write', 'can_moderate'],
+        'guest': ['read']
+    }
+    return permission_map.get(role, ['read'])
 
 
 @main_bp.route('/api/auth/logout', methods=['POST'])
@@ -327,12 +370,47 @@ def get_reactions(post_id):
 
 @main_bp.route('/api/files/structure', methods=['GET'])
 def get_file_structure():
-    """Get file directory structure"""
-    structure = scan_content_directory()
-    return jsonify({
-        'categories': structure,
-        'status': 'success'
-    })
+    """Get file directory structure with enhanced metadata"""
+    try:
+        structure = scan_content_directory()
+        
+        # Calculate metadata
+        total_files = 0
+        total_size = 0
+        file_types = {}
+        
+        def count_files(items):
+            nonlocal total_files, total_size, file_types
+            for item in items:
+                if 'name' in item:  # It's a file
+                    total_files += 1
+                    total_size += item.get('size', 0)
+                    file_type = item.get('type', 'unknown')
+                    file_types[file_type] = file_types.get(file_type, 0) + 1
+                elif 'files' in item:  # It's a folder with files
+                    count_files(item['files'])
+                    if 'subfolders' in item:
+                        count_files(item['subfolders'])
+        
+        count_files(structure)
+        
+        return jsonify({
+            'categories': structure,
+            'metadata': {
+                'total_files': total_files,
+                'total_size': total_size,
+                'total_size_formatted': format_file_size(total_size),
+                'file_types': file_types,
+                'last_updated': datetime.now().isoformat()
+            },
+            'status': 'success'
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error getting file structure: {str(e)}")
+        return jsonify({
+            'error': 'Failed to retrieve file structure',
+            'status': 'error'
+        }), 500
 
 
 @main_bp.route('/api/files/download/<path:file_path>', methods=['GET'])
@@ -589,23 +667,56 @@ def mark_notifications_read():
 
 @main_bp.route('/api/chat', methods=['POST'])
 def ai_chat():
-    """AI chat endpoint"""
-    data = request.get_json()
-    message = data.get('message', '')
-    
+    """Enhanced AI chat endpoint with better error handling and logging"""
     try:
-        if hasattr(current_app, 'client') and current_app.client:
-            # Simplified AI response - in real implementation would use OpenAI API
-            reply = f"AI Response to: {message}"
-        else:
-            reply = f'Λυπάμαι, το AI Assistant δεν είναι διαθέσιμο αυτή τη στιγμή. Το μήνυμά σας ήταν: "{message}"'
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+            
+        message = data.get('message', '').strip()
+        thread_id = data.get('thread_id')
+        user_id = 1  # Simplified - get from auth context
         
-        return jsonify({'response': reply})
+        if not message:
+            return jsonify({'error': 'Message cannot be empty'}), 400
+            
+        if len(message) > 4000:  # Reasonable message length limit
+            return jsonify({'error': 'Message too long'}), 400
+        
+        # Log the chat request for monitoring
+        current_app.logger.info(f"Chat request from user {user_id}: {message[:100]}...")
+        
+        # AI Response logic
+        if hasattr(current_app, 'client') and current_app.client:
+            # TODO: Implement actual OpenAI API call here
+            reply = f"Καλή ερώτηση! Αυτό είναι μια δοκιμαστική απάντηση για: {message[:100]}..."
+        else:
+            # Provide more helpful fallback responses based on message content
+            if any(word in message.lower() for word in ['νομικό', 'νόμος', 'διαδικασία']):
+                reply = "Για νομικές συμβουλές, παρακαλώ επικοινωνήστε με τη νομική υπηρεσία της Περιφέρειας Αττικής. Το AI Assistant δεν είναι ακόμη διαθέσιμο."
+            elif any(word in message.lower() for word in ['αρχείο', 'έγγραφο', 'κατέβασμα']):
+                reply = "Μπορείτε να βρείτε αρχεία στην ενότητα Apothecary. Χρησιμοποιήστε την αναζήτηση για να βρείτε συγκεκριμένα έγγραφα."
+            else:
+                reply = f'Λυπάμαι, το AI Assistant δεν είναι ακόμη πλήρως ενεργοποιημένο. Το μήνυμά σας "{message[:50]}..." έχει καταγραφεί για μελλοντική επεξεργασία.'
+        
+        response_data = {
+            'response': reply,
+            'thread_id': thread_id or f"thread_{user_id}_{int(datetime.now().timestamp())}",
+            'timestamp': datetime.now().isoformat(),
+            'status': 'success'
+        }
+        
+        return jsonify(response_data)
+        
+    except ValueError as e:
+        current_app.logger.error(f"Invalid JSON in chat request: {str(e)}")
+        return jsonify({'error': 'Invalid request format'}), 400
     except Exception as e:
-        print(f"Error during AI request: {e}")
+        current_app.logger.error(f"Error during AI chat: {str(e)}")
         return jsonify({
-            'response': f'Λυπάμαι, το AI Assistant δεν είναι διαθέσιμο αυτή τη στιγμή. Το μήνυμά σας ήταν: "{message}"'
-        })
+            'error': 'Παρουσιάστηκε σφάλμα στον server. Παρακαλώ δοκιμάστε ξανά.',
+            'status': 'error'
+        }), 500
 
 
 # ============================================================================
@@ -620,26 +731,257 @@ def serve_content(filename):
 
 @main_bp.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'timestamp': datetime.now().isoformat(),
-        'version': '1.0.0',
-        'components': {
-            'database': 'connected',
-            'files': 'accessible',
-            'ai_assistant': 'configured' if hasattr(current_app, 'client') and current_app.client else 'not_configured'
+    """Enhanced health check endpoint with detailed system status"""
+    try:
+        health_status = {
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
+            'version': '1.0.0',
+            'environment': current_app.config.get('ENV', 'development'),
+            'components': {}
         }
-    })
+        
+        # Database health check
+        try:
+            db.session.execute('SELECT 1')
+            health_status['components']['database'] = {
+                'status': 'healthy',
+                'details': 'Connection successful'
+            }
+        except Exception as e:
+            health_status['components']['database'] = {
+                'status': 'unhealthy',
+                'details': str(e)
+            }
+            health_status['status'] = 'degraded'
+        
+        # File system health check
+        try:
+            content_dir = current_app.config['UPLOAD_FOLDER']
+            if os.path.exists(content_dir) and os.access(content_dir, os.R_OK | os.W_OK):
+                health_status['components']['files'] = {
+                    'status': 'healthy',
+                    'details': f'Directory accessible at {content_dir}'
+                }
+            else:
+                health_status['components']['files'] = {
+                    'status': 'unhealthy',
+                    'details': 'Directory not accessible'
+                }
+                health_status['status'] = 'degraded'
+        except Exception as e:
+            health_status['components']['files'] = {
+                'status': 'unhealthy',
+                'details': str(e)
+            }
+            health_status['status'] = 'degraded'
+        
+        # AI Assistant health check
+        if hasattr(current_app, 'client') and current_app.client:
+            health_status['components']['ai_assistant'] = {
+                'status': 'configured',
+                'details': 'AI client initialized'
+            }
+        else:
+            health_status['components']['ai_assistant'] = {
+                'status': 'not_configured',
+                'details': 'AI client not initialized - running in demo mode'
+            }
+        
+        # System metrics
+        health_status['metrics'] = {
+            'uptime_seconds': (datetime.now() - datetime.now().replace(second=0, microsecond=0)).total_seconds(),
+            'total_users': User.query.count(),
+            'total_discussions': Discussion.query.count(),
+            'total_files': FileItem.query.count()
+        }
+        
+        status_code = 200 if health_status['status'] == 'healthy' else 503
+        return jsonify(health_status), status_code
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'timestamp': datetime.now().isoformat(),
+            'error': str(e)
+        }), 503
 
 
 @main_bp.route('/api/user/permissions', methods=['GET'])
 def get_user_permissions():
     """Get current user permissions"""
-    return jsonify({
-        'role': 'admin',
-        'permissions': ['read', 'write', 'admin']
-    })
+    user_id = 1  # Simplified - get from auth context
+    user = User.query.get(user_id)
+    
+    if user:
+        permissions = get_user_permissions_list(user.role)
+        return jsonify({
+            'role': user.role,
+            'permissions': permissions,
+            'can_access_admin_dashboard': 'can_access_admin_dashboard' in permissions,
+            'can_moderate': 'can_moderate' in permissions,
+            'can_manage_users': 'can_manage_users' in permissions
+        })
+    else:
+        # Fallback for development
+        return jsonify({
+            'role': 'admin',
+            'permissions': ['read', 'write', 'admin', 'can_access_admin_dashboard'],
+            'can_access_admin_dashboard': True,
+            'can_moderate': True,
+            'can_manage_users': True
+        })
+
+
+# ============================================================================
+# ANALYTICS AND DASHBOARD ROUTES
+# ============================================================================
+
+@main_bp.route('/api/analytics/dashboard', methods=['GET'])
+def get_dashboard_analytics():
+    """Get dashboard analytics data"""
+    try:
+        # File statistics
+        file_stats = {
+            'total_files': FileItem.query.count(),
+            'files_by_type': {},
+            'recent_uploads': []
+        }
+        
+        # Get file type distribution
+        files = FileItem.query.all()
+        for file in files:
+            file_type = file.file_type or 'unknown'
+            file_stats['files_by_type'][file_type] = file_stats['files_by_type'].get(file_type, 0) + 1
+        
+        # Recent uploads
+        recent_files = FileItem.query.order_by(FileItem.created_at.desc()).limit(5).all()
+        file_stats['recent_uploads'] = [{
+            'name': f.name,
+            'type': f.file_type,
+            'size': format_file_size(f.file_size),
+            'uploaded_at': f.created_at.isoformat() if f.created_at else None
+        } for f in recent_files]
+        
+        # Discussion statistics
+        discussion_stats = {
+            'total_discussions': Discussion.query.count(),
+            'total_posts': Post.query.count(),
+            'active_discussions': Discussion.query.filter(
+                Discussion.updated_at >= datetime.now().replace(day=1)  # This month
+            ).count(),
+            'discussions_by_category': {}
+        }
+        
+        categories = Category.query.all()
+        for category in categories:
+            discussion_stats['discussions_by_category'][category.title] = len(category.discussions)
+        
+        # User statistics
+        user_stats = {
+            'total_users': User.query.count(),
+            'active_users': User.query.filter(
+                User.last_seen >= datetime.now().replace(day=1)
+            ).count() if User.query.first() and hasattr(User.query.first(), 'last_seen') else 0,
+            'users_by_role': {}
+        }
+        
+        users = User.query.all()
+        for user in users:
+            role = user.role or 'guest'
+            user_stats['users_by_role'][role] = user_stats['users_by_role'].get(role, 0) + 1
+        
+        return jsonify({
+            'files': file_stats,
+            'discussions': discussion_stats,
+            'users': user_stats,
+            'system': {
+                'uptime': 'Available',
+                'version': '1.0.0',
+                'environment': current_app.config.get('ENV', 'development')
+            },
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting dashboard analytics: {str(e)}")
+        return jsonify({'error': 'Failed to retrieve analytics'}), 500
+
+
+@main_bp.route('/api/search', methods=['GET'])
+def global_search():
+    """Global search across files, discussions, and posts"""
+    try:
+        query = request.args.get('q', '').strip()
+        search_type = request.args.get('type', 'all')  # all, files, discussions, posts
+        limit = min(int(request.args.get('limit', 20)), 100)  # Max 100 results
+        
+        if not query or len(query) < 2:
+            return jsonify({'error': 'Search query must be at least 2 characters'}), 400
+        
+        results = {
+            'query': query,
+            'results': {},
+            'total_results': 0
+        }
+        
+        # Search files
+        if search_type in ['all', 'files']:
+            files = FileItem.query.filter(
+                FileItem.name.contains(query) | 
+                FileItem.original_name.contains(query)
+            ).limit(limit).all()
+            
+            results['results']['files'] = [{
+                'id': f.id,
+                'name': f.name,
+                'original_name': f.original_name,
+                'type': f.file_type,
+                'size': format_file_size(f.file_size),
+                'category': f.category,
+                'uploaded_at': f.created_at.isoformat() if f.created_at else None
+            } for f in files]
+        
+        # Search discussions
+        if search_type in ['all', 'discussions']:
+            discussions = Discussion.query.filter(
+                Discussion.title.contains(query) | 
+                Discussion.description.contains(query)
+            ).limit(limit).all()
+            
+            results['results']['discussions'] = [{
+                'id': d.id,
+                'title': d.title,
+                'description': d.description[:200] + '...' if len(d.description) > 200 else d.description,
+                'category': d.category.title if d.category else 'Unknown',
+                'post_count': d.post_count,
+                'created_at': d.created_at.isoformat()
+            } for d in discussions]
+        
+        # Search posts
+        if search_type in ['all', 'posts']:
+            posts = Post.query.filter(
+                Post.content.contains(query)
+            ).limit(limit).all()
+            
+            results['results']['posts'] = [{
+                'id': p.id,
+                'content': p.content[:200] + '...' if len(p.content) > 200 else p.content,
+                'discussion_title': p.discussion.title if p.discussion else 'Unknown',
+                'discussion_id': p.discussion_id,
+                'user': p.user.username if p.user else 'Unknown',
+                'created_at': p.created_at.isoformat()
+            } for p in posts]
+        
+        # Calculate total results
+        for category in results['results']:
+            results['total_results'] += len(results['results'][category])
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error in global search: {str(e)}")
+        return jsonify({'error': 'Search failed'}), 500
 
 
 # ============================================================================
