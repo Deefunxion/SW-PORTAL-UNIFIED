@@ -7,6 +7,12 @@ import sys
 import os
 from datetime import datetime
 
+# Force testing config BEFORE importing the app
+os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
+os.environ['FLASK_ENV'] = 'testing'
+os.environ['SECRET_KEY'] = 'test-secret-key-long-enough-for-hmac'
+os.environ['JWT_SECRET_KEY'] = 'test-jwt-secret-key-long-enough-for-hmac'
+
 # Add backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'backend'))
 
@@ -17,22 +23,21 @@ from my_project.extensions import db
 @pytest.fixture(scope='session')
 def app():
     """Create application for testing."""
-    # Create app with testing config
     app = create_app()
     app.config.update({
         'TESTING': True,
         'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
         'WTF_CSRF_ENABLED': False,
-        'SECRET_KEY': 'test-secret-key',
-        'JWT_SECRET_KEY': 'test-jwt-secret'
+        'SECRET_KEY': 'test-secret-key-long-enough-for-hmac',
+        'JWT_SECRET_KEY': 'test-jwt-secret-key-long-enough-for-hmac'
     })
-    
+
     with app.app_context():
         db.create_all()
-        
+
         # Add test data if needed
         yield app
-        
+
         db.session.remove()
         db.drop_all()
 
@@ -45,7 +50,7 @@ def client(app):
 
 @pytest.fixture
 def runner(app):
-    """Flask test CLI runner.""" 
+    """Flask test CLI runner."""
     return app.test_cli_runner()
 
 
@@ -55,20 +60,20 @@ def auth_headers(client):
     # Register test user
     response = client.post('/api/auth/register', json={
         'username': 'testuser',
-        'email': 'test@example.com', 
+        'email': 'test@example.com',
         'password': 'testpass123'
     })
-    
+
     # Login to get token
     response = client.post('/api/auth/login', json={
         'username': 'testuser',
         'password': 'testpass123'
     })
-    
+
     if response.status_code == 200:
         token = response.get_json()['access_token']
         return {'Authorization': f'Bearer {token}'}
-    
+
     return {}
 
 

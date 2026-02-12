@@ -7,6 +7,7 @@ from flask import Blueprint, jsonify, request, send_from_directory, send_file, c
 import os
 from datetime import datetime
 from werkzeug.utils import secure_filename
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 
 # Import db and models from the new consolidated structure
 from .extensions import db
@@ -59,54 +60,101 @@ def scan_content_directory():
     if not os.path.isabs(content_dir):
         content_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), content_dir)
     
-    print(f"DEBUG: Looking for content in: {content_dir}")
-    print(f"DEBUG: Path exists: {os.path.exists(content_dir)}")
-    if os.path.exists(content_dir):
-        print(f"DEBUG: Contents: {os.listdir(content_dir)}")
-    
     if not os.path.exists(content_dir):
         os.makedirs(content_dir)
         return []
 
-    def scan_recursive(path, relative_path=""):
-        folders = []
-        files = []
+    def scan_directory(path, is_root=False):
+        """Scan a directory and return categorized structure"""
+        categories = []
         
         try:
-            for item in os.listdir(path):
-                if item.startswith('.'):
-                    continue
-                    
+            # Handle Greek characters in filenames
+            items = []
+            try:
+                items = os.listdir(path)
+            except UnicodeDecodeError:
+                # Fallback for encoding issues
+                import glob
+                items = [os.path.basename(p) for p in glob.glob(os.path.join(path, '*'))]
+            
+            # Filter out hidden files and system files
+            items = [item for item in items if not item.startswith('.') and item not in ['uploads', 'welcome.txt', 'README.md']]
+            
+            for item in items:
                 item_path = os.path.join(path, item)
-                relative_item_path = os.path.join(relative_path, item) if relative_path else item
                 
                 if os.path.isdir(item_path):
-                    # Recursively scan subfolder
-                    subfolder_result = scan_recursive(item_path, relative_item_path)
+                    # This is a category folder
+                    category_files = []
+                    category_subfolders = []
                     
-                    folders.append({
-                        'id': relative_item_path.replace(os.sep, '_').replace(' ', '_'),
-                        'category': item,
-                        'path': relative_item_path.replace('\\', '/'),
-                        'files': [f for f in subfolder_result if 'name' in f],  # Files in this folder
-                        'subfolders': [f for f in subfolder_result if 'category' in f]  # Subfolders
-                    })
-                else:
-                    file_info = {
+                    # Scan the category folder
+                    try:
+                        category_items = []
+                        try:
+                            category_items = os.listdir(item_path)
+                        except UnicodeDecodeError:
+                            import glob
+                            category_items = [os.path.basename(p) for p in glob.glob(os.path.join(item_path, '*'))]
+                        
+                        for category_item in category_items:
+                            if category_item.startswith('.'):
+                                continue
+                                
+                            category_item_path = os.path.join(item_path, category_item)
+                            
+                            if os.path.isdir(category_item_path):
+                                # This is a subfolder - scan it recursively
+                                subfolder_result = scan_directory(category_item_path)
+                                
+                                # Collect all files from this subfolder
+                                subfolder_files = []
+                                for sub_item in subfolder_result:
+                                    if 'files' in sub_item:
+                                        subfolder_files.extend(sub_item['files'])
+                                    if 'subfolders' in sub_item:
+                                        for sub_subfolder in sub_item['subfolders']:
+                                            if 'files' in sub_subfolder:
+                                                subfolder_files.extend(sub_subfolder['files'])
+                                
+                                category_subfolders.append({
+                                    'name': category_item,
+                                    'path': f"{item}/{category_item}",
+                                    'files': subfolder_files
+                                })
+                            else:
+                                # This is a file in the category
+                                try:
+                                    file_info = {
+                                        'name': category_item,
+                                        'path': f"{item}/{category_item}",
+                                        'size': os.path.getsize(category_item_path),
+                                        'modified': datetime.fromtimestamp(os.path.getmtime(category_item_path)).isoformat(),
+                                        'type': get_file_type(category_item)
+                                    }
+                                    category_files.append(file_info)
+                                except (OSError, PermissionError):
+                                    continue
+                    except (OSError, PermissionError):
+                        continue
+                    
+                    # Add this category to the results
+                    categories.append({
+                        'id': item.replace(' ', '_').replace('/', '_').replace('\\', '_'),
                         'name': item,
-                        'path': relative_item_path.replace('\\', '/'),
-                        'size': os.path.getsize(item_path),
-                        'modified': datetime.fromtimestamp(os.path.getmtime(item_path)).isoformat(),
-                        'type': get_file_type(item)
-                    }
-                    files.append(file_info)
-        except PermissionError:
+                        'category': item,  # Keep this for compatibility
+                        'path': item,
+                        'files': category_files,
+                        'subfolders': category_subfolders
+                    })
+                    
+        except (OSError, PermissionError):
             pass
         
-        # Return both files and folders combined
-        return files + folders
+        return categories
 
-    return scan_recursive(content_dir)
+    return scan_directory(content_dir, is_root=True)
 
 
 # ============================================================================
@@ -130,9 +178,13 @@ def login():
         user.last_seen = datetime.utcnow()
         user.presence_status = 'online'
         db.session.commit()
-        
+
+        # Generate JWT token (identity must be string)
+        access_token = create_access_token(identity=str(user.id))
+
         return jsonify({
             'message': 'Login successful',
+            'access_token': access_token,
             'user': user.to_dict()
         })
     else:
@@ -171,26 +223,20 @@ def register():
 
 
 @main_bp.route('/api/auth/me', methods=['GET'])
+@jwt_required()
 def get_current_user():
     """Get current user info with enhanced user data"""
-    # Simplified - in a real app you'd validate JWT tokens
-    user = User.query.get(1)  # Get actual user from database
-    if user:
-        user_data = user.to_dict()
-        # Add additional computed fields
-        user_data['permissions'] = get_user_permissions_list(user.role)
-        user_data['last_active'] = user.last_seen.isoformat() if user.last_seen else None
-        return jsonify(user_data)
-    else:
-        # Fallback for development
-        return jsonify({
-            'id': 1,
-            'username': 'admin',
-            'email': 'admin@portal.gr',
-            'role': 'admin',
-            'permissions': ['read', 'write', 'admin', 'can_access_admin_dashboard'],
-            'last_active': datetime.now().isoformat()
-        })
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    user_data = user.to_dict()
+    # Add additional computed fields
+    user_data['permissions'] = get_user_permissions_list(user.role)
+    user_data['last_active'] = user.last_seen.isoformat() if user.last_seen else None
+    return jsonify(user_data)
 
 def get_user_permissions_list(role):
     """Get list of permissions based on user role."""
@@ -265,20 +311,22 @@ def get_discussions():
 
 
 @main_bp.route('/api/discussions', methods=['POST'])
+@jwt_required()
 def create_discussion():
     """Create a new discussion"""
     data = request.get_json()
-    
+    user_id = int(get_jwt_identity())
+
     discussion = Discussion(
         title=data['title'],
         description=data.get('description', ''),
         category_id=data['category_id'],
-        user_id=1  # Simplified - get from auth context
+        user_id=user_id
     )
-    
+
     db.session.add(discussion)
     db.session.commit()
-    
+
     return jsonify({'message': 'Discussion created', 'id': discussion.id}), 201
 
 
@@ -307,36 +355,39 @@ def get_posts(discussion_id):
 
 
 @main_bp.route('/api/discussions/<int:discussion_id>/posts', methods=['POST'])
+@jwt_required()
 def create_post(discussion_id):
     """Create a new post in a discussion"""
     discussion = Discussion.query.get_or_404(discussion_id)
     data = request.get_json()
-    
+    user_id = int(get_jwt_identity())
+
     post = Post(
         content=data['content'],
         discussion_id=discussion_id,
-        user_id=1  # Simplified - get from auth context
+        user_id=user_id
     )
-    
+
     db.session.add(post)
     db.session.commit()
-    
+
     return jsonify({'message': 'Post created', 'id': post.id}), 201
 
 
 @main_bp.route('/api/posts/<int:post_id>/reactions', methods=['POST'])
+@jwt_required()
 def add_reaction(post_id):
     """Add reaction to a post"""
     post = Post.query.get_or_404(post_id)
     data = request.get_json()
     reaction_type = data.get('reaction_type', 'like')
-    user_id = 1  # Simplified - get from auth context
-    
+    user_id = int(get_jwt_identity())
+
     # Check if user already reacted
     existing_reaction = PostReaction.query.filter_by(
         post_id=post_id, user_id=user_id
     ).first()
-    
+
     if existing_reaction:
         if existing_reaction.reaction_type == reaction_type:
             # Remove reaction
@@ -352,7 +403,7 @@ def add_reaction(post_id):
             reaction_type=reaction_type
         )
         db.session.add(reaction)
-    
+
     db.session.commit()
     return jsonify({'message': 'Reaction updated'})
 
@@ -426,25 +477,27 @@ def download_file(file_path):
 
 
 @main_bp.route('/api/files/upload', methods=['POST'])
+@jwt_required()
 def upload_file():
     """Upload a file"""
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
-    
+
     file = request.files['file']
     category = request.form.get('category', 'uploads')
-    
+    user_id = int(get_jwt_identity())
+
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
-    
+
     if file:
         filename = secure_filename(file.filename)
         category_path = os.path.join(current_app.config['UPLOAD_FOLDER'], category)
         os.makedirs(category_path, exist_ok=True)
-        
+
         file_path = os.path.join(category_path, filename)
         file.save(file_path)
-        
+
         # Save to database
         file_item = FileItem(
             name=filename,
@@ -453,12 +506,12 @@ def upload_file():
             category=category,
             file_type=get_file_type(filename),
             file_size=os.path.getsize(file_path),
-            uploaded_by=1  # Simplified - get from auth context
+            uploaded_by=user_id
         )
-        
+
         db.session.add(file_item)
         db.session.commit()
-        
+
         return jsonify({'message': 'File uploaded successfully', 'id': file_item.id}), 201
 
 
@@ -486,15 +539,16 @@ def create_folder():
 # ============================================================================
 
 @main_bp.route('/api/conversations', methods=['GET'])
+@jwt_required()
 def get_conversations():
     """Get user conversations"""
-    user_id = 1  # Simplified - get from auth context
-    
+    user_id = int(get_jwt_identity())
+
     conversations = db.session.query(Conversation).join(ConversationParticipant).filter(
         ConversationParticipant.user_id == user_id,
         ConversationParticipant.is_active == True
     ).all()
-    
+
     return jsonify([{
         'id': conv.id,
         'title': conv.title,
@@ -553,25 +607,27 @@ def get_messages(conversation_id):
 
 
 @main_bp.route('/api/conversations/<int:conversation_id>/messages', methods=['POST'])
+@jwt_required()
 def send_message(conversation_id):
     """Send a message in a conversation"""
     data = request.get_json()
-    
+    user_id = int(get_jwt_identity())
+
     message = PrivateMessage(
         conversation_id=conversation_id,
-        sender_id=1,  # Simplified - get from auth context
+        sender_id=user_id,
         content=data['content'],
         content_type=data.get('content_type', 'text')
     )
-    
+
     db.session.add(message)
-    
+
     # Update conversation timestamp
     conversation = Conversation.query.get(conversation_id)
     conversation.updated_at = datetime.utcnow()
-    
+
     db.session.commit()
-    
+
     return jsonify({'message': 'Message sent', 'id': message.id}), 201
 
 
@@ -599,24 +655,25 @@ def get_user_profile(user_id):
 
 
 @main_bp.route('/api/users/profile', methods=['PUT'])
+@jwt_required()
 def update_user_profile():
     """Update user profile"""
-    user_id = 1  # Simplified - get from auth context
+    user_id = int(get_jwt_identity())
     data = request.get_json()
-    
+
     profile = UserProfile.query.filter_by(user_id=user_id).first()
     if not profile:
         profile = UserProfile(user_id=user_id)
         db.session.add(profile)
-    
+
     # Update profile fields
     for field in ['display_name', 'bio', 'location', 'website', 'avatar_url']:
         if field in data:
             setattr(profile, field, data[field])
-    
+
     profile.updated_at = datetime.utcnow()
     db.session.commit()
-    
+
     return jsonify({'message': 'Profile updated'})
 
 
@@ -625,14 +682,15 @@ def update_user_profile():
 # ============================================================================
 
 @main_bp.route('/api/notifications', methods=['GET'])
+@jwt_required()
 def get_notifications():
     """Get user notifications"""
-    user_id = 1  # Simplified - get from auth context
-    
+    user_id = int(get_jwt_identity())
+
     notifications = Notification.query.filter_by(user_id=user_id).order_by(
         Notification.created_at.desc()
     ).limit(50).all()
-    
+
     return jsonify([{
         'id': notif.id,
         'title': notif.title,
@@ -645,19 +703,20 @@ def get_notifications():
 
 
 @main_bp.route('/api/notifications/mark-as-read', methods=['POST'])
+@jwt_required()
 def mark_notifications_read():
     """Mark notifications as read"""
     data = request.get_json()
     notification_ids = data.get('notification_ids', [])
-    user_id = 1  # Simplified - get from auth context
-    
+    user_id = int(get_jwt_identity())
+
     Notification.query.filter(
         Notification.id.in_(notification_ids),
         Notification.user_id == user_id
     ).update({'is_read': True, 'read_at': datetime.utcnow()})
-    
+
     db.session.commit()
-    
+
     return jsonify({'message': 'Notifications marked as read'})
 
 
@@ -666,26 +725,27 @@ def mark_notifications_read():
 # ============================================================================
 
 @main_bp.route('/api/chat', methods=['POST'])
+@jwt_required()
 def ai_chat():
     """Enhanced AI chat endpoint with better error handling and logging"""
     try:
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
-            
+
         message = data.get('message', '').strip()
         thread_id = data.get('thread_id')
-        user_id = 1  # Simplified - get from auth context
-        
+        user_id = int(get_jwt_identity())
+
         if not message:
             return jsonify({'error': 'Message cannot be empty'}), 400
-            
+
         if len(message) > 4000:  # Reasonable message length limit
             return jsonify({'error': 'Message too long'}), 400
-        
+
         # Log the chat request for monitoring
         current_app.logger.info(f"Chat request from user {user_id}: {message[:100]}...")
-        
+
         # AI Response logic
         if hasattr(current_app, 'client') and current_app.client:
             # TODO: Implement actual OpenAI API call here
@@ -698,16 +758,16 @@ def ai_chat():
                 reply = "Μπορείτε να βρείτε αρχεία στην ενότητα Apothecary. Χρησιμοποιήστε την αναζήτηση για να βρείτε συγκεκριμένα έγγραφα."
             else:
                 reply = f'Λυπάμαι, το AI Assistant δεν είναι ακόμη πλήρως ενεργοποιημένο. Το μήνυμά σας "{message[:50]}..." έχει καταγραφεί για μελλοντική επεξεργασία.'
-        
+
         response_data = {
             'response': reply,
             'thread_id': thread_id or f"thread_{user_id}_{int(datetime.now().timestamp())}",
             'timestamp': datetime.now().isoformat(),
             'status': 'success'
         }
-        
+
         return jsonify(response_data)
-        
+
     except ValueError as e:
         current_app.logger.error(f"Invalid JSON in chat request: {str(e)}")
         return jsonify({'error': 'Invalid request format'}), 400
@@ -808,29 +868,23 @@ def health_check():
 
 
 @main_bp.route('/api/user/permissions', methods=['GET'])
+@jwt_required()
 def get_user_permissions():
     """Get current user permissions"""
-    user_id = 1  # Simplified - get from auth context
+    user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
-    
-    if user:
-        permissions = get_user_permissions_list(user.role)
-        return jsonify({
-            'role': user.role,
-            'permissions': permissions,
-            'can_access_admin_dashboard': 'can_access_admin_dashboard' in permissions,
-            'can_moderate': 'can_moderate' in permissions,
-            'can_manage_users': 'can_manage_users' in permissions
-        })
-    else:
-        # Fallback for development
-        return jsonify({
-            'role': 'admin',
-            'permissions': ['read', 'write', 'admin', 'can_access_admin_dashboard'],
-            'can_access_admin_dashboard': True,
-            'can_moderate': True,
-            'can_manage_users': True
-        })
+
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    permissions = get_user_permissions_list(user.role)
+    return jsonify({
+        'role': user.role,
+        'permissions': permissions,
+        'can_access_admin_dashboard': 'can_access_admin_dashboard' in permissions,
+        'can_moderate': 'can_moderate' in permissions,
+        'can_manage_users': 'can_manage_users' in permissions
+    })
 
 
 # ============================================================================

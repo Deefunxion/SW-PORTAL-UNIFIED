@@ -37,7 +37,9 @@ def create_app():
 
     # Initialize extensions
     from .extensions import db, celery
+    from flask_jwt_extended import JWTManager
     db.init_app(app)
+    JWTManager(app)
 
     # Configure Celery
     celery.conf.update(
