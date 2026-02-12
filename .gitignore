@@ -3,8 +3,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.db
-*.sqlite3
 *.log
 
 # Virtual environments
@@ -18,7 +16,16 @@ env/
 *.env.*
 !.env.example
 
-# Flask instance folder (αν χρησιμοποιείς)
+# Database
+*.db
+*.sqlite3
+
+# Content and uploads
+content/
+uploads/
+logs/
+
+# Flask instance folder
 instance/
 
 # Node.js (frontend)
@@ -35,20 +42,8 @@ build/
 .DS_Store
 Thumbs.db
 
-# VSCode settings (optional)
+# VSCode settings
 .vscode/
 
-# Πιθανά μεγάλα ή ευαίσθητα αρχεία περιεχομένου
-content/*
-!content/.gitkeep
-
-# Εξαίρεση για παράδειγμα .env
-!.env.example"# Claude and AI tools" 
-".claude/" 
-"ApothecaryPage_Modernization_Guide.md" 
-"SW-Portal-Components-For-AI-Redesign.md" 
-"High-priority-files/" 
-"*.txt" 
-"Screenshot*.png" 
-"*demo.zip" 
-"*demo/" 
+# Claude and AI tools
+.claude/
