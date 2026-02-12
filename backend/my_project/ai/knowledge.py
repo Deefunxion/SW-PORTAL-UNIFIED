@@ -197,15 +197,20 @@ def search_chunks(
         logger.error(f"Failed to generate query embedding: {e}")
         return _fallback_keyword_search(query, limit)
 
-    # pgvector cosine distance search
-    results = db.session.query(
-        FileChunk,
-        FileChunk.embedding.cosine_distance(query_vector).label("distance")
-    ).filter(
-        FileChunk.embedding.isnot(None)
-    ).order_by(
-        "distance"
-    ).limit(limit * 2).all()
+    # pgvector cosine distance search (requires PostgreSQL + pgvector)
+    try:
+        results = db.session.query(
+            FileChunk,
+            FileChunk.embedding.cosine_distance(query_vector).label("distance")
+        ).filter(
+            FileChunk.embedding.isnot(None)
+        ).order_by(
+            "distance"
+        ).limit(limit * 2).all()
+    except Exception as e:
+        logger.warning(f"Vector search unavailable (SQLite?): {e}")
+        db.session.rollback()
+        return _fallback_keyword_search(query, limit)
 
     chunks = []
     for chunk, distance in results:
