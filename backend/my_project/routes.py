@@ -727,56 +727,58 @@ def mark_notifications_read():
 @main_bp.route('/api/chat', methods=['POST'])
 @jwt_required()
 def ai_chat():
-    """Enhanced AI chat endpoint with better error handling and logging"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+    """AI Assistant — chat with RAG context from social welfare documents."""
+    data = request.get_json()
+    message = data.get('message', '').strip()
 
-        message = data.get('message', '').strip()
-        thread_id = data.get('thread_id')
-        user_id = int(get_jwt_identity())
+    if not message:
+        return jsonify({'error': 'Παρακαλώ εισάγετε μήνυμα'}), 400
 
-        if not message:
-            return jsonify({'error': 'Message cannot be empty'}), 400
+    chat_history = data.get('chat_history', [])
 
-        if len(message) > 4000:  # Reasonable message length limit
-            return jsonify({'error': 'Message too long'}), 400
+    from my_project.ai.copilot import get_chat_reply
+    result = get_chat_reply(
+        user_message=message,
+        chat_history=chat_history,
+        use_rag=True,
+    )
 
-        # Log the chat request for monitoring
-        current_app.logger.info(f"Chat request from user {user_id}: {message[:100]}...")
+    return jsonify(result), 200
 
-        # AI Response logic
-        if hasattr(current_app, 'client') and current_app.client:
-            # TODO: Implement actual OpenAI API call here
-            reply = f"Καλή ερώτηση! Αυτό είναι μια δοκιμαστική απάντηση για: {message[:100]}..."
-        else:
-            # Provide more helpful fallback responses based on message content
-            if any(word in message.lower() for word in ['νομικό', 'νόμος', 'διαδικασία']):
-                reply = "Για νομικές συμβουλές, παρακαλώ επικοινωνήστε με τη νομική υπηρεσία της Περιφέρειας Αττικής. Το AI Assistant δεν είναι ακόμη διαθέσιμο."
-            elif any(word in message.lower() for word in ['αρχείο', 'έγγραφο', 'κατέβασμα']):
-                reply = "Μπορείτε να βρείτε αρχεία στην ενότητα Apothecary. Χρησιμοποιήστε την αναζήτηση για να βρείτε συγκεκριμένα έγγραφα."
-            else:
-                reply = f'Λυπάμαι, το AI Assistant δεν είναι ακόμη πλήρως ενεργοποιημένο. Το μήνυμά σας "{message[:50]}..." έχει καταγραφεί για μελλοντική επεξεργασία.'
 
-        response_data = {
-            'response': reply,
-            'thread_id': thread_id or f"thread_{user_id}_{int(datetime.now().timestamp())}",
-            'timestamp': datetime.now().isoformat(),
-            'status': 'success'
-        }
+@main_bp.route('/api/knowledge/search', methods=['POST'])
+@jwt_required()
+def knowledge_search():
+    """Search document chunks for relevant content."""
+    data = request.get_json()
+    query = data.get('query', '').strip()
 
-        return jsonify(response_data)
+    if not query:
+        return jsonify({'error': 'Παρακαλώ εισάγετε ερώτημα αναζήτησης'}), 400
 
-    except ValueError as e:
-        current_app.logger.error(f"Invalid JSON in chat request: {str(e)}")
-        return jsonify({'error': 'Invalid request format'}), 400
-    except Exception as e:
-        current_app.logger.error(f"Error during AI chat: {str(e)}")
-        return jsonify({
-            'error': 'Παρουσιάστηκε σφάλμα στον server. Παρακαλώ δοκιμάστε ξανά.',
-            'status': 'error'
-        }), 500
+    limit = data.get('limit', 5)
+
+    from my_project.ai.knowledge import search_chunks
+    results = search_chunks(query, limit=limit)
+
+    return jsonify({'results': results, 'count': len(results)}), 200
+
+
+@main_bp.route('/api/knowledge/stats', methods=['GET'])
+@jwt_required()
+def knowledge_stats():
+    """Get statistics about indexed documents."""
+    from my_project.models import DocumentIndex, FileChunk
+
+    total_docs = DocumentIndex.query.filter_by(status='ready').count()
+    total_chunks = FileChunk.query.count()
+    embedded_chunks = FileChunk.query.filter(FileChunk.embedding.isnot(None)).count()
+
+    return jsonify({
+        'total_documents': total_docs,
+        'total_chunks': total_chunks,
+        'embedded_chunks': embedded_chunks,
+    }), 200
 
 
 # ============================================================================
