@@ -410,3 +410,42 @@ class Notification(db.Model):
     
     # Relationships
     user = db.relationship('User', backref='notifications')
+
+
+# ============================================================================
+# AI / RAG MODELS
+# ============================================================================
+
+class DocumentIndex(db.Model):
+    """Tracks documents that have been processed for RAG."""
+    __tablename__ = 'document_index'
+
+    id = db.Column(db.Integer, primary_key=True)
+    file_path = db.Column(db.String(500), unique=True, nullable=False)
+    file_name = db.Column(db.String(255), nullable=False)
+    file_type = db.Column(db.String(20))  # pdf, docx, txt
+    file_hash = db.Column(db.String(64))  # SHA-256 for change detection
+    chunk_count = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(20), default='pending')  # pending, processing, ready, error
+    error_message = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+
+    chunks = db.relationship('FileChunk', backref='document', lazy='dynamic',
+                            cascade='all, delete-orphan')
+
+
+class FileChunk(db.Model):
+    """A chunk of text from a processed document, with vector embedding."""
+    __tablename__ = 'file_chunk'
+
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('document_index.id'), index=True)
+    source_path = db.Column(db.String(500), index=True)
+    content = db.Column(db.Text, nullable=False)
+    chunk_index = db.Column(db.Integer, default=0)
+    chunk_type = db.Column(db.String(20), default='text')  # text, table, header
+    embedding = db.Column(Vector(1536))  # OpenAI text-embedding-3-small dimension
+    embedding_model = db.Column(db.String(50))
+    text_hash = db.Column(db.String(64), index=True)  # For deduplication
+    created_at = db.Column(db.DateTime, default=db.func.now())
