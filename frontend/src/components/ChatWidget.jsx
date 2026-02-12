@@ -153,7 +153,7 @@ function ChatWidget() {
         <div className="fixed bottom-6 right-6 z-50">
           <Button
             onClick={() => { setIsOpen(true); setIsMinimized(false); }}
-            className="w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 relative"
+            className="w-14 h-14 rounded-full bg-[#1a3aa3] hover:bg-[#152e82] hover:shadow-[0_8px_24px_rgba(26,58,163,.35)] hover:scale-110 shadow-lg transition-all duration-300 relative"
           >
             <Bot className="w-6 h-6 text-white" />
             {unreadCount > 0 && (
@@ -170,9 +170,9 @@ function ChatWidget() {
         <div className={`fixed bottom-6 right-6 z-50 transition-all duration-300 ${
           isMinimized ? 'w-80 h-16' : 'w-96 h-[500px]'
         }`}>
-          <Card className="h-full flex flex-col shadow-2xl border-0">
+          <Card className="h-full flex flex-col shadow-2xl border border-[#e8e2d8] rounded-2xl overflow-hidden">
             {/* Header */}
-            <CardHeader className="flex-shrink-0 bg-blue-600 text-white rounded-t-lg p-3">
+            <CardHeader className="flex-shrink-0 bg-[#1a3aa3] text-white rounded-t-2xl p-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
@@ -210,27 +210,27 @@ function ChatWidget() {
             {/* Messages */}
             {!isMinimized && (
               <>
-                <CardContent className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50">
+                <CardContent className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#faf8f4]">
                   {messages.map((message) => (
                     <div
                       key={message.id}
                       className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-lg p-2 text-sm ${
+                        className={`max-w-[85%] p-2 text-sm ${
                           message.type === 'user'
-                            ? 'bg-blue-600 text-white'
+                            ? 'bg-[#1a3aa3] text-white rounded-tl-2xl rounded-tr-sm rounded-br-2xl rounded-bl-2xl'
                             : message.isError
-                            ? 'bg-red-50 border border-red-200 text-red-800'
-                            : 'bg-white text-gray-800 shadow-sm'
+                            ? 'bg-red-50 border border-red-200 text-red-800 rounded-tl-sm rounded-tr-2xl rounded-br-2xl rounded-bl-2xl'
+                            : 'bg-white text-[#2a2520] shadow-sm rounded-tl-sm rounded-tr-2xl rounded-br-2xl rounded-bl-2xl'
                         }`}
                       >
                         <div className="flex items-start space-x-1">
                           {message.type === 'assistant' && (
                             <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
-                              message.isError ? 'bg-red-200' : 'bg-blue-100'
+                              message.isError ? 'bg-red-200' : 'bg-[#dde4f5]'
                             }`}>
-                              <Bot className={`w-2 h-2 ${message.isError ? 'text-red-600' : 'text-blue-600'}`} />
+                              <Bot className={`w-2 h-2 ${message.isError ? 'text-red-600' : 'text-[#1a3aa3]'}`} />
                             </div>
                           )}
                           <div className="flex-1">
@@ -244,20 +244,20 @@ function ChatWidget() {
                             )}
                             {/* Sources */}
                             {message.sources && message.sources.length > 0 && (
-                              <div className="mt-2 pt-1 border-t border-gray-200">
-                                <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                              <div className="mt-2 pt-1 border-t border-[#e8e2d8]">
+                                <div className="flex items-center gap-1 text-xs text-[#8a8580] mb-1">
                                   <FileText className="w-3 h-3" />
                                   <span>Πηγές:</span>
                                 </div>
                                 {message.sources.map((src, i) => (
-                                  <div key={i} className="text-xs text-blue-600 truncate" title={src}>
+                                  <div key={i} className="text-xs text-[#1a3aa3] truncate" title={src}>
                                     {src.split('/').pop() || src}
                                   </div>
                                 ))}
                               </div>
                             )}
                             <div className={`text-xs mt-1 opacity-70 ${
-                              message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
+                              message.type === 'user' ? 'text-blue-100' : 'text-[#8a8580]'
                             }`}>
                               {formatTime(message.timestamp)}
                             </div>
@@ -269,15 +269,15 @@ function ChatWidget() {
 
                   {isLoading && (
                     <div className="flex justify-start">
-                      <div className="bg-white rounded-lg p-2 shadow-sm">
+                      <div className="bg-white rounded-tl-sm rounded-tr-2xl rounded-br-2xl rounded-bl-2xl p-2 shadow-sm">
                         <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 bg-blue-100 rounded-full flex items-center justify-center">
-                            <Bot className="w-2 h-2 text-blue-600" />
+                          <div className="w-4 h-4 bg-[#dde4f5] rounded-full flex items-center justify-center">
+                            <Bot className="w-2 h-2 text-[#1a3aa3]" />
                           </div>
                           <div className="flex space-x-1">
-                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
-                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            <div className="w-1.5 h-1.5 bg-[#8a8580] rounded-full animate-bounce"></div>
+                            <div className="w-1.5 h-1.5 bg-[#8a8580] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                            <div className="w-1.5 h-1.5 bg-[#8a8580] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                           </div>
                         </div>
                       </div>
@@ -289,13 +289,13 @@ function ChatWidget() {
 
                 {/* Suggested Questions */}
                 {showSuggestions && (
-                  <div className="px-3 py-2 bg-gray-50 border-t">
+                  <div className="px-3 py-2 bg-[#faf8f4] border-t">
                     <div className="flex flex-wrap gap-1">
                       {SUGGESTED_QUESTIONS.map(q => (
                         <button
                           key={q}
                           onClick={() => handleSendMessage(q)}
-                          className="text-xs bg-white border border-gray-200 rounded-full px-2.5 py-1 text-gray-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors"
+                          className="text-xs bg-white border border-[#e8e2d8] rounded-full px-2.5 py-1 text-[#6b6560] hover:bg-[#eef1f8] hover:border-[#b0c0e0] hover:text-[#1a3aa3] transition-colors"
                         >
                           {q}
                         </button>
@@ -319,7 +319,7 @@ function ChatWidget() {
                       onClick={() => handleSendMessage()}
                       disabled={!inputMessage.trim() || isLoading}
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 px-3"
+                      className="bg-[#1a3aa3] hover:bg-[#152e82] px-3"
                     >
                       <Send className="w-3 h-3" />
                     </Button>
