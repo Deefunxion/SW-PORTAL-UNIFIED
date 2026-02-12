@@ -107,7 +107,7 @@ const NotificationBell = () => {
 
   const getNotificationColor = (color, isRead) => {
     const colors = {
-      blue: isRead ? 'text-blue-400' : 'text-blue-600',
+      blue: isRead ? 'text-[#7b8fc7]' : 'text-[#1a3aa3]',
       red: isRead ? 'text-red-400' : 'text-red-600',
       green: isRead ? 'text-green-400' : 'text-green-600',
       purple: isRead ? 'text-purple-400' : 'text-purple-600',
@@ -128,7 +128,7 @@ const NotificationBell = () => {
         <Button
           variant="ghost"
           size="sm"
-          className="relative text-white hover:bg-white/10"
+          className="relative text-white hover:bg-white/10 hover:text-[#dde4f5] transition-colors duration-200"
         >
           {unreadCount > 0 ? (
             <BellRing className="w-5 h-5" />

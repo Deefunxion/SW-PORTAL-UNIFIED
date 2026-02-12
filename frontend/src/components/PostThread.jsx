@@ -151,7 +151,7 @@ function PostItem({
   };
 
   const getAvatarColor = (username) => {
-    if (!username) return 'bg-gray-500';
+    if (!username) return 'bg-[#8a8580]';
     const colors = [
       'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500',
       'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
@@ -166,11 +166,11 @@ function PostItem({
       let html = content
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 rounded text-sm">$1</code>')
-        .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-2">$1</blockquote>')
+        .replace(/`(.*?)`/g, '<code class="bg-[#f0ede6] px-1 rounded text-sm">$1</code>')
+        .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-[#e0dbd2] pl-4 italic text-[#6b6560] my-2">$1</blockquote>')
         .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>')
         .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4">$1. $2</li>')
-        .replace(/@(\w+)/g, '<span class="text-blue-600 font-medium bg-blue-50 px-1 rounded">@$1</span>')
+        .replace(/@(\w+)/g, '<span class="text-[#1a3aa3] font-medium bg-[#eef1f8] px-1 rounded">@$1</span>')
         .replace(/\n/g, '<br>');
       
       return <div dangerouslySetInnerHTML={{ __html: html }} className="prose prose-sm max-w-none" />;
@@ -192,7 +192,7 @@ function PostItem({
 
   return (
     <div className={`${depth > 0 ? 'ml-8 mt-4' : ''}`}>
-      <Card className={`${depth > 0 ? 'border-l-4 border-l-blue-200' : ''}`}>
+      <Card className={`${depth > 0 ? 'border-l-4 border-l-[#d0d8ee]' : ''}`}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-3">
@@ -209,7 +209,7 @@ function PostItem({
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-1">
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-[#2a2520]">
                     {post.user?.username || 'Άγνωστος'}
                   </span>
                   {post.user?.role === 'admin' && (
@@ -235,7 +235,7 @@ function PostItem({
                 </div>
                 
                 {/* Enhanced timestamp with relative time */}
-                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <div className="flex items-center space-x-2 text-sm text-[#8a8580]">
                   <Clock className="w-3 h-3" />
                   <span title={formatDate(post.created_at)}>
                     {formatRelativeTime(post.created_at)}
@@ -248,7 +248,7 @@ function PostItem({
                 </div>
 
                 {/* Engagement Stats */}
-                <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                <div className="flex items-center space-x-4 mt-2 text-xs text-[#8a8580]">
                   <div className="flex items-center space-x-1">
                     <MessageCircle className="w-3 h-3" />
                     <span>{engagementStats.replies} απαντήσεις</span>
@@ -341,8 +341,8 @@ function PostItem({
                   {showAttachments && attachments.length > 0 && (
                     <div className="mt-2 space-y-2">
                       {attachments.map((attachment) => (
-                        <div key={attachment.id} className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
-                          <ImageIcon className="w-4 h-4 text-gray-400" />
+                        <div key={attachment.id} className="flex items-center space-x-2 p-2 bg-[#faf8f4] rounded">
+                          <ImageIcon className="w-4 h-4 text-[#8a8580]" />
                           <span className="text-sm flex-1">{attachment.filename}</span>
                           <Button size="sm" variant="ghost">
                             <Download className="w-3 h-3" />
@@ -390,7 +390,7 @@ function PostItem({
 
               {/* Reply Form */}
               {showReplyForm && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <div className="mt-4 p-3 bg-[#faf8f4] rounded-lg">
                   <RichTextEditor
                     value={replyContent}
                     onChange={setReplyContent}
@@ -456,8 +456,8 @@ function PostThread({
 }) {
   if (!posts || posts.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+      <div className="text-center py-8 text-[#8a8580]">
+        <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50 text-[#c0b89e]" />
         <p>Δεν υπάρχουν μηνύματα σε αυτή τη συζήτηση</p>
       </div>
     );
