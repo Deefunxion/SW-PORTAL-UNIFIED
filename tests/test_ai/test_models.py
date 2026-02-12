@@ -16,9 +16,9 @@ def test_file_chunk_creation(app):
         db.session.add(chunk)
         db.session.commit()
 
-        saved = FileChunk.query.first()
+        saved = FileChunk.query.filter_by(source_path="content/test.pdf").first()
+        assert saved is not None
         assert saved.content == "Test content for embedding"
-        assert saved.source_path == "content/test.pdf"
         assert saved.chunk_index == 0
 
 def test_document_index_creation(app):
@@ -37,6 +37,7 @@ def test_document_index_creation(app):
         db.session.add(doc)
         db.session.commit()
 
-        saved = DocumentIndex.query.first()
+        saved = DocumentIndex.query.filter_by(file_path="content/ΝΟΜΟΘΕΣΙΑ/law1.pdf").first()
+        assert saved is not None
         assert saved.status == "ready"
         assert saved.chunk_count == 15
