@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input.jsx';
 import {
   Search, Upload, FolderPlus, Grid3X3, List, File as FileIcon, X, ChevronDown, ChevronUp, Folder
 } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBookOpen, faScaleBalanced, faClipboard, faSearch, faFile, faUsers } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'sonner';
 import ApothecaryPageSkeleton from '@/components/skeletons/ApothecaryPageSkeleton.jsx';
 import DropZone from '@/components/DropZone.jsx';
@@ -189,7 +191,8 @@ function ApothecaryPage() {
       
       // Create a temporary link and trigger download
       const link = document.createElement('a');
-      link.href = `http://127.0.0.1:5000${downloadUrl}`;
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      link.href = `${baseUrl}${downloadUrl}`;
       link.download = file.name;
       link.target = '_blank';
       
@@ -410,7 +413,7 @@ function ApothecaryPage() {
       {/* Header */}
       <header className="mb-20">
         <h1 className="text-7xl font-bold text-[#1e3a8a] mb-6 leading-tight">
-          📚 Αρχειοθήκη
+          <FontAwesomeIcon icon={faBookOpen} className="mr-3" /> Αρχειοθήκη
         </h1>
         <p className="text-2xl text-[#6b7280] max-w-4xl leading-relaxed">
           Διαχείριση και πρόσβαση στα επίσημα έγγραφα και φάκελα της Περιφέρειας Αττικής
@@ -420,12 +423,12 @@ function ApothecaryPage() {
       {/* Main Categories Navigation - ENHANCED */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-20">
         {[
-          { title: 'Αποφάσεις Αδειοδότησης', icon: '⚖️', desc: 'ΚΑΑ, ΚΔΑΠ, ΚΗΦΗ, ΜΦΗ, ΣΥΔ', color: 'from-blue-600 to-blue-700', hoverColor: 'hover:from-blue-700 hover:to-blue-800' },
-          { title: 'Νομοθεσία Κοινωνικής Μέριμνας', icon: '📋', desc: 'Νόμοι και Κανονισμοί', color: 'from-green-600 to-green-700', hoverColor: 'hover:from-green-700 hover:to-green-800' },
-          { title: 'Εκθέσεις Ελέγχων', icon: '🔍', desc: 'Αξιολογήσεις και Επιθεωρήσεις', color: 'from-purple-600 to-purple-700', hoverColor: 'hover:from-purple-700 hover:to-purple-800' },
-          { title: 'Έντυπα Αιτήσεων', icon: '📄', desc: 'Φόρμες και Αιτήσεις', color: 'from-orange-600 to-orange-700', hoverColor: 'hover:from-orange-700 hover:to-orange-800' },
-          { title: 'Συγκρότηση Επιτροπών', icon: '👥', desc: 'Οργανωτικές Αποφάσεις', color: 'from-teal-600 to-teal-700', hoverColor: 'hover:from-teal-700 hover:to-teal-800' },
-          { title: 'Εκπαιδευτικό Υλικό', icon: '📚', desc: 'Οδηγίες και Μάθημα', color: 'from-indigo-600 to-indigo-700', hoverColor: 'hover:from-indigo-700 hover:to-indigo-800' }
+          { title: 'Αποφάσεις Αδειοδότησης', icon: faScaleBalanced, desc: 'ΚΑΑ, ΚΔΑΠ, ΚΗΦΗ, ΜΦΗ, ΣΥΔ', color: 'from-blue-600 to-blue-700', hoverColor: 'hover:from-blue-700 hover:to-blue-800' },
+          { title: 'Νομοθεσία Κοινωνικής Μέριμνας', icon: faClipboard, desc: 'Νόμοι και Κανονισμοί', color: 'from-green-600 to-green-700', hoverColor: 'hover:from-green-700 hover:to-green-800' },
+          { title: 'Εκθέσεις Ελέγχων', icon: faSearch, desc: 'Αξιολογήσεις και Επιθεωρήσεις', color: 'from-purple-600 to-purple-700', hoverColor: 'hover:from-purple-700 hover:to-purple-800' },
+          { title: 'Έντυπα Αιτήσεων', icon: faFile, desc: 'Φόρμες και Αιτήσεις', color: 'from-orange-600 to-orange-700', hoverColor: 'hover:from-orange-700 hover:to-orange-800' },
+          { title: 'Συγκρότηση Επιτροπών', icon: faUsers, desc: 'Οργανωτικές Αποφάσεις', color: 'from-teal-600 to-teal-700', hoverColor: 'hover:from-teal-700 hover:to-teal-800' },
+          { title: 'Εκπαιδευτικό Υλικό', icon: faBookOpen, desc: 'Οδηγίες και Μάθημα', color: 'from-indigo-600 to-indigo-700', hoverColor: 'hover:from-indigo-700 hover:to-indigo-800' }
         ].map((category, index) => (
           <div key={index} className="space-y-6">
             {/* Category Card */}
@@ -435,7 +438,9 @@ function ApothecaryPage() {
             >
               <CardContent className="p-8">
                 <div className={`w-20 h-20 bg-gradient-to-br ${category.color} ${category.hoverColor} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl group-hover:scale-110 transition-all duration-300`}>
-                  <span className="text-3xl filter drop-shadow-lg">{category.icon}</span>
+                  <span className="text-3xl filter drop-shadow-lg text-white">
+                    <FontAwesomeIcon icon={category.icon} />
+                  </span>
                 </div>
                 <h3 className="text-2xl font-bold text-[#1e3a8a] mb-4 text-center group-hover:text-blue-700 transition-colors leading-tight">
                   {category.title}
