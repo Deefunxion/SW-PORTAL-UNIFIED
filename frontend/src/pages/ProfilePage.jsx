@@ -121,9 +121,9 @@ const ProfilePage = () => {
   const getRoleBadgeColor = (role) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800';
-      case 'staff': return 'bg-blue-100 text-blue-800';
-      case 'guest': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'staff': return 'bg-[#dde4f5] text-[#1a3aa3]';
+      case 'guest': return 'bg-[#f0ede6] text-[#2a2520]';
+      default: return 'bg-[#f0ede6] text-[#2a2520]';
     }
   };
 
@@ -143,10 +143,10 @@ const ProfilePage = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+            <div className="h-8 bg-[#e8e2d8] rounded w-1/3 mb-6"></div>
             <div className="space-y-4">
-              <div className="h-32 bg-gray-200 rounded"></div>
-              <div className="h-64 bg-gray-200 rounded"></div>
+              <div className="h-32 bg-[#e8e2d8] rounded"></div>
+              <div className="h-64 bg-[#e8e2d8] rounded"></div>
             </div>
           </div>
         </div>
@@ -157,7 +157,7 @@ const ProfilePage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Προφίλ Χρήστη</h1>
+        <h1 className="text-3xl font-bold text-[#2a2520] mb-8" style={{fontFamily: "'Literata', serif"}}>Προφίλ Χρήστη</h1>
 
         {/* Profile Overview Card */}
         <Card className="mb-8">
@@ -171,13 +171,13 @@ const ProfilePage = () => {
             <div className="flex items-center space-x-4 mb-6">
               <Avatar className="w-16 h-16">
                 <AvatarImage src={profile?.avatar} />
-                <AvatarFallback className="bg-blue-100 text-blue-800 text-lg">
+                <AvatarFallback className="bg-[#dde4f5] text-[#1a3aa3] text-lg">
                   {getUserInitials(profile)}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <h3 className="text-xl font-semibold">{profile?.username}</h3>
-                <p className="text-gray-600">{profile?.email}</p>
+                <p className="text-[#6b6560]">{profile?.email}</p>
                 <Badge className={`mt-2 ${getRoleBadgeColor(profile?.role)}`}>
                   <Shield className="w-3 h-3 mr-1" />
                   {profile?.role || 'guest'}
@@ -187,13 +187,13 @@ const ProfilePage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-gray-500" />
-                <span className="text-gray-600">Εγγραφή:</span>
+                <Calendar className="w-4 h-4 text-[#8a8580]" />
+                <span className="text-[#6b6560]">Εγγραφή:</span>
                 <span>{formatDate(profile?.created_at)}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-gray-500" />
-                <span className="text-gray-600">Τελευταία σύνδεση:</span>
+                <Calendar className="w-4 h-4 text-[#8a8580]" />
+                <span className="text-[#6b6560]">Τελευταία σύνδεση:</span>
                 <span>{formatDate(profile?.last_login)}</span>
               </div>
             </div>

@@ -68,18 +68,18 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#eef1f8] via-[#f0ede6] to-[#eef1f8] flex items-center justify-center p-4">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
       
       <div className="w-full max-w-md relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <div className="w-20 h-20 bg-gradient-to-r from-[#1a3aa3] to-[#152e82] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <span className="text-white font-bold text-2xl">SW</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">SW Portal</h1>
-          <p className="text-gray-600">Περιφέρεια Αττικής</p>
+          <h1 className="text-3xl font-bold text-[#2a2520] mb-2" style={{fontFamily: "'Literata', serif"}}>SW Portal</h1>
+          <p className="text-[#6b6560]">Περιφέρεια Αττικής</p>
           <Badge variant="secondary" className="mt-2">
             Ασφαλής Σύνδεση
           </Badge>
@@ -89,7 +89,7 @@ const LoginPage = () => {
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="space-y-1 pb-6">
             <CardTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
-              <Shield className="w-5 h-5 text-blue-600" />
+              <Shield className="w-5 h-5 text-[#1a3aa3]" />
               Σύνδεση
             </CardTitle>
             <CardDescription className="text-center">
@@ -151,9 +151,9 @@ const LoginPage = () => {
                     disabled={isSubmitting}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
+                      <EyeOff className="h-4 w-4 text-[#8a8580]" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
+                      <Eye className="h-4 w-4 text-[#8a8580]" />
                     )}
                   </Button>
                 </div>
@@ -162,7 +162,7 @@ const LoginPage = () => {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium"
+                className="w-full h-11 bg-gradient-to-r from-[#1a3aa3] to-[#152e82] hover:from-[#152e82] hover:to-[#0f2260] text-white font-medium"
                 disabled={isSubmitting || !formData.username || !formData.password}
               >
                 {isSubmitting ? (
@@ -180,11 +180,11 @@ const LoginPage = () => {
             </form>
 
             {/* Test Credentials Info */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="text-sm font-medium text-blue-900 mb-2">
+            <div className="mt-6 p-4 bg-[#eef1f8] rounded-lg border border-[#d0d8ee]">
+              <h4 className="text-sm font-medium text-[#1a3aa3] mb-2">
                 Στοιχεία Δοκιμής:
               </h4>
-              <div className="text-sm text-blue-700 space-y-1">
+              <div className="text-sm text-[#152e82] space-y-1">
                 <p><strong>Admin:</strong> admin / admin123</p>
                 <p><strong>Staff:</strong> staff / staff123</p>
                 <p><strong>Guest:</strong> guest / guest123</p>
@@ -195,7 +195,7 @@ const LoginPage = () => {
             <div className="mt-6 text-center">
               <Link 
                 to="/" 
-                className="inline-flex items-center text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                className="inline-flex items-center text-sm text-[#6b6560] hover:text-[#1a3aa3] transition-colors"
               >
                 <Home className="mr-1 h-4 w-4" />
                 Επιστροφή στην αρχική
@@ -205,7 +205,7 @@ const LoginPage = () => {
         </Card>
 
         {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-500">
+        <div className="text-center mt-8 text-sm text-[#8a8580]">
           <p>&copy; {new Date().getFullYear()} SW Portal - Περιφέρεια Αττικής</p>
           <p className="mt-1">Ασφαλής πρόσβαση με JWT authentication</p>
         </div>
