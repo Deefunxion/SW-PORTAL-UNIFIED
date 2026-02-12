@@ -19,8 +19,19 @@ import {
   Quote
 } from 'lucide-react';
 
-import { UserAvatarWithPresence } from '@/components/UserPresenceIndicator';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar.jsx';
 import { useAuth } from '@/contexts/AuthContext';
+
+function SimpleUserAvatar({ username, size = "sm" }) {
+  const sizes = { sm: "h-8 w-8 text-xs", md: "h-10 w-10 text-sm" };
+  return (
+    <Avatar className={sizes[size] || sizes.sm}>
+      <AvatarFallback className="bg-blue-100 text-blue-800 font-medium">
+        {username ? username[0].toUpperCase() : "U"}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
 import api from '@/lib/api';
 
 /**
@@ -133,7 +144,7 @@ function MessageReadReceipts({ receipts = [], showDetails = false }) {
       <p className="text-xs font-medium text-gray-600">Διαβάστηκε από:</p>
       {receipts.map((receipt) => (
         <div key={receipt.id} className="flex items-center space-x-2 text-xs text-gray-500">
-          <UserAvatarWithPresence
+          <SimpleUserAvatar
             userId={receipt.user_id}
             username={receipt.user?.username}
             size="xs"
@@ -224,7 +235,7 @@ function MessageItem({
       <div className={`flex ${isOwn ? 'flex-row-reverse' : 'flex-row'} items-end space-x-2 max-w-[70%]`}>
         {/* Avatar */}
         {showAvatar && !isOwn && (
-          <UserAvatarWithPresence
+          <SimpleUserAvatar
             userId={message.sender_id}
             username={message.sender?.username}
             size="sm"

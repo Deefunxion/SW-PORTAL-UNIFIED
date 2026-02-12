@@ -1,24 +1,21 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.jsx';
-import { 
-  Home, 
-  Files, 
-  MessageSquare, 
-  Bot, 
-  Menu, 
+import {
+  Home,
+  Files,
+  MessageSquare,
+  Bot,
+  Menu,
   X,
-  Download,
-  Users,
-  FileText,
-  Settings,
   LogOut,
   User,
   Shield
 } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFolder, faComments, faRobot, faEnvelope, faMobileAlt, faBuilding } from '@fortawesome/free-solid-svg-icons';
 
 // Import Sonner for toast notifications
 import { Toaster } from 'sonner';
@@ -40,9 +37,6 @@ import AdminDashboardPage from '@/pages/AdminDashboardPage';
 import NotificationBell from '@/components/NotificationBell';
 import ChatWidget from '@/components/ChatWidget';
 
-// New Enhanced Forum Imports
-import EnhancedForumPage from '@/pages/EnhancedForumPage';
-import EnhancedDiscussionDetail from '@/pages/EnhancedDiscussionDetail';
 import PrivateMessagingPage from '@/pages/PrivateMessagingPage';
 
 import './App.css';
@@ -303,13 +297,13 @@ function Footer() {
             <h3 className="text-lg font-semibold mb-4">Γρήγοροι Σύνδεσμοι</h3>
             <div className="space-y-2">
               <Link to="/apothecary" className="block text-gray-300 hover:text-white text-sm">
-                📁 Αρχεία & Έγγραφα
+                <FontAwesomeIcon icon={faFolder} className="mr-2" /> Αρχεία & Έγγραφα
               </Link>
               <Link to="/forum" className="block text-gray-300 hover:text-white text-sm">
-                💬 Φόρουμ Συζητήσεων
+                <FontAwesomeIcon icon={faComments} className="mr-2" /> Φόρουμ Συζητήσεων
               </Link>
               <Link to="/assistant" className="block text-gray-300 hover:text-white text-sm">
-                🤖 AI Assistant
+                <FontAwesomeIcon icon={faRobot} className="mr-2" /> AI Assistant
               </Link>
             </div>
           </div>
@@ -318,9 +312,9 @@ function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Επικοινωνία</h3>
             <div className="space-y-2 text-sm text-gray-300">
-              <p>📧 support@swportal.gr</p>
-              <p>📱 +30 210 1234567</p>
-              <p>🏢 Περιφέρεια Αττικής</p>
+              <p><FontAwesomeIcon icon={faEnvelope} className="mr-2" /> support@swportal.gr</p>
+              <p><FontAwesomeIcon icon={faMobileAlt} className="mr-2" /> +30 210 1234567</p>
+              <p><FontAwesomeIcon icon={faBuilding} className="mr-2" /> Περιφέρεια Αττικής</p>
             </div>
           </div>
         </div>
@@ -386,15 +380,14 @@ function AppContent() {
               <ApothecaryPage />
             </ProtectedRoute>
           } />
-          {/* New Enhanced Forum Routes */}
           <Route path="/forum" element={
             <ProtectedRoute>
-              <EnhancedForumPage />
+              <ForumPage />
             </ProtectedRoute>
           } />
           <Route path="/forum/:discussionId" element={
             <ProtectedRoute>
-              <EnhancedDiscussionDetail />
+              <DiscussionDetail />
             </ProtectedRoute>
           } />
           <Route path="/messaging" element={
@@ -408,18 +401,6 @@ function AppContent() {
             </ProtectedRoute>
           } />
 
-          {/* Old Forum Routes - Commented out for now */}
-          {/* <Route path="/forum-legacy" element={
-            <ProtectedRoute>
-              <ForumPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/forum-legacy/:discussionId" element={
-            <ProtectedRoute>
-              <DiscussionDetail />
-            </ProtectedRoute>
-          } /> */}
-          
           <Route path="/assistant" element={
             <ProtectedRoute>
               <AssistantPage />

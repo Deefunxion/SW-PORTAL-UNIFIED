@@ -20,8 +20,18 @@ import {
 import ConversationList from '../components/ConversationList';
 import MessageThread from '../components/MessageThread';
 import MessageComposer from '../components/MessageComposer';
-import { UserAvatarWithPresence, OnlineUsersList, PresenceStatusSelector } from '../components/UserPresenceIndicator';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar.jsx';
 import { useAuth } from '../contexts/AuthContext';
+
+function SimpleUserAvatar({ username, size = "md" }) {
+  const sizes = { sm: "h-8 w-8 text-xs", md: "h-10 w-10 text-sm", xl: "h-16 w-16 text-lg mx-auto" };
+  const initial = username ? username[0].toUpperCase() : "U";
+  return (
+    <Avatar className={sizes[size] || sizes.md}>
+      <AvatarFallback className="bg-blue-100 text-blue-800 font-medium">{initial}</AvatarFallback>
+    </Avatar>
+  );
+}
 
 /**
  * Conversation Header Component
@@ -80,7 +90,7 @@ function ConversationHeader({
               <Users className="h-5 w-5" />
             </div>
           ) : (
-            <UserAvatarWithPresence
+            <SimpleUserAvatar
               userId={conversation.participants?.[0]?.user_id}
               username={conversation.participants?.[0]?.user?.username}
               size="md"
@@ -216,7 +226,7 @@ function ConversationInfoSidebar({
               <Users className="h-8 w-8" />
             </div>
           ) : (
-            <UserAvatarWithPresence
+            <SimpleUserAvatar
               userId={conversation.participants?.[0]?.user_id}
               username={conversation.participants?.[0]?.user?.username}
               size="xl"
@@ -270,7 +280,7 @@ function ConversationInfoSidebar({
           <div className="p-4 space-y-3">
             {conversation.participants?.map((participant) => (
               <div key={participant.user_id} className="flex items-center space-x-3">
-                <UserAvatarWithPresence
+                <SimpleUserAvatar
                   userId={participant.user_id}
                   username={participant.user?.username}
                   size="md"
@@ -455,7 +465,7 @@ function PrivateMessagingPage() {
           {/* Current User Status */}
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center space-x-3 mb-3">
-              <UserAvatarWithPresence
+              <SimpleUserAvatar
                 userId={user?.id}
                 username={user?.username}
                 size="sm"
@@ -467,23 +477,12 @@ function PrivateMessagingPage() {
               </div>
             </div>
             
-            <PresenceStatusSelector
-              currentStatus="online"
-              onStatusChange={(status, customStatus) => {
-                console.log('Status changed:', status, customStatus);
-              }}
-            />
+            <Badge variant="secondary" className="text-xs">Online</Badge>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <OnlineUsersList
-            onUserClick={(user) => {
-              // Start conversation with user
-              console.log('Start conversation with:', user);
-            }}
-            className="p-4"
-          />
+        <div className="flex-1 overflow-y-auto p-4">
+          <p className="text-sm text-gray-500">Λειτουργία σε εξέλιξη</p>
         </div>
       </div>
     </div>
