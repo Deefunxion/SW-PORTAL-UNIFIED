@@ -31,37 +31,37 @@ const pinnedCategories = [
   { 
     name: 'Νομοθεσία', 
     icon: ScrollText, 
-    color: 'bg-blue-500 hover:bg-blue-600',
+    color: 'bg-[#1a3aa3] hover:bg-[#152e82]',
     description: 'Νομικά θέματα και κανονισμοί'
   },
   { 
     name: 'Καλές Πρακτικές', 
     icon: ThumbsUp, 
-    color: 'bg-green-500 hover:bg-green-600',
+    color: 'bg-[#2d6b2d] hover:bg-[#245a24]',
     description: 'Επιτυχημένες μεθοδολογίες'
   },
   { 
     name: 'Ψυχική Υγεία', 
     icon: BrainCircuit, 
-    color: 'bg-purple-500 hover:bg-purple-600',
+    color: 'bg-[#3d5cc9] hover:bg-[#2d4ab5]',
     description: 'Υποστήριξη και συμβουλές'
   },
   { 
     name: 'Εποπτεία', 
     icon: Users, 
-    color: 'bg-orange-500 hover:bg-orange-600',
+    color: 'bg-[#b8942e] hover:bg-[#9a7a24]',
     description: 'Επαγγελματική καθοδήγηση'
   },
   { 
     name: 'Δικαιοσύνη', 
     icon: Scale, 
-    color: 'bg-red-500 hover:bg-red-600',
+    color: 'bg-[#c94444] hover:bg-[#a83838]',
     description: 'Νομικές υποθέσεις'
   },
   { 
     name: 'Προτάσεις', 
     icon: Lightbulb, 
-    color: 'bg-yellow-500 hover:bg-yellow-600',
+    color: 'bg-[#b8942e] hover:bg-[#9a7a24]',
     description: 'Ιδέες και βελτιώσεις'
   }
 ];
@@ -125,7 +125,7 @@ function ForumPage() {
     console.log('Selected category:', categoryName);
   };
 
-  const filteredDiscussions = discussions.map(category => ({
+  const filteredDiscussions = Array.isArray(discussions) ? discussions.map(category => ({
     ...category,
     discussions: category.discussions?.filter(discussion => {
       const matchesSearch = !searchTerm || 
@@ -137,7 +137,7 @@ function ForumPage() {
       
       return matchesSearch && matchesCategory;
     }) || []
-  })).filter(category => category.discussions.length > 0);
+  })).filter(category => category.discussions.length > 0) : [];
 
   const getCategoryIcon = (categoryTitle) => {
     const iconMap = {
@@ -166,7 +166,7 @@ function ForumPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a3aa3] mx-auto mb-4"></div>
           <p>Φόρτωση φόρουμ...</p>
         </div>
       </div>
@@ -177,10 +177,10 @@ function ForumPage() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <h1 className="text-3xl font-bold text-[#2a2520] mb-2" style={{fontFamily: "'Literata', serif"}}>
           💬 Φόρουμ Συζητήσεων
         </h1>
-        <p className="text-gray-600">
+        <p className="text-[#6b6560]">
           Επαγγελματικό φόρουμ για συζητήσεις και ανταλλαγή απόψεων
         </p>
       </div>
@@ -188,7 +188,7 @@ function ForumPage() {
       {/* Pinned Categories */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2" style={{fontFamily: "'Literata', serif"}}>
             <TrendingUp className="w-5 h-5" />
             Κυριότερες Κατηγορίες
           </CardTitle>
@@ -248,7 +248,7 @@ function ForumPage() {
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8a8580] w-4 h-4" />
               <Input
                 placeholder="Αναζήτηση συζητήσεων..."
                 value={searchTerm}
@@ -270,7 +270,7 @@ function ForumPage() {
             {/* Create Discussion Button */}
             <Button 
               onClick={() => setShowCreateModal(true)}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-[#1a3aa3] hover:bg-[#152e82]"
             >
               <Plus className="w-4 h-4 mr-2" />
               Νέα Συζήτηση
@@ -281,9 +281,9 @@ function ForumPage() {
 
       {/* Search Results Info */}
       {(searchTerm || selectedCategory) && (
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="mb-4 p-3 bg-[#eef1f8] rounded-lg border border-[#d0d8ee]">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-blue-800">
+            <div className="text-sm text-[#1a3aa3]">
               {filteredDiscussions.length === 0 ? (
                 <span className="flex items-center gap-2">
                   <Search className="w-4 h-4" />
@@ -307,7 +307,7 @@ function ForumPage() {
                 setSearchTerm('');
                 setSelectedCategory('');
               }}
-              className="text-blue-600 hover:text-blue-800"
+              className="text-[#1a3aa3] hover:text-[#152e82]"
             >
               Καθαρισμός
             </Button>
@@ -319,28 +319,28 @@ function ForumPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-[#1a3aa3]" style={{fontFamily: "'Literata', serif"}}>
               {discussions.reduce((acc, cat) => acc + (cat.discussions?.length || 0), 0)}
             </div>
-            <div className="text-sm text-gray-600">Συνολικές Συζητήσεις</div>
+            <div className="text-sm text-[#6b6560]">Συνολικές Συζητήσεις</div>
           </CardContent>
         </Card>
         
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{categories.length}</div>
-            <div className="text-sm text-gray-600">Κατηγορίες</div>
+            <div className="text-2xl font-bold text-[#b8942e]" style={{fontFamily: "'Literata', serif"}}>{categories.length}</div>
+            <div className="text-sm text-[#6b6560]">Κατηγορίες</div>
           </CardContent>
         </Card>
         
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {discussions.reduce((acc, cat) => 
+            <div className="text-2xl font-bold text-[#3d5cc9]" style={{fontFamily: "'Literata', serif"}}>
+              {discussions.reduce((acc, cat) =>
                 acc + (cat.discussions?.reduce((sum, disc) => sum + (disc.post_count || 0), 0) || 0), 0
               )}
             </div>
-            <div className="text-sm text-gray-600">Συνολικά Μηνύματα</div>
+            <div className="text-sm text-[#6b6560]">Συνολικά Μηνύματα</div>
           </CardContent>
         </Card>
       </div>
@@ -349,7 +349,7 @@ function ForumPage() {
       <div className="space-y-6">
         {filteredDiscussions.length === 0 ? (
           <Card>
-            <CardContent className="p-8 text-center text-gray-500">
+            <CardContent className="p-8 text-center text-[#8a8580]">
               <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-medium mb-2">Δεν βρέθηκαν αποτελέσματα</h3>
               <p className="text-sm">
@@ -360,12 +360,12 @@ function ForumPage() {
         ) : (
           filteredDiscussions.map((category) => (
             <Card key={category.category} className="overflow-hidden">
-              <CardHeader className="bg-gray-800 text-white">
+              <CardHeader className="bg-[#1a3aa3] text-white rounded-t-xl">
                 <div className="flex items-center space-x-3">
                   <span className="text-2xl">{getCategoryIcon(category.category)}</span>
                   <div>
-                    <CardTitle className="text-xl">{category.category}</CardTitle>
-                    <CardDescription className="text-gray-300">
+                    <CardTitle className="text-xl" style={{fontFamily: "'Literata', serif"}}>{category.category}</CardTitle>
+                    <CardDescription className="text-[#c0b89e]">
                       {category.description}
                     </CardDescription>
                   </div>
@@ -374,25 +374,25 @@ function ForumPage() {
               
               <CardContent className="p-0">
                 {category.discussions && category.discussions.length > 0 ? (
-                  <div className="divide-y divide-gray-200">
+                  <div className="divide-y divide-[#e8e2d8]">
                     {category.discussions.map((discussion) => (
                       <Link
                         key={discussion.id}
                         to={`/forum/${discussion.id}`}
-                        className="block hover:bg-gray-50 transition-colors duration-200"
+                        className="group block hover:bg-[#eef1f8] hover:pl-8 hover:shadow-[inset_4px_0_0_#1a3aa3] transition-all duration-250"
                       >
                         <div className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-800 mb-1">
+                              <h3 className="font-semibold text-[#2a2520] mb-1">
                                 {discussion.title}
                               </h3>
                               {discussion.description && (
-                                <p className="text-gray-600 text-sm mb-2 line-clamp-2">
+                                <p className="text-[#6b6560] text-sm mb-2 line-clamp-2">
                                   {discussion.description}
                                 </p>
                               )}
-                              <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <div className="flex items-center space-x-4 text-xs text-[#8a8580]">
                                 <div className="flex items-center">
                                   <MessageCircle className="w-3 h-3 mr-1" />
                                   {discussion.post_count || 0} μηνύματα
@@ -409,11 +409,11 @@ function ForumPage() {
                             </div>
                             
                             <div className="ml-4 text-right">
-                              <Badge variant="secondary">
+                              <Badge variant="secondary" className="group-hover:bg-[#1a3aa3] group-hover:text-white group-hover:scale-110 transition-all duration-200">
                                 {discussion.post_count || 0}
                               </Badge>
                               {discussion.last_post && (
-                                <div className="mt-2 text-xs text-gray-500">
+                                <div className="mt-2 text-xs text-[#8a8580]">
                                   <div>Τελευταίο από:</div>
                                   <div className="font-medium">{discussion.last_post.user}</div>
                                   <div>{formatDate(discussion.last_post.created_at)}</div>
@@ -426,7 +426,7 @@ function ForumPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="p-8 text-center text-gray-500">
+                  <div className="p-8 text-center text-[#8a8580]">
                     <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>Δεν υπάρχουν συζητήσεις σε αυτήν την κατηγορία</p>
                   </div>
