@@ -1041,16 +1041,29 @@ def global_search():
 
 
 # ============================================================================
-# FRONTEND SERVING (for development)
+# FRONTEND SERVING (production: serves built React SPA)
 # ============================================================================
 
 @main_bp.route('/', defaults={'path': ''})
 @main_bp.route('/<path:path>')
 def serve_frontend(path):
-    """Serve frontend files (for development only)"""
-    build_dir = os.path.join(current_app.root_path, '..', 'frontend', 'dist')
-    if path != "" and os.path.exists(os.path.join(build_dir, path)):
+    """Serve the React SPA.
+
+    Static assets (js, css, images) are served directly.
+    All other paths return index.html for client-side routing.
+    """
+    build_dir = os.path.abspath(current_app.config.get('FRONTEND_DIR', ''))
+
+    if not os.path.isdir(build_dir):
+        return jsonify({'message': 'SW Portal API is running. Frontend not built.'}), 200
+
+    # Serve static files directly if they exist
+    if path and os.path.exists(os.path.join(build_dir, path)):
         return send_from_directory(build_dir, path)
-    else:
-        # Return a simple JSON response if frontend build doesn't exist
-        return jsonify({'message': 'SW Portal Backend API is running'})
+
+    # SPA catch-all: return index.html for React Router
+    index_path = os.path.join(build_dir, 'index.html')
+    if os.path.exists(index_path):
+        return send_from_directory(build_dir, 'index.html')
+
+    return jsonify({'message': 'SW Portal API is running. Frontend not built.'}), 200

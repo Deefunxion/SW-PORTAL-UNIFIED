@@ -53,21 +53,21 @@ class TestingConfig(Config):
 
 
 class ProductionConfig(Config):
-    """Production configuration."""
+    """Production configuration (Render)."""
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
-    
+
     # Security settings
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    
-    # Production CORS
-    CORS_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',')
-    
-    # Logging
-    LOG_LEVEL = 'INFO'
-    LOG_FILE = '/var/log/sw-portal/app.log'
+
+    # In production on Render, CORS isn't needed (same origin)
+    # but keep configurable for future split deployments
+    CORS_ORIGINS = os.getenv('ALLOWED_ORIGINS', '*').split(',')
+
+    # Logging to stdout (Render captures stdout)
+    LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 
 
 class StagingConfig(ProductionConfig):
