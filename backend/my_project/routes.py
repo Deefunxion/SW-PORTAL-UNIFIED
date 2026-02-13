@@ -11,6 +11,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_tok
 
 # Import db and models from the new consolidated structure
 from .extensions import db, limiter
+from .audit import log_action
 from .models import (
     User, Category, Discussion, Post, FileItem, Notification,
     PostAttachment, PostReaction, PostMention, UserReputation,
@@ -183,12 +184,15 @@ def login():
         # Generate JWT token (identity must be string)
         access_token = create_access_token(identity=str(user.id))
 
+        log_action('login', resource='auth', user_id=user.id)
+
         return jsonify({
             'message': 'Login successful',
             'access_token': access_token,
             'user': user.to_dict()
         })
     else:
+        log_action('login_failed', resource='auth', details=f'username={username}')
         return jsonify({'error': 'Invalid credentials'}), 401
 
 
@@ -529,6 +533,8 @@ def upload_file():
 
         db.session.add(file_item)
         db.session.commit()
+
+        log_action('upload', resource='file', resource_id=file_item.id, user_id=user_id)
 
         return jsonify({'message': 'File uploaded successfully', 'id': file_item.id}), 201
 

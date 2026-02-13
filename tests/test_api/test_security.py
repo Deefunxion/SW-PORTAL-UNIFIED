@@ -100,3 +100,41 @@ def test_demo_users_not_seeded_in_production():
 
     # Restore testing env
     os.environ['FLASK_ENV'] = 'testing'
+
+
+def test_login_creates_audit_log(client, app):
+    """Successful login should create an audit log entry."""
+    from my_project.models import User, AuditLog
+    from my_project.extensions import db
+
+    with app.app_context():
+        user = User.query.filter_by(username='audituser').first()
+        if not user:
+            user = User(username='audituser', email='audit@test.com', role='guest')
+            user.set_password('auditpass123')
+            db.session.add(user)
+            db.session.commit()
+
+    client.post('/api/auth/login', json={
+        'username': 'audituser',
+        'password': 'auditpass123'
+    })
+
+    with app.app_context():
+        logs = AuditLog.query.filter_by(action='login').all()
+        assert len(logs) >= 1
+        assert logs[-1].resource == 'auth'
+
+
+def test_failed_login_creates_audit_log(client, app):
+    """Failed login should also create an audit log entry."""
+    from my_project.models import AuditLog
+
+    client.post('/api/auth/login', json={
+        'username': 'nonexistent',
+        'password': 'wrongpass'
+    })
+
+    with app.app_context():
+        logs = AuditLog.query.filter_by(action='login_failed').all()
+        assert len(logs) >= 1
