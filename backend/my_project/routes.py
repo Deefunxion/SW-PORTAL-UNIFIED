@@ -232,6 +232,17 @@ def register():
     }), 201
 
 
+@main_bp.route('/api/auth/verify', methods=['GET'])
+@jwt_required()
+def verify_token():
+    """Verify JWT token is still valid and return current user."""
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    return jsonify({'valid': True, 'user': user.to_dict()})
+
+
 @main_bp.route('/api/auth/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
@@ -754,7 +765,7 @@ def mark_notifications_read():
 
 @main_bp.route('/api/chat', methods=['POST'])
 @jwt_required()
-@limiter.limit("20 per minute")
+@limiter.limit(lambda: current_app.config.get('AI_CHAT_RATE_LIMIT', '20 per minute'))
 def ai_chat():
     """AI Assistant — chat with RAG context from social welfare documents."""
     data = request.get_json()
@@ -784,11 +795,13 @@ def ai_chat():
     } if user else None
 
     from my_project.ai.copilot import get_chat_reply
+    model_override = data.get('model')  # allows frontend to switch model on the fly
     result = get_chat_reply(
         user_message=message,
         chat_history=chat_history,
         use_rag=True,
         user_context=user_context,
+        model_override=model_override,
     )
 
     # Store assistant reply in session

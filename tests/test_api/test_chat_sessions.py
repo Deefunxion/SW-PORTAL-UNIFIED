@@ -102,3 +102,10 @@ def test_session_belongs_to_user(client, auth_headers, app):
     # Try to access first user's session
     resp = client.get(f'/api/chat/sessions/{session_id}/messages', headers=other_headers)
     assert resp.status_code == 404  # Not found (not 403 — don't leak existence)
+
+
+def test_chat_rate_limit_from_config(app):
+    """Rate limit should be configurable via app config."""
+    with app.app_context():
+        # Testing config should have a rate limit value
+        assert 'AI_CHAT_RATE_LIMIT' in app.config

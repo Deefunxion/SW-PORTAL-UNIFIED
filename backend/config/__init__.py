@@ -28,6 +28,9 @@ class Config:
     # CORS
     CORS_ORIGINS = ["http://localhost:3000", "http://localhost:5173"]
 
+    # AI Chat rate limit
+    AI_CHAT_RATE_LIMIT = "20 per minute"
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""
@@ -48,6 +51,8 @@ class TestingConfig(Config):
 
     # High default rate limit for tests (avoids cross-test interference)
     RATELIMIT_DEFAULT = "1000 per minute"
+
+    AI_CHAT_RATE_LIMIT = "100 per minute"
 
     # Disable email sending during tests
     MAIL_SUPPRESS_SEND = True
@@ -72,6 +77,8 @@ class ProductionConfig(Config):
 
     # Logging to stdout (Render captures stdout)
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+
+    AI_CHAT_RATE_LIMIT = os.getenv('AI_CHAT_RATE_LIMIT', "60 per minute")
 
 
 class StagingConfig(ProductionConfig):
