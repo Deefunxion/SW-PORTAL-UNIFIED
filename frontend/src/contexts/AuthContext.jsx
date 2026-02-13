@@ -22,7 +22,14 @@ export const AuthProvider = ({ children }) => {
   const fetchPermissions = async () => {
     try {
       const response = await api.get('/api/user/permissions');
-      setPermissions(response.permissions || {});
+      const data = response.data || {};
+      // Backend returns top-level booleans (can_access_admin_dashboard, etc.)
+      // plus a permissions array — use the booleans directly
+      setPermissions({
+        can_access_admin_dashboard: data.can_access_admin_dashboard || false,
+        can_moderate: data.can_moderate || false,
+        can_manage_users: data.can_manage_users || false,
+      });
     } catch (error) {
       console.error('Error fetching permissions:', error);
       setPermissions({});

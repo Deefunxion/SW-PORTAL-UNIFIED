@@ -12,7 +12,8 @@ import {
   X,
   LogOut,
   User,
-  Shield
+  Shield,
+  Database
 } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFolder, faComments, faRobot, faEnvelope, faMobileAlt, faBuilding } from '@fortawesome/free-solid-svg-icons';
@@ -36,6 +37,7 @@ import ProfilePage from '@/pages/ProfilePage';
 import AdminDashboardPage from '@/pages/AdminDashboardPage';
 import NotificationBell from '@/components/NotificationBell';
 import PrivateMessagingPage from '@/pages/PrivateMessagingPage';
+import KnowledgeBasePage from '@/pages/KnowledgeBasePage';
 
 import './App.css';
 
@@ -57,6 +59,7 @@ function Navigation() {
   // Add admin-only navigation items
   const adminNavItems = permissions.canAccessAdminDashboard() ? [
     { path: '/admin', label: 'Διαχείριση', icon: Shield },
+    { path: '/knowledge', label: 'Βάση Γνώσεων', icon: Database },
   ] : [];
 
   const allNavItems = [...navItems, ...adminNavItems];
@@ -416,6 +419,18 @@ function AppContent() {
                 </div>
               } showFallback={true}>
                 <AdminDashboardPage />
+              </PermissionGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/knowledge" element={
+            <ProtectedRoute>
+              <PermissionGuard permission="can_access_admin_dashboard" fallback={
+                <div className="container mx-auto px-4 py-8 text-center">
+                  <h1 className="text-2xl font-bold text-red-600 mb-4">Δεν έχετε πρόσβαση</h1>
+                  <p className="text-[#6b6560]">Δεν έχετε τα απαραίτητα δικαιώματα.</p>
+                </div>
+              } showFallback={true}>
+                <KnowledgeBasePage />
               </PermissionGuard>
             </ProtectedRoute>
           } />
