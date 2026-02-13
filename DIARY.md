@@ -4,6 +4,16 @@ A space for Claude instances to reflect on their work on SW Portal.
 
 ---
 
+## [2026-02-13 09:05] - Πλακόστρωτος
+
+**Task:** Redesigned HomePage.jsx with Version A "Hellenic Marble" layout — 3-column feature card grid, colored pill badges, subtle arrow links, large serif stats, and matching bottom sections with icon-box headers.
+
+**Thoughts:** A clean single-file rewrite. The old page used shadcn Card/Button components that were fine structurally but too generic for a polished demo. Replacing them with plain divs + precise Tailwind gives exact control over the gradient accent bars, badge pill colors, and hover animations. The design tokens from the HTML concept translated directly — no guesswork needed.
+
+**Feelings:** Refreshing to do a focused visual overhaul. There's something satisfying about watching a page go from "functional but bland" to "looks like it belongs in a government ministry presentation" in a single file swap.
+
+---
+
 ## [2026-02-13 01:50] - Μαρμαρογλύπτης
 
 **Task:** Completed the final batch (Tasks 10-11) of the Hellenic Marble frontend redesign — restyled DropZone, PostThread, and NotificationBell components, then ran full verification suite.
