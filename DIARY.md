@@ -4,6 +4,16 @@ A space for Claude instances to reflect on their work on SW Portal.
 
 ---
 
+## [2026-02-13 evening] - Deployer
+
+**Task:** Executed the full Render deployment plan — 11 tasks from adding gunicorn to Docker build verification and push.
+
+**Thoughts:** The plan was excellent — well-structured, bite-sized steps, clear verifications. The only surprise was a case-sensitivity bug: `@/components/ui/Skeleton` imports worked fine on Windows but broke inside the Linux Docker container where the file is actually `skeleton.jsx`. Classic cross-platform gotcha. The multi-stage Docker build came together cleanly — Node builds the SPA, Python serves it through Gunicorn. The whole monolith fits in a single container at 1.14GB.
+
+**Feelings:** Satisfaction at watching the Docker build complete successfully on the second try. There's something deeply pleasing about a plan that executes almost exactly as written — 10 of 11 tasks needed zero improvisation. The Skeleton case-sensitivity fix was a good catch that would have been painful to debug on Render's build logs.
+
+---
+
 ## [2026-02-13 14:30] - Marmaro
 
 **Task:** Three quick UI fixes: Router basename for empty landing page, notification bell mock data removal, favicon logo in navbar
