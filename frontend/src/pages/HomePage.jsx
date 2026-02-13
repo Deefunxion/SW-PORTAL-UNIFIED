@@ -50,7 +50,7 @@ function HomePage() {
 
   const features = [
     {
-      title: 'Apothecary — Αρχεία',
+      title: 'Αρχεία',
       description: 'Διαχείριση και κατέβασμα αρχείων με προηγμένες λειτουργίες',
       icon: Files,
       link: '/apothecary',
@@ -84,7 +84,7 @@ function HomePage() {
       ]
     },
     {
-      title: 'AI Assistant',
+      title: 'ΑΙ Βοηθός',
       description: 'Έξυπνος βοηθός για απαντήσεις και υποστήριξη',
       icon: Bot,
       link: '/assistant',

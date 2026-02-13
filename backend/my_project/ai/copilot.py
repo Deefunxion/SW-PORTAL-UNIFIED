@@ -2,6 +2,13 @@
 Copilot service for SW Portal AI Assistant.
 Context-aware chat using RAG over Greek social welfare documents.
 Adapted from Academicon's copilot_service.py.
+
+DATA RESIDENCY NOTE:
+Document chunks are sent to OpenAI's API (US-based servers) for embedding
+and chat completion. Only public legislation and official guidelines should
+be stored in the knowledge base. Do NOT ingest documents containing citizen
+PII or case-specific data. For on-premises deployment, the LLM client can
+be swapped to a local Ollama instance by setting LLM_BASE_URL env var.
 """
 import os
 import logging
@@ -30,6 +37,13 @@ SYSTEM_PROMPT = """Είσαι ο ψηφιακός βοηθός της Πύλης
 - Αναφέρεις τις πηγές σου (ονόματα εγγράφων)
 - Είσαι σαφής, ακριβής, και χρησιμοποιείς επαγγελματικό ύφος
 """
+
+
+DISCLAIMER_TEXT = (
+    "\n\n---\n"
+    "*Οι απαντήσεις του AI Βοηθού είναι ενδεικτικές και συμβουλευτικού χαρακτήρα. "
+    "Ελέγξτε πάντα με την ισχύουσα νομοθεσία και τις επίσημες εγκυκλίους.*"
+)
 
 
 def build_system_prompt() -> str:
@@ -129,7 +143,7 @@ def get_chat_reply(
     ))
 
     return {
-        "reply": reply,
+        "reply": reply + DISCLAIMER_TEXT,
         "sources": sources,
         "context_used": len(context_chunks) > 0,
         "chunks_found": len(context_chunks),

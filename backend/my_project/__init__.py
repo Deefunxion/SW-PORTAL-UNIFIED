@@ -40,13 +40,14 @@ def create_app():
         os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'dist')
     )
 
-    # Enable CORS for all origins (for development)
-    CORS(app, origins="*")
+    # Enable CORS for configured origins
+    CORS(app, origins=app.config.get('CORS_ORIGINS', ['http://localhost:5173']))
 
     # Initialize extensions
-    from .extensions import db, celery
+    from .extensions import db, celery, limiter
     from flask_jwt_extended import JWTManager
     db.init_app(app)
+    limiter.init_app(app)
     JWTManager(app)
 
     # Configure Celery
@@ -94,7 +95,7 @@ def create_app():
     # Create database tables and seed data
     with app.app_context():
         # Import models to ensure they are registered
-        from .models import User, Category, Discussion, Post, FileItem
+        from .models import User, Category, Discussion, Post, FileItem, AuditLog
 
         # Enable pgvector extension (required for Vector columns)
         try:
@@ -106,28 +107,28 @@ def create_app():
         # Create all tables
         db.create_all()
 
-        # Seed database with default data (guarded against race conditions
-        # when multiple Gunicorn workers start simultaneously)
-        try:
-            if User.query.count() == 0:
-                print("Seeding database with default users...")
-                default_users = [
-                    {'username': 'admin', 'email': 'admin@portal.gr', 'password': 'admin123', 'role': 'admin'},
-                    {'username': 'staff', 'email': 'staff@portal.gr', 'password': 'staff123', 'role': 'staff'},
-                    {'username': 'guest', 'email': 'guest@portal.gr', 'password': 'guest123', 'role': 'guest'}
-                ]
-                for user_data in default_users:
-                    new_user = User(
-                        username=user_data['username'],
-                        email=user_data['email'],
-                        role=user_data['role']
-                    )
-                    new_user.set_password(user_data['password'])
-                    db.session.add(new_user)
-                db.session.commit()
-                print("Default users created.")
-        except Exception:
-            db.session.rollback()  # Another worker already seeded
+        # Seed demo data ONLY in development mode
+        if app.debug:
+            try:
+                if User.query.count() == 0:
+                    print("Seeding database with default users...")
+                    default_users = [
+                        {'username': 'admin', 'email': 'admin@portal.gr', 'password': 'admin123', 'role': 'admin'},
+                        {'username': 'staff', 'email': 'staff@portal.gr', 'password': 'staff123', 'role': 'staff'},
+                        {'username': 'guest', 'email': 'guest@portal.gr', 'password': 'guest123', 'role': 'guest'}
+                    ]
+                    for user_data in default_users:
+                        new_user = User(
+                            username=user_data['username'],
+                            email=user_data['email'],
+                            role=user_data['role']
+                        )
+                        new_user.set_password(user_data['password'])
+                        db.session.add(new_user)
+                    db.session.commit()
+                    print("Default users created.")
+            except Exception:
+                db.session.rollback()
 
         try:
             if Category.query.count() == 0:
@@ -146,6 +147,19 @@ def create_app():
                 print("Default categories created.")
         except Exception:
             db.session.rollback()  # Another worker already seeded
+
+    # Security headers on every response
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
+        if not app.debug:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+            response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+        return response
 
     # Ensure content directory exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

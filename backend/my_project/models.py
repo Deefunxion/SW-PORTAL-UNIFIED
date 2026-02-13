@@ -449,3 +449,23 @@ class FileChunk(db.Model):
     embedding_model = db.Column(db.String(50))
     text_hash = db.Column(db.String(64), index=True)  # For deduplication
     created_at = db.Column(db.DateTime, default=db.func.now())
+
+
+# ============================================================================
+# AUDIT LOG MODEL
+# ============================================================================
+
+class AuditLog(db.Model):
+    """Tracks security-relevant actions for compliance."""
+    __tablename__ = 'audit_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    action = db.Column(db.String(100), nullable=False)  # login, login_failed, upload, delete, admin_action
+    resource = db.Column(db.String(100))  # auth, file, discussion, user
+    resource_id = db.Column(db.String(100))  # ID of the affected resource
+    details = db.Column(db.Text)  # JSON string with extra context
+    ip_address = db.Column(db.String(45))  # IPv4 or IPv6
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='audit_logs')

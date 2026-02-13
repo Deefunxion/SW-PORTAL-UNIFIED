@@ -35,8 +35,6 @@ import LoginPage from '@/pages/LoginPage';
 import ProfilePage from '@/pages/ProfilePage';
 import AdminDashboardPage from '@/pages/AdminDashboardPage';
 import NotificationBell from '@/components/NotificationBell';
-import ChatWidget from '@/components/ChatWidget';
-
 import PrivateMessagingPage from '@/pages/PrivateMessagingPage';
 
 import './App.css';
@@ -53,7 +51,7 @@ function Navigation() {
     { path: '/', label: 'Αρχική', icon: Home },
     { path: '/apothecary', label: 'Αρχεία', icon: Files },
     { path: '/forum', label: 'Φόρουμ', icon: MessageSquare },
-    { path: '/assistant', label: 'AI Assistant', icon: Bot },
+    { path: '/assistant', label: 'AI Βοηθός', icon: Bot },
   ];
 
   // Add admin-only navigation items
@@ -425,10 +423,7 @@ function AppContent() {
       </main>
 
       <Footer />
-      
-      {/* Floating AI Assistant Widget - only show when authenticated */}
-      {isAuthenticated && <ChatWidget />}
-      
+
       {/* Toast notifications */}
       <Toaster 
         position="top-right"

@@ -23,7 +23,8 @@ import {
   Scale,
   Lightbulb,
   Megaphone,
-  Eye
+  Eye,
+  AlertTriangle
 } from 'lucide-react';
 
 // Pinned categories with icons
@@ -504,6 +505,14 @@ function ForumPage() {
               </div>
             </div>
             
+            <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 flex items-start gap-3 mt-4">
+              <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-orange-700">
+                <strong>Προσοχή:</strong> Μην αναφέρετε ονόματα πολιτών, αριθμούς υποθέσεων ή άλλα προσωπικά δεδομένα
+                στις δημοσιεύσεις του φόρουμ.
+              </p>
+            </div>
+
             <div className="flex justify-end space-x-3 mt-6">
               <Button
                 variant="outline"

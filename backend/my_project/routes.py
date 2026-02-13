@@ -10,7 +10,8 @@ from werkzeug.utils import secure_filename
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 
 # Import db and models from the new consolidated structure
-from .extensions import db
+from .extensions import db, limiter
+from .audit import log_action
 from .models import (
     User, Category, Discussion, Post, FileItem, Notification,
     PostAttachment, PostReaction, PostMention, UserReputation,
@@ -162,6 +163,7 @@ def scan_content_directory():
 # ============================================================================
 
 @main_bp.route('/api/auth/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def login():
     """User login endpoint"""
     data = request.get_json()
@@ -182,18 +184,25 @@ def login():
         # Generate JWT token (identity must be string)
         access_token = create_access_token(identity=str(user.id))
 
+        log_action('login', resource='auth', user_id=user.id)
+
         return jsonify({
             'message': 'Login successful',
             'access_token': access_token,
             'user': user.to_dict()
         })
     else:
+        log_action('login_failed', resource='auth', details=f'username={username}')
         return jsonify({'error': 'Invalid credentials'}), 401
 
 
 @main_bp.route('/api/auth/register', methods=['POST'])
+@jwt_required()
 def register():
-    """User registration endpoint"""
+    """User registration endpoint (admin only)"""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
     data = request.get_json()
     username = data.get('username')
     email = data.get('email')
@@ -248,6 +257,15 @@ def get_user_permissions_list(role):
     return permission_map.get(role, ['read'])
 
 
+def require_admin():
+    """Check if current user is admin. Returns error response or None."""
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user or user.role != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    return None
+
+
 @main_bp.route('/api/auth/logout', methods=['POST'])
 def logout():
     """User logout endpoint"""
@@ -255,8 +273,12 @@ def logout():
 
 
 @main_bp.route('/api/auth/users', methods=['GET'])
+@jwt_required()
 def get_users():
-    """Get all users"""
+    """Get all users (admin only)"""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
     users = User.query.all()
     return jsonify([user.to_dict() for user in users])
 
@@ -512,10 +534,13 @@ def upload_file():
         db.session.add(file_item)
         db.session.commit()
 
+        log_action('upload', resource='file', resource_id=file_item.id, user_id=user_id)
+
         return jsonify({'message': 'File uploaded successfully', 'id': file_item.id}), 201
 
 
 @main_bp.route('/api/folders/create', methods=['POST'])
+@jwt_required()
 def create_folder():
     """Create a new folder"""
     data = request.get_json()
@@ -560,6 +585,7 @@ def get_conversations():
 
 
 @main_bp.route('/api/conversations', methods=['POST'])
+@jwt_required()
 def create_conversation():
     """Create a new conversation"""
     data = request.get_json()
@@ -588,6 +614,7 @@ def create_conversation():
 
 
 @main_bp.route('/api/conversations/<int:conversation_id>/messages', methods=['GET'])
+@jwt_required()
 def get_messages(conversation_id):
     """Get messages in a conversation"""
     messages = PrivateMessage.query.filter_by(
@@ -726,6 +753,7 @@ def mark_notifications_read():
 
 @main_bp.route('/api/chat', methods=['POST'])
 @jwt_required()
+@limiter.limit("20 per minute")
 def ai_chat():
     """AI Assistant — chat with RAG context from social welfare documents."""
     data = request.get_json()
@@ -779,6 +807,52 @@ def knowledge_stats():
         'total_chunks': total_chunks,
         'embedded_chunks': embedded_chunks,
     }), 200
+
+
+# ============================================================================
+# ADMIN ROUTES
+# ============================================================================
+
+@main_bp.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@jwt_required()
+def delete_user(user_id):
+    """Anonymize a user's data (GDPR right to erasure). Admin only."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Don't allow deleting yourself
+    current_user_id = int(get_jwt_identity())
+    if user.id == current_user_id:
+        return jsonify({'error': 'Cannot delete your own account'}), 400
+
+    # Anonymize instead of hard delete to preserve referential integrity
+    user.username = f'deleted_{user.id}'
+    user.email = f'deleted_{user.id}@removed.local'
+    user.password_hash = 'ANONYMIZED'
+    user.presence_status = 'offline'
+
+    # Anonymize profile if exists
+    profile = UserProfile.query.filter_by(user_id=user.id).first()
+    if profile:
+        profile.display_name = None
+        profile.bio = None
+        profile.location = None
+        profile.website = None
+        profile.avatar_url = None
+        profile.phone = None
+        profile.birth_date = None
+
+    db.session.commit()
+
+    log_action('user_deleted', resource='user', resource_id=user_id,
+               user_id=current_user_id)
+
+    return jsonify({'message': f'User {user_id} anonymized successfully'})
 
 
 # ============================================================================

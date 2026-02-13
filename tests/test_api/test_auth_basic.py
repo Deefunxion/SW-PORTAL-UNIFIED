@@ -7,15 +7,16 @@ import json
 
 
 @pytest.mark.api
-@pytest.mark.auth 
+@pytest.mark.auth
 def test_auth_endpoints_exist(client):
     """Test that auth endpoints respond (even if with errors)."""
     # These might return various error codes but should not crash
     response = client.post('/api/auth/login')
     assert response.status_code in [400, 404, 405, 415, 422]
-    
-    response = client.post('/api/auth/register') 
-    assert response.status_code in [400, 404, 405, 415, 422]
+
+    # Register now requires admin JWT, so 401 is expected without auth
+    response = client.post('/api/auth/register')
+    assert response.status_code in [400, 401, 404, 405, 415, 422]
 
 
 @pytest.mark.api
@@ -29,12 +30,12 @@ def test_invalid_login(client):
     assert response.status_code in [400, 401, 404, 422]
 
 
-@pytest.mark.api  
+@pytest.mark.api
 def test_empty_registration(client):
-    """Test registration with empty data."""
+    """Test registration with empty data requires auth."""
     response = client.post('/api/auth/register', json={})
-    # Should fail validation but not crash
-    assert response.status_code in [400, 422]
+    # Register now requires admin JWT — 401 expected without auth
+    assert response.status_code in [400, 401, 422]
 
 
 @pytest.mark.integration
@@ -48,8 +49,8 @@ def test_valid_registration_flow(client, sample_user_data):
             data = response.get_json()
             assert 'message' in data or 'access_token' in data
         else:
-            # Endpoint might not be implemented yet
-            assert response.status_code in [400, 404, 422, 500]
+            # Register requires admin JWT; 401/403 expected without proper auth
+            assert response.status_code in [400, 401, 403, 404, 422, 500]
             
     except Exception as e:
         # If there are issues with the endpoint, that's expected during development

@@ -237,10 +237,10 @@ function ApothecaryPage() {
       <div className="space-y-8">
         {/* Show matched folder name */}
         {content.folderName && (
-          <div className="bg-[#eef5ee] border-2 border-[#c8dec8] rounded-xl p-4">
-            <h4 className="text-xl font-bold text-[#2d6b2d] flex items-center" style={{fontFamily: "'Literata', serif"}}>
-              <Folder className="w-6 h-6 mr-3" />
-              Περιεχόμενα φακέλου: {content.folderName}
+          <div className="bg-[#eef5ee] border-2 border-[#c8dec8] rounded-xl p-4 overflow-hidden">
+            <h4 className="text-lg font-bold text-[#2d6b2d] flex items-start gap-2" style={{fontFamily: "'Literata', serif"}}>
+              <Folder className="w-5 h-5 mt-0.5 flex-shrink-0" />
+              <span className="break-words min-w-0">Περιεχόμενα φακέλου: {content.folderName}</span>
             </h4>
           </div>
         )}
@@ -264,12 +264,12 @@ function ApothecaryPage() {
                       className="flex items-center justify-between p-4 sm:p-5 bg-gradient-to-r from-[#eef1f8] to-[#dde4f5] hover:from-[#dde4f5] hover:to-[#d0d8ee] cursor-pointer transition-all duration-300 hover:shadow-md"
                       onClick={() => handleSubfolderClick(subfolder, categoryIndex)}
                     >
-                      <div className="flex items-center">
-                        <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
-                          <Folder className="w-6 h-6 text-white" />
+                      <div className="flex items-center min-w-0 flex-1 mr-2">
+                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-lg flex-shrink-0">
+                          <Folder className="w-5 h-5 text-white" />
                         </div>
-                        <div>
-                          <h5 className="text-xl font-bold text-[#1a3aa3] mb-1">
+                        <div className="min-w-0 flex-1">
+                          <h5 className="text-base sm:text-lg font-bold text-[#1a3aa3] mb-1 break-words line-clamp-2">
                             {subfolder.category || subfolder.name || `Φάκελος ${idx + 1}`}
                           </h5>
                           {(subfolder.files || []).length > 0 && (
@@ -281,13 +281,10 @@ function ApothecaryPage() {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-bold text-[#152e82]">
-                          {isExpanded ? 'Κλείσιμο' : 'Άνοιγμα'}
-                        </span>
-                        {isExpanded ? 
-                          <ChevronUp className="w-7 h-7 text-[#1a3aa3]" /> : 
-                          <ChevronDown className="w-7 h-7 text-[#1a3aa3]" />
+                      <div className="flex items-center space-x-1 flex-shrink-0">
+                        {isExpanded ?
+                          <ChevronUp className="w-6 h-6 text-[#1a3aa3]" /> :
+                          <ChevronDown className="w-6 h-6 text-[#1a3aa3]" />
                         }
                       </div>
                     </div>
@@ -301,16 +298,16 @@ function ApothecaryPage() {
                               key={fileIdx}
                               className="flex items-center justify-between p-5 bg-[#eef5ee] rounded-2xl hover:bg-[#dde8dd] transition-all duration-300 border-2 border-[#c8dec8] hover:border-[#a8cca8] hover:shadow-lg hover:pl-8"
                             >
-                              <div className="flex items-center min-w-0 flex-1 mr-4">
-                                <div className="w-12 h-12 bg-[#1a3aa3] rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
-                                  <FileIcon className="w-6 h-6 text-white" />
+                              <div className="flex items-center min-w-0 flex-1 mr-3">
+                                <div className="w-9 h-9 bg-[#1a3aa3] rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                  <FileIcon className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <h6 className="text-lg font-bold text-[#2a2520] truncate mb-1">
+                                  <h6 className="text-sm font-bold text-[#2a2520] mb-0.5 line-clamp-2 break-all">
                                     {file.name}
                                   </h6>
                                   {file.size && (
-                                    <p className="text-sm font-medium text-[#6b6560]">
+                                    <p className="text-xs font-medium text-[#6b6560]">
                                       {(file.size / 1024).toFixed(1)} KB
                                     </p>
                                   )}
@@ -318,10 +315,9 @@ function ApothecaryPage() {
                               </div>
                               <Button
                                 onClick={() => handleFileDownload(file, subfolder.path)}
-                                className="bg-gradient-to-r from-[#2d6b2d] to-[#245a24] hover:from-[#245a24] hover:to-[#1a481a] text-white font-bold px-3 sm:px-5 py-2 sm:py-3 rounded-xl text-sm sm:text-base shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-1.5 shrink-0"
+                                className="bg-gradient-to-r from-[#2d6b2d] to-[#245a24] hover:from-[#245a24] hover:to-[#1a481a] text-white font-semibold px-3 py-1.5 rounded-full text-xs shadow-md hover:shadow-lg transition-all duration-300 shrink-0"
                               >
-                                <span className="text-lg">📥</span>
-                                <span>Λήψη</span>
+                                Λήψη
                               </Button>
                             </div>
                           ))}
@@ -359,16 +355,16 @@ function ApothecaryPage() {
                   key={idx}
                   className="flex items-center justify-between p-6 bg-gradient-to-r from-[#eef5ee] to-[#dde8dd] rounded-2xl hover:from-[#dde8dd] hover:to-[#c8dec8] transition-all duration-300 border-2 border-[#c8dec8] hover:border-[#a8cca8] shadow-lg hover:shadow-xl hover:pl-8"
                 >
-                  <div className="flex items-center min-w-0 flex-1 mr-4">
-                    <div className="w-12 h-12 bg-[#1a3aa3] rounded-xl flex items-center justify-center mr-4 flex-shrink-0 shadow-lg">
-                      <FileIcon className="w-6 h-6 text-white" />
+                  <div className="flex items-center min-w-0 flex-1 mr-3">
+                    <div className="w-9 h-9 bg-[#1a3aa3] rounded-lg flex items-center justify-center mr-3 flex-shrink-0 shadow-md">
+                      <FileIcon className="w-5 h-5 text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h6 className="text-lg font-bold text-[#2a2520] truncate mb-1">
+                      <h6 className="text-sm font-bold text-[#2a2520] mb-0.5 line-clamp-2 break-all">
                         {file.name}
                       </h6>
                       {file.size && (
-                        <p className="text-sm font-medium text-[#6b6560]">
+                        <p className="text-xs font-medium text-[#6b6560]">
                           {(file.size / 1024).toFixed(1)} KB
                         </p>
                       )}
@@ -376,10 +372,9 @@ function ApothecaryPage() {
                   </div>
                   <Button
                     onClick={() => handleFileDownload(file, content.folderName)}
-                    className="bg-gradient-to-r from-[#2d6b2d] to-[#245a24] hover:from-[#245a24] hover:to-[#1a481a] text-white font-bold px-8 py-4 rounded-xl text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 min-w-[120px]"
+                    className="bg-gradient-to-r from-[#2d6b2d] to-[#245a24] hover:from-[#245a24] hover:to-[#1a481a] text-white font-semibold px-3 py-1.5 rounded-full text-xs shadow-md hover:shadow-lg transition-all duration-300 shrink-0"
                   >
-                    <span className="text-lg">📥</span>
-                    <span>Λήψη</span>
+                    Λήψη
                   </Button>
                 </div>
               ))}
