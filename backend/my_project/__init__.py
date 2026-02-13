@@ -23,7 +23,11 @@ def create_app():
 
     # Override with environment variables if present
     if os.environ.get('DATABASE_URL'):
-        app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+        db_url = os.environ['DATABASE_URL']
+        # Render/Heroku provides postgres:// but SQLAlchemy requires postgresql://
+        if db_url.startswith('postgres://'):
+            db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     if os.environ.get('SECRET_KEY'):
         app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
     if os.environ.get('JWT_SECRET_KEY'):
@@ -31,6 +35,10 @@ def create_app():
 
     app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', '../content')
     app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+    app.config['FRONTEND_DIR'] = os.environ.get(
+        'FRONTEND_DIR',
+        os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'dist')
+    )
 
     # Enable CORS for all origins (for development)
     CORS(app, origins="*")
@@ -94,6 +102,13 @@ def create_app():
     with app.app_context():
         # Import models to ensure they are registered
         from .models import User, Category, Discussion, Post, FileItem
+
+        # Enable pgvector extension (required for Vector columns)
+        try:
+            db.session.execute(db.text('CREATE EXTENSION IF NOT EXISTS vector'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()  # Fails on SQLite (testing) — that's OK
 
         # Create all tables
         db.create_all()

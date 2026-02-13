@@ -5,7 +5,7 @@ import {
   SkeletonHeading, 
   SkeletonButton, 
   SkeletonCard 
-} from '@/components/ui/Skeleton';
+} from '@/components/ui/skeleton';
 
 /**
  * Skeleton component for ApothecaryPage loading state

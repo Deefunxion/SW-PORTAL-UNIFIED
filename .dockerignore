@@ -1,0 +1,17 @@
+node_modules
+.git
+*.pyc
+__pycache__
+.env
+.venv
+*.db
+content/
+uploads/
+logs/
+frontend/node_modules
+frontend/.vite
+SW_PORTAL_demo/
+docs/
+tests/
+*.md
+!requirements.txt
