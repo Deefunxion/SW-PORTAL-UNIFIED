@@ -805,7 +805,7 @@ def health_check():
         
         # Database health check
         try:
-            db.session.execute('SELECT 1')
+            db.session.execute(db.text('SELECT 1'))
             health_status['components']['database'] = {
                 'status': 'healthy',
                 'details': 'Connection successful'

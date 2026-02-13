@@ -83,16 +83,9 @@ def create_app():
     # Initialize HTTP client
     app.http_client = httpx.Client()
 
-    # Initialize ChromaDB (optional — used by legacy endpoints)
-    try:
-        import chromadb
-        app.chroma_client = chromadb.Client()
-        app.document_collection = app.chroma_client.get_or_create_collection(
-            name="sw_portal_documents"
-        )
-    except Exception:
-        app.chroma_client = None
-        app.document_collection = None
+    # ChromaDB removed — using pgvector for embeddings
+    app.chroma_client = None
+    app.document_collection = None
 
     # Register blueprints
     from .routes import main_bp
@@ -113,40 +106,46 @@ def create_app():
         # Create all tables
         db.create_all()
 
-        # Seed database with default users if they don't exist
-        if User.query.count() == 0:
-            print("Seeding database with default users...")
-            default_users = [
-                {'username': 'admin', 'email': 'admin@portal.gr', 'password': 'admin123', 'role': 'admin'},
-                {'username': 'staff', 'email': 'staff@portal.gr', 'password': 'staff123', 'role': 'staff'},
-                {'username': 'guest', 'email': 'guest@portal.gr', 'password': 'guest123', 'role': 'guest'}
-            ]
-            for user_data in default_users:
-                new_user = User(
-                    username=user_data['username'],
-                    email=user_data['email'],
-                    role=user_data['role']
-                )
-                new_user.set_password(user_data['password'])
-                db.session.add(new_user)
-            db.session.commit()
-            print("Default users created.")
+        # Seed database with default data (guarded against race conditions
+        # when multiple Gunicorn workers start simultaneously)
+        try:
+            if User.query.count() == 0:
+                print("Seeding database with default users...")
+                default_users = [
+                    {'username': 'admin', 'email': 'admin@portal.gr', 'password': 'admin123', 'role': 'admin'},
+                    {'username': 'staff', 'email': 'staff@portal.gr', 'password': 'staff123', 'role': 'staff'},
+                    {'username': 'guest', 'email': 'guest@portal.gr', 'password': 'guest123', 'role': 'guest'}
+                ]
+                for user_data in default_users:
+                    new_user = User(
+                        username=user_data['username'],
+                        email=user_data['email'],
+                        role=user_data['role']
+                    )
+                    new_user.set_password(user_data['password'])
+                    db.session.add(new_user)
+                db.session.commit()
+                print("Default users created.")
+        except Exception:
+            db.session.rollback()  # Another worker already seeded
 
-        # Seed database with default categories if they don't exist
-        if Category.query.count() == 0:
-            print("Seeding database with default forum categories...")
-            default_categories = [
-                {'title': 'Γενικά Θέματα', 'description': 'Συζητήσεις για οτιδήποτε δεν ταιριάζει στις άλλες κατηγορίες.'},
-                {'title': 'Νομικά Θέματα', 'description': 'Ερωτήσεις και συζητήσεις νομικού περιεχομένου.'},
-                {'title': 'Δύσκολα Θέματα', 'description': 'Για πιο σύνθετα και απαιτητικά ζητήματα.'},
-                {'title': 'Νέα-Ανακοινώσεις', 'description': 'Ενημερώσεις και ανακοινώσεις από τη διαχείριση.'},
-                {'title': 'Προτάσεις', 'description': 'Προτάσεις για τη βελτίωση του portal.'}
-            ]
-            for cat_data in default_categories:
-                new_cat = Category(title=cat_data['title'], description=cat_data['description'])
-                db.session.add(new_cat)
-            db.session.commit()
-            print("Default categories created.")
+        try:
+            if Category.query.count() == 0:
+                print("Seeding database with default forum categories...")
+                default_categories = [
+                    {'title': 'Γενικά Θέματα', 'description': 'Συζητήσεις για οτιδήποτε δεν ταιριάζει στις άλλες κατηγορίες.'},
+                    {'title': 'Νομικά Θέματα', 'description': 'Ερωτήσεις και συζητήσεις νομικού περιεχομένου.'},
+                    {'title': 'Δύσκολα Θέματα', 'description': 'Για πιο σύνθετα και απαιτητικά ζητήματα.'},
+                    {'title': 'Νέα-Ανακοινώσεις', 'description': 'Ενημερώσεις και ανακοινώσεις από τη διαχείριση.'},
+                    {'title': 'Προτάσεις', 'description': 'Προτάσεις για τη βελτίωση του portal.'}
+                ]
+                for cat_data in default_categories:
+                    new_cat = Category(title=cat_data['title'], description=cat_data['description'])
+                    db.session.add(new_cat)
+                db.session.commit()
+                print("Default categories created.")
+        except Exception:
+            db.session.rollback()  # Another worker already seeded
 
     # Ensure content directory exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
