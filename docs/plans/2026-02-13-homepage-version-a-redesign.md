@@ -1,3 +1,57 @@
+# HomePage Version A "Hellenic Marble" Redesign
+
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
+**Goal:** Redesign `HomePage.jsx` to match the Version A "Hellenic Marble" concept from `SW_PORTAL_demo/design-concepts.html`, fixing layout, typography, badges, buttons, and bottom sections.
+
+**Architecture:** Single-file visual redesign of `frontend/src/pages/HomePage.jsx`. No API changes, no new dependencies. Replace shadcn Card/Button with plain divs + Tailwind classes for precise control matching the HTML concept. Keep all state logic, useEffect, and data fetching identical.
+
+**Tech Stack:** React, Tailwind CSS v4 (arbitrary values), Lucide icons, existing Literata/Fira Sans fonts
+
+---
+
+## Reference: Design Concept
+
+The approved design is Version A "Hellenic Marble" from `SW_PORTAL_demo/design-concepts.html` (view by opening in browser → A. Hellenic Marble → Home tab). Key design tokens:
+
+- **Primary:** `#1a3aa3` (navy), `#2548b8` (royal blue), `#3d5cc9` (medium blue)
+- **Gold accent:** `#b8942e`, `#9a7a24`
+- **Background:** ivory `#f7f4ef` (page), `#faf8f4` (card hover areas)
+- **Borders:** `#e8e2d8` (cards), `#f0ebe3` (dividers), `#ece7de` (section heads)
+- **Text:** `#1a2a1a` (headings), `#2a2520` (body), `#6b6560` (descriptions), `#8a8580` (muted)
+- **Serif headings:** `font-family: 'Literata', serif`
+- **Badge colors:** blue `bg-[#eef1f8] text-[#1a3aa3] border-[#d0d8ee]`, gold `bg-[#faf5e8] text-[#8a6d1b] border-[#e8ddb8]`, green `bg-[#eef5ee] text-[#2d6b2d] border-[#c8dec8]`
+
+## What Changes
+
+| Problem | Fix |
+|---------|-----|
+| Cards stack vertically in single column | 3-column grid at desktop (`lg:grid-cols-3`) |
+| "Μετάβαση" buttons are oversized full-width blue blocks | Subtle text link with arrow: "Μετάβαση →" |
+| Tags look like plain text | Proper rounded pill badges with colored backgrounds/borders |
+| Font sizes too small | 50px hero heading, 22px card titles, 38px stat numbers |
+| Bottom sections feel like afterthoughts | Matching card styling, proper headers with icon boxes |
+
+## What Does NOT Change
+
+- State management (`useState`, `useEffect`)
+- API calls (`/api/files/structure`, `/api/discussions`, `/api/categories`)
+- Data structure (stats object, recentActivity array)
+- Route links (`/apothecary`, `/forum`, `/assistant`)
+- No new dependencies added
+
+---
+
+### Task 1: Rewrite HomePage.jsx with Version A design
+
+**Files:**
+- Modify: `frontend/src/pages/HomePage.jsx` (full rewrite of JSX + minor data array update)
+
+**Step 1: Replace the entire file contents**
+
+Replace `frontend/src/pages/HomePage.jsx` with:
+
+```jsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -274,3 +328,78 @@ function HomePage() {
 }
 
 export default HomePage;
+```
+
+**Key changes from old code:**
+- Removed imports: `Card`, `CardContent`, `CardDescription`, `CardHeader`, `CardTitle`, `Button`, `Users`, `FileText`
+- Kept imports: `Files`, `MessageSquare`, `Bot`, `Download`, `TrendingUp`, `Clock`, `ArrowRight`
+- `features` array: renamed `features` field to `badges` (now objects with `{label, style}` instead of plain strings), added `gradient`/`accentGradient`/`statColor` fields, removed `color` field
+- Added `quickActions` array for bottom-right section
+- Hero: larger text (50px on desktop), gradient text for "SW Portal"
+- Cards: plain divs with Tailwind instead of shadcn Card components, 4px gradient accent bar, proper rounded pill badges, "Μετάβαση →" text link replaces full-width Button
+- Bottom: matching rounded-2xl card containers with icon box headers
+
+---
+
+### Task 2: Verify build and existing tests pass
+
+**Step 1: Run ESLint**
+
+Run: `cd /d/LAPTOP_BACKUP/Development/SW-PORTAL-UNIFIED/frontend && npx pnpm lint`
+
+Expected: No errors. Warnings about unused vars are OK as long as no errors.
+
+If there are unused import warnings, go back and fix them.
+
+**Step 2: Run Vite build**
+
+Run: `cd /d/LAPTOP_BACKUP/Development/SW-PORTAL-UNIFIED/frontend && npx pnpm build`
+
+Expected: Build succeeds with no errors. This verifies JSX syntax, import paths, and Tailwind class processing.
+
+**Step 3: Run existing frontend tests**
+
+Run: `cd /d/LAPTOP_BACKUP/Development/SW-PORTAL-UNIFIED/frontend && npx pnpm test --run`
+
+Expected: All existing tests pass. No HomePage-specific tests exist, but this verifies nothing else broke.
+
+**Step 4: Visual check (manual)**
+
+Run: `cd /d/LAPTOP_BACKUP/Development/SW-PORTAL-UNIFIED/frontend && npx pnpm dev`
+
+Open `http://localhost:5173/SW-PORTAL-UNIFIED/` in browser and verify:
+- [ ] 3 cards display side-by-side on desktop
+- [ ] Gradient accent bars visible at top of each card
+- [ ] Badges are rounded colored pills, not plain text
+- [ ] "Μετάβαση →" is a text link, not a full-width button
+- [ ] Stat numbers are large serif text
+- [ ] Bottom sections have proper icon-box headers
+- [ ] Quick actions are a 2x2 grid with hover lift
+- [ ] Mobile: cards stack to single column, text sizes reduce gracefully
+
+---
+
+### Task 3: Commit
+
+**Step 1: Stage and commit**
+
+```bash
+cd /d/LAPTOP_BACKUP/Development/SW-PORTAL-UNIFIED
+git add frontend/src/pages/HomePage.jsx
+git commit -m "$(cat <<'EOF'
+style: redesign HomePage with Version A Hellenic Marble layout
+
+- 3-column feature card grid (was single-column stack)
+- Replace full-width "Μετάβαση" buttons with subtle arrow links
+- Proper rounded pill badges with colored backgrounds/borders
+- Large serif stat numbers (38px) and heading hierarchy (50px hero)
+- Bottom sections with icon-box headers and matching card styling
+- Quick actions as 2x2 grid with hover lift effects
+- Remove shadcn Card/Button deps — plain divs + Tailwind for precision
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+EOF
+)"
+```
+
+Expected: Clean commit on `revival/demo-prep` branch.

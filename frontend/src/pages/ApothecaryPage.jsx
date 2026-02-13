@@ -261,7 +261,7 @@ function ApothecaryPage() {
                   <div key={idx} className="border-2 border-[#d0d8ee] rounded-xl overflow-hidden">
                     {/* Subfolder Header */}
                     <div
-                      className="flex items-center justify-between p-6 bg-gradient-to-r from-[#eef1f8] to-[#dde4f5] hover:from-[#dde4f5] hover:to-[#d0d8ee] cursor-pointer transition-all duration-300 hover:shadow-md"
+                      className="flex items-center justify-between p-4 sm:p-5 bg-gradient-to-r from-[#eef1f8] to-[#dde4f5] hover:from-[#dde4f5] hover:to-[#d0d8ee] cursor-pointer transition-all duration-300 hover:shadow-md"
                       onClick={() => handleSubfolderClick(subfolder, categoryIndex)}
                     >
                       <div className="flex items-center">
@@ -318,7 +318,7 @@ function ApothecaryPage() {
                               </div>
                               <Button
                                 onClick={() => handleFileDownload(file, subfolder.path)}
-                                className="bg-gradient-to-r from-[#2d6b2d] to-[#245a24] hover:from-[#245a24] hover:to-[#1a481a] text-white font-bold px-8 py-4 rounded-xl text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 min-w-[120px]"
+                                className="bg-gradient-to-r from-[#2d6b2d] to-[#245a24] hover:from-[#245a24] hover:to-[#1a481a] text-white font-bold px-3 sm:px-5 py-2 sm:py-3 rounded-xl text-sm sm:text-base shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-1.5 shrink-0"
                               >
                                 <span className="text-lg">📥</span>
                                 <span>Λήψη</span>
@@ -409,19 +409,19 @@ function ApothecaryPage() {
   if (isLoading) return <ApothecaryPageSkeleton />;
 
   return (
-    <div className="container mx-auto px-12 py-16 max-w-7xl">
+    <div className="mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-12 max-w-7xl">
       {/* Header */}
-      <header className="mb-20">
-        <h1 className="text-7xl font-bold text-[#1a3aa3] mb-6 leading-tight" style={{fontFamily: "'Literata', serif"}}>
+      <header className="mb-8 sm:mb-12">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1a3aa3] mb-4 leading-tight" style={{fontFamily: "'Literata', serif"}}>
           <FontAwesomeIcon icon={faBookOpen} className="mr-3" /> Αρχειοθήκη
         </h1>
-        <p className="text-2xl text-[#8a8580] max-w-4xl leading-relaxed">
+        <p className="text-base sm:text-lg lg:text-xl text-[#8a8580] max-w-4xl leading-relaxed">
           Διαχείριση και πρόσβαση στα επίσημα έγγραφα και φάκελα της Περιφέρειας Αττικής
         </p>
       </header>
 
       {/* Main Categories Navigation - ENHANCED */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-20">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 mb-8 sm:mb-12">
         {[
           { title: 'Αποφάσεις Αδειοδότησης', icon: faScaleBalanced, desc: 'ΚΑΑ, ΚΔΑΠ, ΚΗΦΗ, ΜΦΗ, ΣΥΔ', color: 'from-[#1a3aa3] to-[#152e82]', hoverColor: 'hover:from-[#152e82] hover:to-[#0f2260]' },
           { title: 'Νομοθεσία Κοινωνικής Μέριμνας', icon: faClipboard, desc: 'Νόμοι και Κανονισμοί', color: 'from-[#2d6b2d] to-[#245a24]', hoverColor: 'hover:from-[#245a24] hover:to-[#1a481a]' },
@@ -436,16 +436,16 @@ function ApothecaryPage() {
               className="group hover:shadow-2xl transition-all duration-300 cursor-pointer border-0 shadow-xl hover:scale-[1.02] hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(26,58,163,0.14)] rounded-3xl overflow-hidden bg-gradient-to-br from-white to-[#faf8f4]"
               onClick={() => handleCategoryClick(category.title, index)}
             >
-              <CardContent className="p-8">
-                <div className={`w-20 h-20 bg-gradient-to-br ${category.color} ${category.hoverColor} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl group-hover:scale-110 transition-all duration-300`}>
-                  <span className="text-3xl filter drop-shadow-lg text-white">
+              <CardContent className="p-5 sm:p-6">
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br ${category.color} ${category.hoverColor} rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-all duration-300`}>
+                  <span className="text-xl sm:text-2xl filter drop-shadow-lg text-white">
                     <FontAwesomeIcon icon={category.icon} />
                   </span>
                 </div>
-                <h3 className="text-2xl font-bold text-[#1a3aa3] mb-4 text-center group-hover:text-[#1a3aa3] transition-colors leading-tight" style={{fontFamily: "'Literata', serif"}}>
+                <h3 className="text-lg sm:text-xl font-bold text-[#1a3aa3] mb-2 text-center group-hover:text-[#1a3aa3] transition-colors leading-tight" style={{fontFamily: "'Literata', serif"}}>
                   {category.title}
                 </h3>
-                <p className="text-lg font-medium text-[#6b6560] text-center leading-relaxed mb-6">
+                <p className="text-sm sm:text-base font-medium text-[#6b6560] text-center leading-relaxed mb-4">
                   {category.desc}
                 </p>
                 {/* Dropdown indicator */}
@@ -466,8 +466,8 @@ function ApothecaryPage() {
 
             {/* Dropdown Content */}
             {activeDropdown === index && (
-              <Card className="border-3 border-[#b0c0e0] shadow-2xl rounded-3xl overflow-hidden animate-in slide-in-from-top-4 duration-500">
-                <CardContent className="p-10">{renderDropdownContent(dropdownContent[index], index)}
+              <Card className="border-2 border-[#b0c0e0] shadow-xl rounded-2xl overflow-hidden animate-in slide-in-from-top-4 duration-500">
+                <CardContent className="p-4 sm:p-6">{renderDropdownContent(dropdownContent[index], index)}
                 </CardContent>
               </Card>
             )}
@@ -476,31 +476,31 @@ function ApothecaryPage() {
       </div>
 
       {/* Search & Controls - ENHANCED */}
-      <Card className="p-8 mb-12 shadow-2xl rounded-3xl border-0 bg-gradient-to-br from-[#eef1f8] via-[#f0ede6] to-[#eef1f8]">
-        <div className="flex flex-col lg:flex-row gap-8 items-center">
-          <div className="relative flex-1 max-w-2xl">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#8a8580]" />
+      <Card className="p-4 sm:p-6 mb-8 sm:mb-10 shadow-xl rounded-2xl border-0 bg-gradient-to-br from-[#eef1f8] via-[#f0ede6] to-[#eef1f8]">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 items-stretch lg:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8a8580]" />
             <Input
               placeholder="Αναζήτηση στα αρχεία και φάκελα..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-16 pr-6 py-6 text-lg font-medium border-3 border-gray-200 rounded-2xl focus:border-[#1a3aa3] focus:ring-4 focus:ring-[#1a3aa3]/20 transition-all shadow-lg bg-white"
+              className="pl-12 pr-4 py-3 sm:py-4 text-base font-medium border-2 border-gray-200 rounded-xl focus:border-[#1a3aa3] focus:ring-4 focus:ring-[#1a3aa3]/20 transition-all shadow-md bg-white"
             />
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-3 sm:gap-4">
             <Button
               onClick={() => openUploadModal('')}
-              className="bg-gradient-to-r from-[#1a3aa3] to-[#152e82] hover:from-[#152e82] hover:to-[#0f2260] text-white font-bold px-8 py-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 text-base min-h-[64px] flex items-center space-x-3"
+              className="flex-1 lg:flex-none bg-gradient-to-r from-[#1a3aa3] to-[#152e82] hover:from-[#152e82] hover:to-[#0f2260] text-white font-bold px-4 sm:px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base min-h-[48px] flex items-center justify-center gap-2"
             >
-              <Upload className="w-6 h-6" />
-              <span>Ανέβασμα Αρχείου</span>
+              <Upload className="w-5 h-5" />
+              <span>Ανέβασμα</span>
             </Button>
             <Button
               variant="outline"
               onClick={() => setShowFolderModal(true)}
-              className="border-3 border-[#1a3aa3] text-[#1a3aa3] hover:bg-[#1a3aa3] hover:text-white font-bold px-8 py-6 rounded-2xl transition-all duration-300 transform hover:scale-105 text-base min-h-[64px] flex items-center space-x-3 bg-white shadow-lg hover:shadow-xl"
+              className="flex-1 lg:flex-none border-2 border-[#1a3aa3] text-[#1a3aa3] hover:bg-[#1a3aa3] hover:text-white font-bold px-4 sm:px-6 py-3 rounded-xl transition-all duration-300 text-sm sm:text-base min-h-[48px] flex items-center justify-center gap-2 bg-white shadow-md hover:shadow-lg"
             >
-              <FolderPlus className="w-6 h-6" />
+              <FolderPlus className="w-5 h-5" />
               <span>Νέος Φάκελος</span>
             </Button>
           </div>
@@ -511,17 +511,17 @@ function ApothecaryPage() {
 
       {/* Empty State - ENHANCED */}
       {!files.length && (
-        <Card className="py-24 text-center shadow-2xl rounded-3xl border-0 bg-gradient-to-br from-[#faf8f4] via-[#eef1f8] to-[#f0ede6]">
-          <FileIcon className="w-28 h-28 mx-auto text-[#c0b89e] mb-8" />
-          <h3 className="text-4xl font-bold text-[#2a2520] mb-6">Δεν βρέθηκαν αρχεία</h3>
-          <p className="text-xl font-medium text-[#6b6560] mb-12 max-w-2xl mx-auto leading-relaxed">
+        <Card className="py-12 sm:py-16 text-center shadow-xl rounded-2xl border-0 bg-gradient-to-br from-[#faf8f4] via-[#eef1f8] to-[#f0ede6]">
+          <FileIcon className="w-16 h-16 sm:w-20 sm:h-20 mx-auto text-[#c0b89e] mb-6" />
+          <h3 className="text-2xl sm:text-3xl font-bold text-[#2a2520] mb-4">Δεν βρέθηκαν αρχεία</h3>
+          <p className="text-base sm:text-lg font-medium text-[#6b6560] mb-8 max-w-xl mx-auto px-4 leading-relaxed">
             Ανεβάστε τα πρώτα έγγραφα για να ξεκινήσετε τη διαχείριση της αρχειοθήκης σας
           </p>
           <Button
             onClick={() => openUploadModal('')}
-            className="bg-gradient-to-r from-[#1a3aa3] to-[#152e82] hover:from-[#152e82] hover:to-[#0f2260] text-white font-bold px-12 py-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 text-xl min-h-[72px] flex items-center space-x-4 mx-auto"
+            className="bg-gradient-to-r from-[#1a3aa3] to-[#152e82] hover:from-[#152e82] hover:to-[#0f2260] text-white font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-base sm:text-lg min-h-[48px] sm:min-h-[56px] flex items-center gap-3 mx-auto"
           >
-            <Upload className="w-7 h-7" />
+            <Upload className="w-5 h-5 sm:w-6 sm:h-6" />
             <span>Ανέβασμα Πρώτου Αρχείου</span>
           </Button>
         </Card>
@@ -529,12 +529,12 @@ function ApothecaryPage() {
 
       {/* Modals - Unchanged */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur flex items-center justify-center z-50 p-6">
-          <Card className="w-full max-w-2xl rounded-3xl shadow-2xl">
-            <CardHeader className="p-8">
-              <CardTitle className="text-3xl font-bold text-[#1a3aa3]">Ανέβασμα Αρχείων</CardTitle>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg sm:max-w-xl rounded-2xl shadow-2xl">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-[#1a3aa3]">Ανέβασμα Αρχείων</CardTitle>
             </CardHeader>
-            <CardContent className="px-8 pb-8">
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               <DropZone onDrop={handleFileUpload} />
               {uploadProgress > 0 && (
                 <div className="mt-8">
@@ -559,12 +559,12 @@ function ApothecaryPage() {
       )}
 
       {showFolderModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur flex items-center justify-center z-50 p-6">
-          <Card className="w-full max-w-2xl rounded-3xl shadow-2xl">
-            <CardHeader className="p-8">
-              <CardTitle className="text-3xl font-bold text-[#1a3aa3]">Δημιουργία Νέου Φακέλου</CardTitle>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg sm:max-w-xl rounded-2xl shadow-2xl">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-[#1a3aa3]">Δημιουργία Νέου Φακέλου</CardTitle>
             </CardHeader>
-            <CardContent className="px-8 pb-8">
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               <Input
                 placeholder="Εισάγετε το όνομα του φακέλου..."
                 value={newFolderName}

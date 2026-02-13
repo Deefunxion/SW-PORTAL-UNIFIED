@@ -99,9 +99,7 @@ function Navigation() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-[#1a3aa3] font-bold text-sm">SW</span>
-            </div>
+            <img src={`${import.meta.env.BASE_URL}favicon.ico`} alt="SW Portal" className="w-8 h-8 rounded-lg" />
             <span className="text-xl font-bold" style={{fontFamily: "'Literata', serif"}}>SW PORTAL</span>
             <Badge variant="secondary" className="hidden sm:inline-flex">
               Περιφέρεια Αττικής
@@ -160,7 +158,7 @@ function Navigation() {
 
                 {/* User Dropdown Menu */}
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-[#e8e2d8] py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-white rounded-lg shadow-lg border border-[#e8e2d8] py-2 z-50">
                     <div className="px-4 py-3 border-b border-[#e8e2d8]">
                       <div className="flex items-center space-x-3">
                         <Avatar className="w-10 h-10">
@@ -455,7 +453,7 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <Router basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
         <AppContent />
       </Router>
     </AuthProvider>
