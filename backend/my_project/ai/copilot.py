@@ -73,8 +73,8 @@ def build_messages(
             "content": f"Σχετικά έγγραφα για την ερώτηση:\n\n{context_text}",
         })
 
-    # Add chat history (last 6 messages)
-    for msg in chat_history[-6:]:
+    # Add chat history (last 20 messages)
+    for msg in chat_history[-20:]:
         messages.append({
             "role": msg.get("role", "user"),
             "content": msg.get("content", ""),

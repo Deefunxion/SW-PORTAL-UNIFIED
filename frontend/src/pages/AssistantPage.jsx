@@ -58,7 +58,7 @@ function AssistantPage() {
           role: m.type === 'user' ? 'user' : 'assistant',
           content: m.content
         }))
-        .slice(-6);
+        .slice(-20);
 
       const { data } = await api.post('/api/chat', {
         message: text,
