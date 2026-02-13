@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 
 # Import db and models from the new consolidated structure
-from .extensions import db
+from .extensions import db, limiter
 from .models import (
     User, Category, Discussion, Post, FileItem, Notification,
     PostAttachment, PostReaction, PostMention, UserReputation,
@@ -162,6 +162,7 @@ def scan_content_directory():
 # ============================================================================
 
 @main_bp.route('/api/auth/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def login():
     """User login endpoint"""
     data = request.get_json()
@@ -746,6 +747,7 @@ def mark_notifications_read():
 
 @main_bp.route('/api/chat', methods=['POST'])
 @jwt_required()
+@limiter.limit("20 per minute")
 def ai_chat():
     """AI Assistant — chat with RAG context from social welfare documents."""
     data = request.get_json()

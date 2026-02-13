@@ -58,3 +58,15 @@ def test_get_messages_requires_auth(client):
     """GET /api/conversations/<id>/messages must require JWT."""
     response = client.get('/api/conversations/1/messages')
     assert response.status_code == 401
+
+
+def test_login_rate_limited(client):
+    """Login should be rate-limited after too many failed attempts."""
+    # Make 6 rapid failed login attempts (limit is 5/minute)
+    for i in range(6):
+        response = client.post('/api/auth/login', json={
+            'username': 'nonexistent',
+            'password': 'wrong'
+        })
+    # The 6th request should be rate-limited
+    assert response.status_code == 429

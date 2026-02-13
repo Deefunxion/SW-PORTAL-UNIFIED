@@ -4,9 +4,18 @@ Centralizes initialization of Flask extensions to avoid circular imports
 """
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Initialize SQLAlchemy without binding to app
 db = SQLAlchemy()
+
+# Initialize rate limiter (no default limits — applied per-route)
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri="memory://",
+    default_limits=[]
+)
 
 # Initialize Celery (optional — only needed for background tasks)
 try:

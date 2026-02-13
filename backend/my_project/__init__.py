@@ -44,9 +44,10 @@ def create_app():
     CORS(app, origins=app.config.get('CORS_ORIGINS', ['http://localhost:5173']))
 
     # Initialize extensions
-    from .extensions import db, celery
+    from .extensions import db, celery, limiter
     from flask_jwt_extended import JWTManager
     db.init_app(app)
+    limiter.init_app(app)
     JWTManager(app)
 
     # Configure Celery
