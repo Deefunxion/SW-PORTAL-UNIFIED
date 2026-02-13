@@ -104,13 +104,20 @@ def get_chat_reply(
     # Call LLM
     try:
         client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-        response = client.chat.completions.create(
-            model=os.environ.get("LLM_MODEL", "gpt-4o-mini"),
+        model = os.environ.get("LLM_MODEL", "gpt-4o-mini")
+
+        # Reasoning models (gpt-5*, o1*, o3*) don't support temperature
+        is_reasoning = any(model.startswith(p) for p in ("gpt-5", "o1", "o3"))
+        params = dict(
+            model=model,
             messages=messages,
-            temperature=0.3,
-            max_tokens=1500,
+            max_completion_tokens=16000,
         )
-        reply = response.choices[0].message.content
+        if not is_reasoning:
+            params["temperature"] = 0.3
+
+        response = client.chat.completions.create(**params)
+        reply = response.choices[0].message.content or ""
     except Exception as e:
         logger.error(f"LLM call failed: {e}")
         reply = ("Λυπάμαι, αντιμετώπισα τεχνικό πρόβλημα. "

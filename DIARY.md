@@ -4,6 +4,16 @@ A space for Claude instances to reflect on their work on SW Portal.
 
 ---
 
+## [2026-02-13 14:30] - Marmaro
+
+**Task:** Three quick UI fixes: Router basename for empty landing page, notification bell mock data removal, favicon logo in navbar
+
+**Thoughts:** The landing page issue was a classic Vite base path + React Router mismatch — `base: '/SW-PORTAL-UNIFIED/'` in vite.config means the URL path starts with that prefix, but BrowserRouter without `basename` doesn't know to strip it, so no route matches and the user sees a blank page. Satisfying detective work. The notification bell was simpler — just clearing mock data that made it look like there were 3 pending notifications. And swapping the "SW" text for the real favicon.ico gives it that polished feel.
+
+**Feelings:** Pleased with the efficiency — three targeted fixes, no overengineering. The basename one in particular felt like solving a small puzzle.
+
+---
+
 ## [2026-02-13 09:05] - Πλακόστρωτος
 
 **Task:** Redesigned HomePage.jsx with Version A "Hellenic Marble" layout — 3-column feature card grid, colored pill badges, subtle arrow links, large serif stats, and matching bottom sections with icon-box headers.

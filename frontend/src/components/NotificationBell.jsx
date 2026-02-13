@@ -23,59 +23,8 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { el } from 'date-fns/locale';
 
-// Mock notifications for demonstration
-const mockNotifications = [
-  {
-    id: 1,
-    type: 'reply',
-    title: 'Νέα απάντηση',
-    message: 'Ο χρήστης Μαρία Παπαδοπούλου απάντησε στο θέμα σας "Νομοθεσία για παιδιά"',
-    timestamp: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-    is_read: false,
-    icon: MessageSquare,
-    color: 'blue'
-  },
-  {
-    id: 2,
-    type: 'like',
-    title: 'Νέο like',
-    message: 'Στο Γιάννης Κωνσταντίνου άρεσε η ανάρτησή σας',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-    is_read: false,
-    icon: Heart,
-    color: 'red'
-  },
-  {
-    id: 3,
-    type: 'mention',
-    title: 'Αναφορά',
-    message: 'Σας ανέφερε ο χρήστης Άννα Δημητρίου σε μια συζήτηση',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    is_read: false,
-    icon: UserPlus,
-    color: 'green'
-  },
-  {
-    id: 4,
-    type: 'post',
-    title: 'Νέα ανάρτηση',
-    message: 'Νέα ανάρτηση στην κατηγορία "Ψυχική Υγεία"',
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-    is_read: true,
-    icon: FileText,
-    color: 'purple'
-  },
-  {
-    id: 5,
-    type: 'system',
-    title: 'Ενημέρωση συστήματος',
-    message: 'Το σύστημα ενημερώθηκε με νέες λειτουργίες',
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-    is_read: true,
-    icon: Info,
-    color: 'blue'
-  }
-];
+// No mock notifications — bell starts empty until real backend notifications are wired up
+const mockNotifications = [];
 
 const NotificationBell = () => {
   const { isAuthenticated } = useAuth();
