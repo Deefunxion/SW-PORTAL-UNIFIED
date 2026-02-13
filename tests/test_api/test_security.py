@@ -144,3 +144,31 @@ def test_ai_reply_includes_disclaimer():
     """AI replies should include advisory disclaimer."""
     from my_project.ai.copilot import DISCLAIMER_TEXT
     assert 'ενδεικτικές' in DISCLAIMER_TEXT or 'ενδεικτικός' in DISCLAIMER_TEXT
+
+
+def test_delete_user_requires_admin(client, auth_headers):
+    """DELETE /api/admin/users/<id> must require admin role."""
+    response = client.delete('/api/admin/users/999', headers=auth_headers)
+    assert response.status_code == 403
+
+
+def test_delete_user_anonymizes_data(client, admin_headers, app):
+    """Admin can anonymize a user's data (GDPR right to erasure)."""
+    from my_project.models import User
+    from my_project.extensions import db
+
+    # Create a user to delete
+    with app.app_context():
+        user = User(username='to_delete', email='delete@test.com', role='guest')
+        user.set_password('pass123')
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    response = client.delete(f'/api/admin/users/{user_id}', headers=admin_headers)
+    assert response.status_code == 200
+
+    with app.app_context():
+        user = db.session.get(User, user_id)
+        assert user.username.startswith('deleted_')
+        assert user.email.startswith('deleted_')

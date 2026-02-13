@@ -810,6 +810,52 @@ def knowledge_stats():
 
 
 # ============================================================================
+# ADMIN ROUTES
+# ============================================================================
+
+@main_bp.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@jwt_required()
+def delete_user(user_id):
+    """Anonymize a user's data (GDPR right to erasure). Admin only."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Don't allow deleting yourself
+    current_user_id = int(get_jwt_identity())
+    if user.id == current_user_id:
+        return jsonify({'error': 'Cannot delete your own account'}), 400
+
+    # Anonymize instead of hard delete to preserve referential integrity
+    user.username = f'deleted_{user.id}'
+    user.email = f'deleted_{user.id}@removed.local'
+    user.password_hash = 'ANONYMIZED'
+    user.presence_status = 'offline'
+
+    # Anonymize profile if exists
+    profile = UserProfile.query.filter_by(user_id=user.id).first()
+    if profile:
+        profile.display_name = None
+        profile.bio = None
+        profile.location = None
+        profile.website = None
+        profile.avatar_url = None
+        profile.phone = None
+        profile.birth_date = None
+
+    db.session.commit()
+
+    log_action('user_deleted', resource='user', resource_id=user_id,
+               user_id=current_user_id)
+
+    return jsonify({'message': f'User {user_id} anonymized successfully'})
+
+
+# ============================================================================
 # UTILITY ROUTES
 # ============================================================================
 
