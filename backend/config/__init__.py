@@ -44,10 +44,11 @@ class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     WTF_CSRF_ENABLED = False
-    
+    CORS_ORIGINS = ['http://localhost', 'http://localhost:5173']
+
     # Disable email sending during tests
     MAIL_SUPPRESS_SEND = True
-    
+
     # Fast JWT for testing
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
 
@@ -64,7 +65,7 @@ class ProductionConfig(Config):
 
     # In production on Render, CORS isn't needed (same origin)
     # but keep configurable for future split deployments
-    CORS_ORIGINS = os.getenv('ALLOWED_ORIGINS', '*').split(',')
+    CORS_ORIGINS = [o.strip() for o in os.getenv('ALLOWED_ORIGINS', '').split(',') if o.strip()]
 
     # Logging to stdout (Render captures stdout)
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')

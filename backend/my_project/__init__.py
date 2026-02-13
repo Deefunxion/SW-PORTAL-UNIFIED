@@ -40,8 +40,8 @@ def create_app():
         os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'dist')
     )
 
-    # Enable CORS for all origins (for development)
-    CORS(app, origins="*")
+    # Enable CORS for configured origins
+    CORS(app, origins=app.config.get('CORS_ORIGINS', ['http://localhost:5173']))
 
     # Initialize extensions
     from .extensions import db, celery
