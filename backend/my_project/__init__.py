@@ -34,6 +34,10 @@ def create_app():
         app.config['JWT_SECRET_KEY'] = os.environ['JWT_SECRET_KEY']
 
     app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', '../content')
+    app.config['KNOWLEDGE_FOLDER'] = os.environ.get(
+        'KNOWLEDGE_FOLDER',
+        os.path.join(os.path.dirname(__file__), '..', '..', 'knowledge')
+    )
     app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
     app.config['FRONTEND_DIR'] = os.environ.get(
         'FRONTEND_DIR',
@@ -95,7 +99,7 @@ def create_app():
     # Create database tables and seed data
     with app.app_context():
         # Import models to ensure they are registered
-        from .models import User, Category, Discussion, Post, FileItem, AuditLog
+        from .models import User, Category, Discussion, Post, FileItem, AuditLog, ChatSession, ChatMessage
 
         # Enable pgvector extension (required for Vector columns)
         try:

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Docker multi-stage, Gunicorn, Render Web Service, Render PostgreSQL, OpenAI API (external).
 
-**Current state:** The codebase runs locally with `python app.py` (backend) + `pnpm dev` (frontend). Frontend base path is `/SW-PORTAL-UNIFIED/` (GitHub Pages). There's already a catch-all `serve_frontend()` route in `routes.py:1047-1056` but it doesn't serve `index.html` for SPA routing. No Dockerfile exists. No `gunicorn` in requirements.
+**Current state:** The codebase runs locally with `python app.py` (backend) + `pnpm dev` (frontend). Frontend base path is `/ΟΠΣΚΜ-UNIFIED/` (GitHub Pages). There's already a catch-all `serve_frontend()` route in `routes.py:1047-1056` but it doesn't serve `index.html` for SPA routing. No Dockerfile exists. No `gunicorn` in requirements.
 
 ---
 
@@ -127,7 +127,7 @@ Falls back gracefully when frontend isn't built."
 ## Task 3: Fix frontend base path and API URL for Render
 
 **Context:** The frontend is currently configured for GitHub Pages deployment:
-- `vite.config.js` has `base: '/SW-PORTAL-UNIFIED/'`
+- `vite.config.js` has `base: '/ΟΠΣΚΜ-UNIFIED/'`
 - `App.jsx` uses `basename={import.meta.env.BASE_URL.replace(/\/$/, '')}`
 - `api.js` defaults to `http://localhost:5000`
 
@@ -142,7 +142,7 @@ For Render, the base is `/` and the API is on the same origin (no explicit URL n
 
 ```js
 export default defineConfig({
-  base: '/SW-PORTAL-UNIFIED/',
+  base: '/ΟΠΣΚΜ-UNIFIED/',
 ```
 
 With:
@@ -152,7 +152,7 @@ export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/',
 ```
 
-This defaults to `/` (for Render) but can be overridden to `/SW-PORTAL-UNIFIED/` for GitHub Pages by setting `VITE_BASE_PATH`.
+This defaults to `/` (for Render) but can be overridden to `/ΟΠΣΚΜ-UNIFIED/` for GitHub Pages by setting `VITE_BASE_PATH`.
 
 **Step 2:** In `frontend/src/lib/api.js`, change the default baseURL from `http://localhost:5000` to empty string (same origin). Replace:
 
@@ -180,7 +180,7 @@ When running locally with `pnpm dev`, the Vite proxy (added in Task 4) will forw
 cd frontend && npx pnpm build
 ```
 
-Expected: Build succeeds. Check that `dist/index.html` has `<script src="/assets/...">` (not `/SW-PORTAL-UNIFIED/assets/...`).
+Expected: Build succeeds. Check that `dist/index.html` has `<script src="/assets/...">` (not `/ΟΠΣΚΜ-UNIFIED/assets/...`).
 
 **Step 5:** Commit:
 
@@ -190,7 +190,7 @@ git commit -m "feat: configure frontend for Render deployment
 
 Default base path to '/' (overridable via VITE_BASE_PATH).
 Default API URL to same-origin (overridable via VITE_API_URL).
-Supports both Render (/) and GitHub Pages (/SW-PORTAL-UNIFIED/)."
+Supports both Render (/) and GitHub Pages (/ΟΠΣΚΜ-UNIFIED/)."
 ```
 
 ---
@@ -310,7 +310,7 @@ requires 'postgresql://'. Auto-replace on startup."
 ## Task 6: Update ProductionConfig for Render
 
 **Context:** The `ProductionConfig` in `backend/config/__init__.py` has some settings that need adjustment for Render:
-- `LOG_FILE` points to `/var/log/sw-portal/app.log` which doesn't exist on Render (use stdout)
+- `LOG_FILE` points to `/var/log/ΟΠΣΚΜ/app.log` which doesn't exist on Render (use stdout)
 - CORS origins should allow the Render domain
 - Need to handle proxy headers (Render terminates SSL)
 
@@ -459,7 +459,7 @@ CMD cd backend && gunicorn app:app \
 **Step 3:** Test the Docker build locally (optional — requires Docker):
 
 ```bash
-docker build -t sw-portal .
+docker build -t ΟΠΣΚΜ .
 ```
 
 Expected: Build completes. Both stages succeed.
@@ -472,7 +472,7 @@ docker run -p 10000:10000 \
   -e SECRET_KEY=test-secret-key-32-bytes-long-ok \
   -e JWT_SECRET_KEY=test-jwt-key-32-bytes-long-okay \
   -e OPENAI_API_KEY=sk-your-key \
-  sw-portal
+  ΟΠΣΚΜ
 ```
 
 Expected: App starts on :10000, frontend loads, API responds.
@@ -505,7 +505,7 @@ Stage 2: Python 3.11 runs Flask+Gunicorn serving API + SPA.
 
 services:
   - type: web
-    name: sw-portal
+    name: ΟΠΣΚΜ
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: starter  # $7/month, always-on
@@ -514,7 +514,7 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: sw-portal-db
+          name: ΟΠΣΚΜ-db
           property: connectionString
       - key: FLASK_ENV
         value: production
@@ -528,7 +528,7 @@ services:
         value: /app/frontend/dist
 
 databases:
-  - name: sw-portal-db
+  - name: ΟΠΣΚΜ-db
     plan: starter  # $7/month, 1GB storage
     region: frankfurt
     databaseName: sw_portal
@@ -629,7 +629,7 @@ Expected: Build succeeds, outputs to `dist/`.
 **Step 3:** Test the full Docker build:
 
 ```bash
-docker build -t sw-portal .
+docker build -t ΟΠΣΚΜ .
 ```
 
 Expected: Build completes successfully.
@@ -641,7 +641,7 @@ docker run --rm -p 10000:10000 \
   -e DATABASE_URL=postgresql://sw_portal:sw_portal_dev@host.docker.internal:5432/sw_portal \
   -e SECRET_KEY=test-secret-key-that-is-32-bytes \
   -e JWT_SECRET_KEY=jwt-secret-key-that-is-32-bytes \
-  sw-portal
+  ΟΠΣΚΜ
 ```
 
 Visit `http://localhost:10000` — should see the SW Portal frontend.
@@ -673,8 +673,8 @@ git push origin revival/demo-prep
 **Step 3:** Connect to the GitHub repo, select the `revival/demo-prep` branch.
 
 **Step 4:** Render will detect `render.yaml` and show the services to create:
-- `sw-portal` (Web Service, Docker, Starter plan)
-- `sw-portal-db` (PostgreSQL 16, Starter plan)
+- `ΟΠΣΚΜ` (Web Service, Docker, Starter plan)
+- `ΟΠΣΚΜ-db` (PostgreSQL 16, Starter plan)
 
 **Step 5:** Set the `OPENAI_API_KEY` environment variable manually in the web service settings.
 
@@ -684,7 +684,7 @@ git push origin revival/demo-prep
 
 **Step 1:** Create PostgreSQL database:
 - Render Dashboard → **New** → **PostgreSQL**
-- Name: `sw-portal-db`
+- Name: `ΟΠΣΚΜ-db`
 - Region: Frankfurt
 - Plan: Starter ($7/month)
 - Version: 16
@@ -713,14 +713,14 @@ git push origin revival/demo-prep
 
 ### Post-Deploy Verification
 
-**Step 1:** Visit `https://sw-portal.onrender.com` (or your service URL)
+**Step 1:** Visit `https://ΟΠΣΚΜ.onrender.com` (or your service URL)
 - Should see the login page
 
 **Step 2:** Login as `admin/admin123`
 - Should redirect to home dashboard
 
 **Step 3:** Test API health:
-- Visit `https://sw-portal.onrender.com/api/health`
+- Visit `https://ΟΠΣΚΜ.onrender.com/api/health`
 - Should return JSON health status
 
 **Step 4:** Test AI chat (if OPENAI_API_KEY is set):

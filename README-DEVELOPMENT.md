@@ -12,7 +12,7 @@
 
 ```bash
 # 1. Clone and enter directory
-cd SW-PORTAL-UNIFIED
+cd ΟΠΣΚΜ-UNIFIED
 
 # 2. Run automated setup
 python scripts/setup-dev.py

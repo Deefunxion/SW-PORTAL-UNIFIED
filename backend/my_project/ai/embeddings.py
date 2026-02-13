@@ -34,8 +34,8 @@ class EmbeddingResult:
 
 def chunk_text(
     text: str,
-    chunk_size: int = 500,
-    overlap: int = 100,
+    chunk_size: int = 1200,
+    overlap: int = 200,
 ) -> List[TextChunk]:
     """Split text into overlapping chunks using semantic boundaries.
 

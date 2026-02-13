@@ -17,7 +17,9 @@ from .models import (
     PostAttachment, PostReaction, PostMention, UserReputation,
     Conversation, ConversationParticipant, PrivateMessage,
     MessageAttachment, MessageReadReceipt, UserPresence,
-    UserProfile, UserContact, UserBlock
+    UserProfile, UserContact, UserBlock,
+    ChatSession, ChatMessage,
+    DocumentIndex, FileChunk
 )
 
 # Create Blueprint
@@ -229,6 +231,17 @@ def register():
         'message': 'User created successfully',
         'user': user.to_dict()
     }), 201
+
+
+@main_bp.route('/api/auth/verify', methods=['GET'])
+@jwt_required()
+def verify_token():
+    """Verify JWT token is still valid and return current user."""
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    return jsonify({'valid': True, 'user': user.to_dict()})
 
 
 @main_bp.route('/api/auth/me', methods=['GET'])
@@ -753,7 +766,7 @@ def mark_notifications_read():
 
 @main_bp.route('/api/chat', methods=['POST'])
 @jwt_required()
-@limiter.limit("20 per minute")
+@limiter.limit(lambda: current_app.config.get('AI_CHAT_RATE_LIMIT', '20 per minute'))
 def ai_chat():
     """AI Assistant — chat with RAG context from social welfare documents."""
     data = request.get_json()
@@ -763,15 +776,101 @@ def ai_chat():
         return jsonify({'error': 'Παρακαλώ εισάγετε μήνυμα'}), 400
 
     chat_history = data.get('chat_history', [])
+    session_id = data.get('session_id')
+
+    # If session_id provided, verify ownership and store user message
+    user_id = int(get_jwt_identity())
+    session = None
+    if session_id:
+        session = ChatSession.query.filter_by(id=session_id, user_id=user_id).first()
+        if session:
+            db.session.add(ChatMessage(
+                session_id=session.id, role='user', content=message, sources='[]'
+            ))
+            db.session.commit()
+
+    user = User.query.get(user_id)
+    user_context = {
+        'username': user.username,
+        'role': user.role,
+    } if user else None
 
     from my_project.ai.copilot import get_chat_reply
+    model_override = data.get('model')  # allows frontend to switch model on the fly
     result = get_chat_reply(
         user_message=message,
         chat_history=chat_history,
         use_rag=True,
+        user_context=user_context,
+        model_override=model_override,
     )
 
+    # Store assistant reply in session
+    if session:
+        import json
+        db.session.add(ChatMessage(
+            session_id=session.id,
+            role='assistant',
+            content=result['reply'],
+            sources=json.dumps(result.get('sources', [])),
+        ))
+        db.session.commit()
+
     return jsonify(result), 200
+
+
+# ============================================================================
+# CHAT SESSION ROUTES
+# ============================================================================
+
+@main_bp.route('/api/chat/sessions', methods=['POST'])
+@jwt_required()
+def create_chat_session():
+    """Create a new chat session."""
+    user_id = int(get_jwt_identity())
+    data = request.get_json() or {}
+    session = ChatSession(
+        user_id=user_id,
+        title=data.get('title', 'Νέα Συζήτηση')[:200],
+    )
+    db.session.add(session)
+    db.session.commit()
+    return jsonify(session.to_dict()), 201
+
+
+@main_bp.route('/api/chat/sessions', methods=['GET'])
+@jwt_required()
+def list_chat_sessions():
+    """List current user's chat sessions (newest first)."""
+    user_id = int(get_jwt_identity())
+    sessions = ChatSession.query.filter_by(user_id=user_id)\
+        .order_by(ChatSession.updated_at.desc()).all()
+    return jsonify([s.to_dict() for s in sessions]), 200
+
+
+@main_bp.route('/api/chat/sessions/<int:session_id>/messages', methods=['GET'])
+@jwt_required()
+def get_session_messages(session_id):
+    """Get all messages in a chat session."""
+    user_id = int(get_jwt_identity())
+    session = ChatSession.query.filter_by(id=session_id, user_id=user_id).first()
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+    messages = session.messages.all()
+    return jsonify([m.to_dict() for m in messages]), 200
+
+
+@main_bp.route('/api/chat/sessions/<int:session_id>', methods=['DELETE'])
+@jwt_required()
+def delete_chat_session(session_id):
+    """Delete a chat session and all its messages."""
+    user_id = int(get_jwt_identity())
+    session = ChatSession.query.filter_by(id=session_id, user_id=user_id).first()
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+    db.session.delete(session)
+    db.session.commit()
+    return jsonify({'message': 'Session deleted'}), 200
 
 
 @main_bp.route('/api/knowledge/search', methods=['POST'])
@@ -806,6 +905,265 @@ def knowledge_stats():
         'total_documents': total_docs,
         'total_chunks': total_chunks,
         'embedded_chunks': embedded_chunks,
+    }), 200
+
+
+# ============================================================================
+# KNOWLEDGE BASE MANAGEMENT ROUTES (admin only)
+# ============================================================================
+
+@main_bp.route('/api/knowledge/files', methods=['GET'])
+@jwt_required()
+def knowledge_list_files():
+    """List all folders and files in the knowledge base directory."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+
+    knowledge_dir = current_app.config['KNOWLEDGE_FOLDER']
+    if not os.path.isabs(knowledge_dir):
+        knowledge_dir = os.path.abspath(knowledge_dir)
+
+    if not os.path.exists(knowledge_dir):
+        os.makedirs(knowledge_dir)
+
+    tree = _scan_knowledge_dir(knowledge_dir)
+    return jsonify({'folders': tree}), 200
+
+
+def _scan_knowledge_dir(base_dir):
+    """Scan knowledge directory and return folder/file tree."""
+    result = []
+    try:
+        for entry in sorted(os.listdir(base_dir)):
+            if entry.startswith('.'):
+                continue
+            full_path = os.path.join(base_dir, entry)
+            rel_path = os.path.relpath(full_path, base_dir)
+
+            if os.path.isdir(full_path):
+                files = []
+                for fname in sorted(os.listdir(full_path)):
+                    if fname.startswith('.'):
+                        continue
+                    fpath = os.path.join(full_path, fname)
+                    if os.path.isfile(fpath):
+                        doc = DocumentIndex.query.filter_by(file_path=fpath).first()
+                        files.append({
+                            'name': fname,
+                            'path': os.path.relpath(fpath, base_dir),
+                            'size': os.path.getsize(fpath),
+                            'chunks': doc.chunk_count if doc else 0,
+                            'status': doc.status if doc else 'not_indexed',
+                        })
+                result.append({
+                    'name': entry,
+                    'path': rel_path,
+                    'files': files,
+                    'file_count': len(files),
+                })
+            elif os.path.isfile(full_path):
+                doc = DocumentIndex.query.filter_by(file_path=full_path).first()
+                result.append({
+                    'name': entry,
+                    'path': rel_path,
+                    'size': os.path.getsize(full_path),
+                    'chunks': doc.chunk_count if doc else 0,
+                    'status': doc.status if doc else 'not_indexed',
+                    'is_file': True,
+                })
+    except OSError as e:
+        current_app.logger.error(f"Error scanning knowledge dir: {e}")
+
+    return result
+
+
+@main_bp.route('/api/knowledge/folders', methods=['POST'])
+@jwt_required()
+def knowledge_create_folder():
+    """Create a folder in the knowledge base."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+
+    data = request.get_json()
+    folder_name = data.get('name', '').strip()
+    parent = data.get('parent', '').strip()
+
+    if not folder_name:
+        return jsonify({'error': 'Folder name required'}), 400
+
+    # Sanitize: no path traversal
+    if '..' in folder_name or '/' in folder_name or '\\' in folder_name:
+        return jsonify({'error': 'Invalid folder name'}), 400
+
+    knowledge_dir = current_app.config['KNOWLEDGE_FOLDER']
+    if parent:
+        folder_path = os.path.join(knowledge_dir, parent, folder_name)
+    else:
+        folder_path = os.path.join(knowledge_dir, folder_name)
+
+    if os.path.exists(folder_path):
+        return jsonify({'error': 'Folder already exists'}), 409
+
+    try:
+        os.makedirs(folder_path)
+        return jsonify({'message': 'Folder created', 'path': os.path.relpath(folder_path, knowledge_dir)}), 201
+    except OSError as e:
+        return jsonify({'error': str(e)}), 500
+
+
+KNOWLEDGE_ALLOWED_EXTENSIONS = {'.md', '.txt'}
+
+
+@main_bp.route('/api/knowledge/upload', methods=['POST'])
+@jwt_required()
+def knowledge_upload():
+    """Upload .md/.txt file to knowledge base and auto-ingest for RAG."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    folder = request.form.get('folder', '').strip()
+
+    if not file.filename:
+        return jsonify({'error': 'No file selected'}), 400
+
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in KNOWLEDGE_ALLOWED_EXTENSIONS:
+        return jsonify({'error': f'Only .md and .txt files are allowed (got {ext})'}), 400
+
+    filename = secure_filename(file.filename)
+    knowledge_dir = current_app.config['KNOWLEDGE_FOLDER']
+
+    if folder:
+        if '..' in folder:
+            return jsonify({'error': 'Invalid folder path'}), 400
+        target_dir = os.path.join(knowledge_dir, folder)
+    else:
+        target_dir = knowledge_dir
+
+    os.makedirs(target_dir, exist_ok=True)
+    file_path = os.path.join(target_dir, filename)
+    file.save(file_path)
+
+    # Auto-ingest: chunk + embed
+    from my_project.ai.knowledge import process_file
+    try:
+        result = process_file(file_path, generate_vectors=True)
+        chunk_count = result.chunk_count if result else 0
+        status = result.status if result else 'error'
+    except Exception as e:
+        current_app.logger.error(f"Knowledge ingest failed for {filename}: {e}")
+        chunk_count = 0
+        status = 'error'
+
+    return jsonify({
+        'message': 'File uploaded and indexed',
+        'filename': filename,
+        'path': os.path.relpath(file_path, knowledge_dir),
+        'chunks': chunk_count,
+        'status': status,
+    }), 201
+
+
+@main_bp.route('/api/knowledge/files/<path:file_path>', methods=['DELETE'])
+@jwt_required()
+def knowledge_delete_file(file_path):
+    """Delete a file from knowledge base and remove its chunks."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+
+    knowledge_dir = current_app.config['KNOWLEDGE_FOLDER']
+    full_path = os.path.abspath(os.path.join(knowledge_dir, file_path))
+
+    # Security: ensure path is inside knowledge_dir
+    if not full_path.startswith(os.path.abspath(knowledge_dir)):
+        return jsonify({'error': 'Invalid path'}), 400
+
+    if not os.path.isfile(full_path):
+        return jsonify({'error': 'File not found'}), 404
+
+    # Remove chunks from database
+    doc = DocumentIndex.query.filter_by(file_path=full_path).first()
+    if doc:
+        db.session.delete(doc)  # cascade deletes FileChunks
+        db.session.commit()
+
+    # Remove physical file
+    os.remove(full_path)
+
+    return jsonify({'message': 'File deleted'}), 200
+
+
+@main_bp.route('/api/knowledge/folders/<path:folder_path>', methods=['DELETE'])
+@jwt_required()
+def knowledge_delete_folder(folder_path):
+    """Delete a folder and all its files/chunks from knowledge base."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+
+    knowledge_dir = current_app.config['KNOWLEDGE_FOLDER']
+    full_path = os.path.abspath(os.path.join(knowledge_dir, folder_path))
+
+    if not full_path.startswith(os.path.abspath(knowledge_dir)):
+        return jsonify({'error': 'Invalid path'}), 400
+
+    if not os.path.isdir(full_path):
+        return jsonify({'error': 'Folder not found'}), 404
+
+    # Remove all indexed documents under this folder
+    docs = DocumentIndex.query.filter(DocumentIndex.file_path.startswith(full_path)).all()
+    for doc in docs:
+        db.session.delete(doc)
+    db.session.commit()
+
+    # Remove physical folder
+    import shutil
+    shutil.rmtree(full_path)
+
+    return jsonify({'message': 'Folder deleted'}), 200
+
+
+@main_bp.route('/api/knowledge/reindex', methods=['POST'])
+@jwt_required()
+def knowledge_reindex():
+    """Re-ingest all files in the knowledge directory."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+
+    knowledge_dir = current_app.config['KNOWLEDGE_FOLDER']
+    if not os.path.exists(knowledge_dir):
+        return jsonify({'error': 'Knowledge directory not found'}), 404
+
+    from my_project.ai.knowledge import process_file
+
+    processed = 0
+    errors = 0
+    for root, dirs, files in os.walk(knowledge_dir):
+        for fname in files:
+            ext = os.path.splitext(fname)[1].lower()
+            if ext not in KNOWLEDGE_ALLOWED_EXTENSIONS:
+                continue
+            fpath = os.path.join(root, fname)
+            try:
+                process_file(fpath, generate_vectors=True)
+                processed += 1
+            except Exception as e:
+                current_app.logger.error(f"Reindex error for {fname}: {e}")
+                errors += 1
+
+    return jsonify({
+        'message': 'Reindex complete',
+        'processed': processed,
+        'errors': errors,
     }), 200
 
 

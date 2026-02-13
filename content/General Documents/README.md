@@ -25,7 +25,7 @@
 ## 📁 Δομή Αρχείων
 
 ```
-sw-portal-extensions/
+ΟΠΣΚΜ-extensions/
 ├── backend/
 │   ├── roles.py                    # RBAC decorators και utilities
 │   ├── user_management.py          # User management endpoints

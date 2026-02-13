@@ -452,6 +452,56 @@ class FileChunk(db.Model):
 
 
 # ============================================================================
+# AI CHAT SESSION MODELS
+# ============================================================================
+
+class ChatSession(db.Model):
+    """A conversation session with the AI assistant."""
+    __tablename__ = 'chat_sessions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    title = db.Column(db.String(200), default='Νέα Συζήτηση')
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+
+    messages = db.relationship('ChatMessage', backref='session', lazy='dynamic',
+                               cascade='all, delete-orphan',
+                               order_by='ChatMessage.created_at')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'message_count': self.messages.count(),
+        }
+
+
+class ChatMessage(db.Model):
+    """A single message in a chat session."""
+    __tablename__ = 'chat_messages'
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('chat_sessions.id'), nullable=False, index=True)
+    role = db.Column(db.String(20), nullable=False)  # 'user' or 'assistant'
+    content = db.Column(db.Text, nullable=False)
+    sources = db.Column(db.Text, default='')  # JSON list of source paths
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+    def to_dict(self):
+        import json
+        return {
+            'id': self.id,
+            'role': self.role,
+            'content': self.content,
+            'sources': json.loads(self.sources) if self.sources else [],
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ============================================================================
 # AUDIT LOG MODEL
 # ============================================================================
 

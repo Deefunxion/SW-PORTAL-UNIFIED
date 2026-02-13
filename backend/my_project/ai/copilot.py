@@ -55,6 +55,7 @@ def build_messages(
     user_message: str,
     context_chunks: List[Dict[str, Any]],
     chat_history: List[Dict[str, str]],
+    user_context: Optional[Dict[str, str]] = None,
 ) -> List[Dict[str, str]]:
     """Build the message array for the LLM call.
 
@@ -73,8 +74,17 @@ def build_messages(
             "content": f"Σχετικά έγγραφα για την ερώτηση:\n\n{context_text}",
         })
 
-    # Add chat history (last 6 messages)
-    for msg in chat_history[-6:]:
+    # Add user context if available
+    if user_context:
+        user_info = (
+            f"Ο χρήστης που ρωτάει: {user_context.get('username', 'Άγνωστος')}, "
+            f"ρόλος: {user_context.get('role', 'guest')}. "
+            f"Προσάρμοσε το επίπεδο λεπτομέρειας ανάλογα με τον ρόλο."
+        )
+        messages.append({"role": "system", "content": user_info})
+
+    # Add chat history (last 20 messages)
+    for msg in chat_history[-20:]:
         messages.append({
             "role": msg.get("role", "user"),
             "content": msg.get("content", ""),
@@ -90,6 +100,8 @@ def get_chat_reply(
     user_message: str,
     chat_history: Optional[List[Dict[str, str]]] = None,
     use_rag: bool = True,
+    user_context: Optional[Dict[str, str]] = None,
+    model_override: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Generate an AI reply using RAG context from document chunks.
 
@@ -97,9 +109,11 @@ def get_chat_reply(
         user_message: The user's question.
         chat_history: Previous messages in the conversation.
         use_rag: Whether to search documents for context.
+        user_context: Dict with 'username' and 'role' for personalization.
+        model_override: Override the LLM model for this request.
 
     Returns:
-        Dict with 'reply', 'sources', and 'context_used'.
+        Dict with 'reply', 'sources', 'context_used', and 'model'.
     """
     if chat_history is None:
         chat_history = []
@@ -113,27 +127,27 @@ def get_chat_reply(
             logger.error(f"RAG search failed: {e}")
 
     # Build messages
-    messages = build_messages(user_message, context_chunks, chat_history)
+    messages = build_messages(user_message, context_chunks, chat_history, user_context)
 
     # Call LLM
+    model = model_override or os.environ.get("LLM_MODEL", "gpt-5-mini")
     try:
         client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-        model = os.environ.get("LLM_MODEL", "gpt-4o-mini")
 
-        # Reasoning models (gpt-5*, o1*, o3*) don't support temperature
-        is_reasoning = any(model.startswith(p) for p in ("gpt-5", "o1", "o3"))
+        # Reasoning models (gpt-5*, o1*, o3*, o4*) don't support temperature
+        is_reasoning = any(model.startswith(p) for p in ("gpt-5", "o1", "o3", "o4"))
         params = dict(
             model=model,
             messages=messages,
-            max_completion_tokens=16000,
         )
         if not is_reasoning:
             params["temperature"] = 0.3
 
+        logger.info(f"Calling LLM: model={model}")
         response = client.chat.completions.create(**params)
         reply = response.choices[0].message.content or ""
     except Exception as e:
-        logger.error(f"LLM call failed: {e}")
+        logger.error(f"LLM call failed (model={model}): {e}")
         reply = ("Λυπάμαι, αντιμετώπισα τεχνικό πρόβλημα. "
                 "Παρακαλώ δοκιμάστε ξανά σε λίγο.")
 
@@ -147,4 +161,5 @@ def get_chat_reply(
         "sources": sources,
         "context_used": len(context_chunks) > 0,
         "chunks_found": len(context_chunks),
+        "model": model,
     }

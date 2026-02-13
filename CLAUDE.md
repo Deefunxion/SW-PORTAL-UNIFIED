@@ -51,7 +51,7 @@ All protected endpoints use `@jwt_required()` decorator with `get_jwt_identity()
 
 - **`embeddings.py`** — Text chunking (paragraph/sentence boundaries with overlap) and OpenAI API embedding generation (`text-embedding-3-small`, 1536 dimensions). No GPU required.
 - **`knowledge.py`** — Document parsing (PDF via PyMuPDF, DOCX via python-docx, TXT), processing pipeline (chunk + embed + store), pgvector cosine similarity search with keyword fallback.
-- **`copilot.py`** — Greek social welfare domain system prompt, RAG context injection, OpenAI chat completion (`gpt-4o-mini`). Returns reply + source references.
+- **`copilot.py`** — Greek social welfare domain system prompt, RAG context injection, OpenAI chat completion (`gpt-5-mini`). Returns reply + source references.
 
 ### Frontend (React + Vite + shadcn/ui)
 
@@ -62,7 +62,7 @@ All protected endpoints use `@jwt_required()` decorator with `get_jwt_identity()
 - **Auth:** `src/contexts/AuthContext.jsx` — React Context wrapping `src/lib/auth.js`
 - **API client:** `src/lib/api.js` — Axios instance with automatic JWT injection from cookies
 - **Path alias:** `@` resolves to `./src` (configured in vite.config.js)
-- **Base path:** `/SW-PORTAL-UNIFIED/` for GitHub Pages deployment
+- **Base path:** `/ΟΠΣΚΜ-UNIFIED/` for GitHub Pages deployment
 
 ### Default Seed Data
 

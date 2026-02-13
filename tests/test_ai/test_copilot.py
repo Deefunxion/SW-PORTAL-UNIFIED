@@ -21,3 +21,38 @@ def test_build_messages_with_context():
     # Should have system + user messages
     assert messages[0]["role"] == "system"
     assert any("4455" in m.get("content", "") for m in messages)
+
+def test_build_messages_preserves_20_messages():
+    """Chat history should retain up to 20 messages, not just 6."""
+    from my_project.ai.copilot import build_messages
+    # Create 24 messages (12 rounds of Q&A)
+    history = [
+        {"role": "user" if i % 2 == 0 else "assistant", "content": f"Message {i}"}
+        for i in range(24)
+    ]
+    messages = build_messages(
+        user_message="Latest question",
+        context_chunks=[],
+        chat_history=history,
+    )
+    # system prompt + 20 history messages + current user message = 22
+    history_messages = [m for m in messages if m["content"].startswith("Message")]
+    assert len(history_messages) == 20
+    # Should keep the LAST 20 (messages 4-23), not the first 20
+    assert history_messages[0]["content"] == "Message 4"
+    assert history_messages[-1]["content"] == "Message 23"
+
+def test_build_messages_includes_user_context():
+    """Messages should include user context when provided."""
+    from my_project.ai.copilot import build_messages
+    messages = build_messages(
+        user_message="Πώς αδειοδοτώ ΚΔΑΠ;",
+        context_chunks=[],
+        chat_history=[],
+        user_context={"username": "maria", "role": "staff"},
+    )
+    # Should have a system message mentioning the user's role
+    system_msgs = [m for m in messages if m["role"] == "system"]
+    combined = " ".join(m["content"] for m in system_msgs)
+    assert "maria" in combined
+    assert "staff" in combined
