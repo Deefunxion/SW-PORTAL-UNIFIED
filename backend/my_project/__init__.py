@@ -95,7 +95,7 @@ def create_app():
     # Create database tables and seed data
     with app.app_context():
         # Import models to ensure they are registered
-        from .models import User, Category, Discussion, Post, FileItem, AuditLog
+        from .models import User, Category, Discussion, Post, FileItem, AuditLog, ChatSession, ChatMessage
 
         # Enable pgvector extension (required for Vector columns)
         try:

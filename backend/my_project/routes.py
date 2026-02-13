@@ -17,7 +17,8 @@ from .models import (
     PostAttachment, PostReaction, PostMention, UserReputation,
     Conversation, ConversationParticipant, PrivateMessage,
     MessageAttachment, MessageReadReceipt, UserPresence,
-    UserProfile, UserContact, UserBlock
+    UserProfile, UserContact, UserBlock,
+    ChatSession, ChatMessage
 )
 
 # Create Blueprint
@@ -763,6 +764,18 @@ def ai_chat():
         return jsonify({'error': 'Παρακαλώ εισάγετε μήνυμα'}), 400
 
     chat_history = data.get('chat_history', [])
+    session_id = data.get('session_id')
+
+    # If session_id provided, verify ownership and store user message
+    user_id = int(get_jwt_identity())
+    session = None
+    if session_id:
+        session = ChatSession.query.filter_by(id=session_id, user_id=user_id).first()
+        if session:
+            db.session.add(ChatMessage(
+                session_id=session.id, role='user', content=message, sources='[]'
+            ))
+            db.session.commit()
 
     from my_project.ai.copilot import get_chat_reply
     result = get_chat_reply(
@@ -771,7 +784,72 @@ def ai_chat():
         use_rag=True,
     )
 
+    # Store assistant reply in session
+    if session:
+        import json
+        db.session.add(ChatMessage(
+            session_id=session.id,
+            role='assistant',
+            content=result['reply'],
+            sources=json.dumps(result.get('sources', [])),
+        ))
+        db.session.commit()
+
     return jsonify(result), 200
+
+
+# ============================================================================
+# CHAT SESSION ROUTES
+# ============================================================================
+
+@main_bp.route('/api/chat/sessions', methods=['POST'])
+@jwt_required()
+def create_chat_session():
+    """Create a new chat session."""
+    user_id = int(get_jwt_identity())
+    data = request.get_json() or {}
+    session = ChatSession(
+        user_id=user_id,
+        title=data.get('title', 'Νέα Συζήτηση')[:200],
+    )
+    db.session.add(session)
+    db.session.commit()
+    return jsonify(session.to_dict()), 201
+
+
+@main_bp.route('/api/chat/sessions', methods=['GET'])
+@jwt_required()
+def list_chat_sessions():
+    """List current user's chat sessions (newest first)."""
+    user_id = int(get_jwt_identity())
+    sessions = ChatSession.query.filter_by(user_id=user_id)\
+        .order_by(ChatSession.updated_at.desc()).all()
+    return jsonify([s.to_dict() for s in sessions]), 200
+
+
+@main_bp.route('/api/chat/sessions/<int:session_id>/messages', methods=['GET'])
+@jwt_required()
+def get_session_messages(session_id):
+    """Get all messages in a chat session."""
+    user_id = int(get_jwt_identity())
+    session = ChatSession.query.filter_by(id=session_id, user_id=user_id).first()
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+    messages = session.messages.all()
+    return jsonify([m.to_dict() for m in messages]), 200
+
+
+@main_bp.route('/api/chat/sessions/<int:session_id>', methods=['DELETE'])
+@jwt_required()
+def delete_chat_session(session_id):
+    """Delete a chat session and all its messages."""
+    user_id = int(get_jwt_identity())
+    session = ChatSession.query.filter_by(id=session_id, user_id=user_id).first()
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+    db.session.delete(session)
+    db.session.commit()
+    return jsonify({'message': 'Session deleted'}), 200
 
 
 @main_bp.route('/api/knowledge/search', methods=['POST'])
