@@ -51,9 +51,10 @@ ENV PYTHONUNBUFFERED=1
 # Expose port (Render provides $PORT)
 EXPOSE 10000
 
-# Start Gunicorn
+# Start Gunicorn (--preload loads app once before forking workers)
 CMD cd backend && gunicorn app:app \
     --bind 0.0.0.0:${PORT:-10000} \
+    --preload \
     --workers 2 \
     --threads 4 \
     --timeout 120 \
