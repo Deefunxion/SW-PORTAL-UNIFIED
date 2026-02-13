@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import DOMPurify from 'dompurify';
 import {
-  Bot, Send, User, Trash2, MessageSquare, Lightbulb, Clock, Zap, FileText, AlertTriangle
+  Bot, Send, User, Trash2, MessageSquare, Lightbulb, Clock, Zap, FileText, AlertTriangle,
+  History, Plus, X, ChevronRight
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -20,22 +21,32 @@ function simpleMarkdown(text) {
   return html;
 }
 
+const WELCOME_MESSAGE = {
+  id: 'welcome',
+  type: 'assistant',
+  content: 'Γεια σας! Είμαι ο AI βοηθός της Πύλης Κοινωνικής Μέριμνας. Μπορώ να σας βοηθήσω με ερωτήσεις σχετικά με τη νομοθεσία, τις διαδικασίες αδειοδότησης, και τα έγγραφα του φορέα. Πώς μπορώ να σας βοηθήσω σήμερα;',
+  sources: [],
+  timestamp: new Date().toISOString()
+};
+
 function AssistantPage() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const [sessions, setSessions] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [showSessions, setShowSessions] = useState(false);
 
   useEffect(() => {
-    setMessages([
-      {
-        id: 'welcome',
-        type: 'assistant',
-        content: 'Γεια σας! Είμαι ο AI βοηθός της Πύλης Κοινωνικής Μέριμνας. Μπορώ να σας βοηθήσω με ερωτήσεις σχετικά με τη νομοθεσία, τις διαδικασίες αδειοδότησης, και τα έγγραφα του φορέα. Πώς μπορώ να σας βοηθήσω σήμερα;',
-        sources: [],
-        timestamp: new Date().toISOString()
-      }
-    ]);
+    setMessages([{ ...WELCOME_MESSAGE, timestamp: new Date().toISOString() }]);
+  }, []);
+
+  // Load sessions on mount
+  useEffect(() => {
+    api.get('/api/chat/sessions')
+      .then(({ data }) => setSessions(data))
+      .catch(() => {});
   }, []);
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -60,9 +71,23 @@ function AssistantPage() {
         }))
         .slice(-20);
 
+      // Auto-create session if none active
+      let currentSessionId = activeSessionId;
+      if (!currentSessionId) {
+        try {
+          const { data: newSession } = await api.post('/api/chat/sessions', {
+            title: text.slice(0, 60) + (text.length > 60 ? '...' : '')
+          });
+          currentSessionId = newSession.id;
+          setActiveSessionId(newSession.id);
+          setSessions(prev => [newSession, ...prev]);
+        } catch { /* continue without persistence */ }
+      }
+
       const { data } = await api.post('/api/chat', {
         message: text,
         chat_history: chatHistory,
+        session_id: currentSessionId,
       });
 
       setMessages(prev => [...prev, {
@@ -85,11 +110,64 @@ function AssistantPage() {
   };
 
   const handleKeyPress = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } };
-  const clearChat = () => setMessages([{
-    id: 'welcome', type: 'assistant',
-    content: 'Γεια σας! Πώς μπορώ να σας βοηθήσω;',
-    sources: [], timestamp: new Date().toISOString()
-  }]);
+  const clearChat = () => {
+    setActiveSessionId(null);
+    setMessages([{
+      id: 'welcome', type: 'assistant',
+      content: 'Γεια σας! Πώς μπορώ να σας βοηθήσω;',
+      sources: [], timestamp: new Date().toISOString()
+    }]);
+  };
+
+  const createSession = async () => {
+    try {
+      const { data } = await api.post('/api/chat/sessions', {
+        title: `Συζήτηση ${new Date().toLocaleDateString('el-GR')}`
+      });
+      setSessions(prev => [data, ...prev]);
+      setActiveSessionId(data.id);
+      setMessages([{
+        id: 'welcome', type: 'assistant',
+        content: 'Γεια σας! Πώς μπορώ να σας βοηθήσω;',
+        sources: [], timestamp: new Date().toISOString()
+      }]);
+      setShowSessions(false);
+    } catch { /* ignore */ }
+  };
+
+  const loadSession = async (sessionId) => {
+    try {
+      const { data } = await api.get(`/api/chat/sessions/${sessionId}/messages`);
+      setActiveSessionId(sessionId);
+      const loaded = data.map((m, i) => ({
+        id: m.id?.toString() || `loaded-${i}`,
+        type: m.role === 'user' ? 'user' : 'assistant',
+        content: m.content,
+        sources: m.sources || [],
+        timestamp: m.created_at || new Date().toISOString()
+      }));
+      setMessages([
+        {
+          id: 'welcome', type: 'assistant',
+          content: 'Γεια σας! Πώς μπορώ να σας βοηθήσω;',
+          sources: [], timestamp: new Date().toISOString()
+        },
+        ...loaded
+      ]);
+      setShowSessions(false);
+    } catch { /* ignore */ }
+  };
+
+  const deleteSession = async (sessionId) => {
+    try {
+      await api.delete(`/api/chat/sessions/${sessionId}`);
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      if (activeSessionId === sessionId) {
+        setActiveSessionId(null);
+        clearChat();
+      }
+    } catch { /* ignore */ }
+  };
 
   const formatTime = (ts) => new Date(ts).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
 
@@ -140,7 +218,7 @@ function AssistantPage() {
       </div>
 
       {/* Chat Card */}
-      <Card className="h-[480px] sm:h-[560px] lg:h-[660px] flex flex-col shadow-xl rounded-2xl border border-[#e8e2d8] bg-white">
+      <Card className="h-[480px] sm:h-[560px] lg:h-[660px] flex flex-col shadow-xl rounded-2xl border border-[#e8e2d8] bg-white relative">
         <CardHeader className="flex-shrink-0 border-b border-[#e8e2d8] bg-gradient-to-r from-[#eef1f8] to-[#f0ede6] p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 sm:gap-4">
@@ -155,15 +233,69 @@ function AssistantPage() {
                 </CardDescription>
               </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={clearChat}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-xl transition-all px-3 sm:px-4 py-2 text-sm font-semibold"
-            >
-              <Trash2 className="w-4 h-4 mr-1.5 sm:mr-2" /> <span className="hidden sm:inline">Καθαρισμός</span><span className="sm:hidden">Clear</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowSessions(!showSessions)}
+                className="text-[#1a3aa3] hover:text-[#152e82] hover:bg-[#eef1f8] border border-[#1a3aa3]/20 rounded-xl transition-all px-3 py-2 text-sm font-semibold"
+              >
+                <History className="w-4 h-4 mr-1.5" /> <span className="hidden sm:inline">Ιστορικό</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={clearChat}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-xl transition-all px-3 sm:px-4 py-2 text-sm font-semibold"
+              >
+                <Trash2 className="w-4 h-4 mr-1.5 sm:mr-2" /> <span className="hidden sm:inline">Καθαρισμός</span><span className="sm:hidden">Clear</span>
+              </Button>
+            </div>
           </div>
         </CardHeader>
+
+        {/* Session Sidebar */}
+        {showSessions && (
+          <div className="absolute right-0 top-[72px] sm:top-[80px] z-20 w-72 sm:w-80 bg-white border border-[#e8e2d8] rounded-bl-xl shadow-2xl max-h-[400px] flex flex-col">
+            <div className="flex items-center justify-between p-3 border-b border-[#e8e2d8] bg-[#f9f8f5]">
+              <span className="font-bold text-[#2a2520] text-sm" style={{fontFamily: "'Literata', serif"}}>Ιστορικό Συζητήσεων</span>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" onClick={createSession} className="h-7 w-7 p-0 text-[#1a3aa3] hover:bg-[#eef1f8]">
+                  <Plus className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowSessions(false)} className="h-7 w-7 p-0 text-[#8a8580] hover:bg-[#f0ede6]">
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="overflow-y-auto flex-1 p-2">
+              {sessions.length === 0 && (
+                <p className="text-sm text-[#8a8580] text-center py-6">Δεν υπάρχουν αποθηκευμένες συζητήσεις</p>
+              )}
+              {sessions.map(s => (
+                <div
+                  key={s.id}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all mb-1 group ${activeSessionId === s.id ? 'bg-[#eef1f8] border border-[#1a3aa3]/20' : 'hover:bg-[#f9f8f5]'}`}
+                  onClick={() => loadSession(s.id)}
+                >
+                  <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${activeSessionId === s.id ? 'text-[#1a3aa3]' : 'text-[#c0bbb5]'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium truncate ${activeSessionId === s.id ? 'text-[#1a3aa3]' : 'text-[#2a2520]'}`}>{s.title}</p>
+                    <p className="text-xs text-[#8a8580]">
+                      {s.message_count || 0} μηνύματα
+                      {s.updated_at && ` · ${new Date(s.updated_at).toLocaleDateString('el-GR')}`}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost" size="sm"
+                    onClick={(e) => { e.stopPropagation(); deleteSession(s.id); }}
+                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         <CardContent className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
