@@ -345,7 +345,7 @@ export default HomePage;
 
 **Step 1: Run ESLint**
 
-Run: `cd /d/LAPTOP_BACKUP/Development/SW-PORTAL-UNIFIED/frontend && npx pnpm lint`
+Run: `cd /d/LAPTOP_BACKUP/Development/ΟΠΣΚΜ-UNIFIED/frontend && npx pnpm lint`
 
 Expected: No errors. Warnings about unused vars are OK as long as no errors.
 
@@ -353,21 +353,21 @@ If there are unused import warnings, go back and fix them.
 
 **Step 2: Run Vite build**
 
-Run: `cd /d/LAPTOP_BACKUP/Development/SW-PORTAL-UNIFIED/frontend && npx pnpm build`
+Run: `cd /d/LAPTOP_BACKUP/Development/ΟΠΣΚΜ-UNIFIED/frontend && npx pnpm build`
 
 Expected: Build succeeds with no errors. This verifies JSX syntax, import paths, and Tailwind class processing.
 
 **Step 3: Run existing frontend tests**
 
-Run: `cd /d/LAPTOP_BACKUP/Development/SW-PORTAL-UNIFIED/frontend && npx pnpm test --run`
+Run: `cd /d/LAPTOP_BACKUP/Development/ΟΠΣΚΜ-UNIFIED/frontend && npx pnpm test --run`
 
 Expected: All existing tests pass. No HomePage-specific tests exist, but this verifies nothing else broke.
 
 **Step 4: Visual check (manual)**
 
-Run: `cd /d/LAPTOP_BACKUP/Development/SW-PORTAL-UNIFIED/frontend && npx pnpm dev`
+Run: `cd /d/LAPTOP_BACKUP/Development/ΟΠΣΚΜ-UNIFIED/frontend && npx pnpm dev`
 
-Open `http://localhost:5173/SW-PORTAL-UNIFIED/` in browser and verify:
+Open `http://localhost:5173/ΟΠΣΚΜ-UNIFIED/` in browser and verify:
 - [ ] 3 cards display side-by-side on desktop
 - [ ] Gradient accent bars visible at top of each card
 - [ ] Badges are rounded colored pills, not plain text
@@ -384,7 +384,7 @@ Open `http://localhost:5173/SW-PORTAL-UNIFIED/` in browser and verify:
 **Step 1: Stage and commit**
 
 ```bash
-cd /d/LAPTOP_BACKUP/Development/SW-PORTAL-UNIFIED
+cd /d/LAPTOP_BACKUP/Development/ΟΠΣΚΜ-UNIFIED
 git add frontend/src/pages/HomePage.jsx
 git commit -m "$(cat <<'EOF'
 style: redesign HomePage with Version A Hellenic Marble layout

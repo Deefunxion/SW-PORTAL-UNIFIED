@@ -6,12 +6,12 @@
 
 **Architecture:** Flask (backend) + React/Vite/shadcn (frontend) + PostgreSQL/pgvector (database + vector search) + OpenAI API (embeddings + chat) + Docker (infrastructure). Port AI modules from Academicon (FastAPI→Flask), migrate from SQLite to PostgreSQL, fix fake authentication, remove ~2,500 lines of dead code.
 
-**Tech Stack:** Flask 2.3, Flask-SQLAlchemy, Flask-JWT-Extended, PostgreSQL 16 + pgvector, OpenAI API (text-embedding-3-small + gpt-4o), React 18, Vite 6, shadcn/ui, Docker Compose, pnpm.
+**Tech Stack:** Flask 2.3, Flask-SQLAlchemy, Flask-JWT-Extended, PostgreSQL 16 + pgvector, OpenAI API (text-embedding-3-small + gpt-5-mini), React 18, Vite 6, shadcn/ui, Docker Compose, pnpm.
 
 **Timeline:** 6 days. Phase 1 (Day 1-2): Cleanup & Infra. Phase 2 (Day 3-4): Port AI. Phase 3 (Day 5-6): Polish & Demo.
 
 **Source repos:**
-- SW Portal: `D:\LAPTOP_BACKUP\Development\SW-PORTAL-UNIFIED`
+- SW Portal: `D:\LAPTOP_BACKUP\Development\ΟΠΣΚΜ-UNIFIED`
 - Academicon (reference): `D:\Academicon`
 
 ---
@@ -28,7 +28,7 @@
 - Delete: `AI_ORCHESTRATORS_ASCENT_UNIFIED_BLUEPRINT.md` (unrelated project)
 - Delete: `IMPORTANT_AI-ECOSYSTEM_GENERAL_CURRENT_KNOWLEDGE_BRIEF_07_25.md` (AI news digest)
 - Delete: `ApothecaryPage_Modernization_Guide.md` (outdated guide)
-- Delete: `SW-Portal-Components-For-AI-Redesign.md` (outdated component docs)
+- Delete: `ΟΠΣΚΜ-Components-For-AI-Redesign.md` (outdated component docs)
 - Delete: `2025-07-22-this-session-is-being-continued-from-a-previous-co.txt` (session artifact)
 - Delete: `clean_md_file.py` (one-off utility)
 - Delete: `bundle.py` (one-off utility)
@@ -1299,10 +1299,8 @@ def get_chat_reply(
     try:
         client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
         response = client.chat.completions.create(
-            model=os.environ.get("LLM_MODEL", "gpt-4o-mini"),
+            model=os.environ.get("LLM_MODEL", "gpt-5-mini"),
             messages=messages,
-            temperature=0.3,
-            max_tokens=1500,
         )
         reply = response.choices[0].message.content
     except Exception as e:
