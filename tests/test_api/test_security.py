@@ -70,3 +70,12 @@ def test_login_rate_limited(client):
         })
     # The 6th request should be rate-limited
     assert response.status_code == 429
+
+
+def test_security_headers_present(client):
+    """Responses should include security headers."""
+    response = client.get('/api/health')
+    assert response.headers.get('X-Content-Type-Options') == 'nosniff'
+    assert response.headers.get('X-Frame-Options') == 'DENY'
+    assert response.headers.get('X-XSS-Protection') == '1; mode=block'
+    assert 'Referrer-Policy' in response.headers
