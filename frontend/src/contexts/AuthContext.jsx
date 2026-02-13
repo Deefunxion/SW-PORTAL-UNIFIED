@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import authService from '@/lib/auth';
+import api from '@/lib/api';
 
 const AuthContext = createContext();
 
@@ -20,7 +21,7 @@ export const AuthProvider = ({ children }) => {
   // Fetch user permissions
   const fetchPermissions = async () => {
     try {
-      const response = await authService.api('/api/user/permissions');
+      const response = await api.get('/api/user/permissions');
       setPermissions(response.permissions || {});
     } catch (error) {
       console.error('Error fetching permissions:', error);

@@ -32,7 +32,7 @@ def test_health_endpoint_exists(client):
 @pytest.mark.unit
 def test_config_values(app):
     """Test configuration values are set correctly."""
-    assert app.config['SECRET_KEY'] == 'test-secret-key'
+    assert app.config['SECRET_KEY'] == 'test-secret-key-long-enough-for-hmac'
     assert 'sqlite:///:memory:' in app.config['SQLALCHEMY_DATABASE_URI']
     assert app.config['TESTING'] is True
 

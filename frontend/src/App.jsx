@@ -1,24 +1,21 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.jsx';
-import { 
-  Home, 
-  Files, 
-  MessageSquare, 
-  Bot, 
-  Menu, 
+import {
+  Home,
+  Files,
+  MessageSquare,
+  Bot,
+  Menu,
   X,
-  Download,
-  Users,
-  FileText,
-  Settings,
   LogOut,
   User,
   Shield
 } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFolder, faComments, faRobot, faEnvelope, faMobileAlt, faBuilding } from '@fortawesome/free-solid-svg-icons';
 
 // Import Sonner for toast notifications
 import { Toaster } from 'sonner';
@@ -40,9 +37,6 @@ import AdminDashboardPage from '@/pages/AdminDashboardPage';
 import NotificationBell from '@/components/NotificationBell';
 import ChatWidget from '@/components/ChatWidget';
 
-// New Enhanced Forum Imports
-import EnhancedForumPage from '@/pages/EnhancedForumPage';
-import EnhancedDiscussionDetail from '@/pages/EnhancedDiscussionDetail';
 import PrivateMessagingPage from '@/pages/PrivateMessagingPage';
 
 import './App.css';
@@ -93,22 +87,22 @@ function Navigation() {
   const getRoleBadgeColor = (role) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800';
-      case 'staff': return 'bg-blue-100 text-blue-800';
-      case 'guest': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'staff': return 'bg-[#dde4f5] text-[#1a3aa3]';
+      case 'guest': return 'bg-[#f0ede6] text-[#2a2520]';
+      default: return 'bg-[#f0ede6] text-[#2a2520]';
     }
   };
 
   return (
-    <nav className="bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-lg sticky top-0 z-50">
+    <nav className="bg-gradient-to-r from-[#152e82] to-[#1a3aa3] text-white shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-blue-900 font-bold text-sm">SW</span>
+              <span className="text-[#1a3aa3] font-bold text-sm">SW</span>
             </div>
-            <span className="text-xl font-bold">SW PORTAL</span>
+            <span className="text-xl font-bold" style={{fontFamily: "'Literata', serif"}}>SW PORTAL</span>
             <Badge variant="secondary" className="hidden sm:inline-flex">
               Περιφέρεια Αττικής
             </Badge>
@@ -166,20 +160,20 @@ function Navigation() {
 
                 {/* User Dropdown Menu */}
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                    <div className="px-4 py-3 border-b border-gray-100">
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-[#e8e2d8] py-2 z-50">
+                    <div className="px-4 py-3 border-b border-[#e8e2d8]">
                       <div className="flex items-center space-x-3">
                         <Avatar className="w-10 h-10">
                           <AvatarImage src={user?.avatar} />
-                          <AvatarFallback className="bg-blue-100 text-blue-800">
+                          <AvatarFallback className="bg-[#dde4f5] text-[#1a3aa3]">
                             {getUserInitials(user)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-[#2a2520]">
                             {user?.full_name || user?.username || 'Χρήστης'}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-[#8a8580]">
                             {user?.email || 'Δεν υπάρχει email'}
                           </div>
                           <Badge className={`text-xs mt-1 ${getRoleBadgeColor(user?.role)}`}>
@@ -193,7 +187,7 @@ function Navigation() {
                     <div className="py-2">
                       <Link
                         to="/profile"
-                        className="w-full flex items-center space-x-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="w-full flex items-center space-x-2 px-4 py-2 text-left text-[#2a2520] hover:bg-[#faf8f4] transition-colors"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <User className="w-4 h-4" />
@@ -203,7 +197,7 @@ function Navigation() {
                       <PermissionGuard permission="can_access_admin_dashboard">
                         <Link
                           to="/admin"
-                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-[#2a2520] hover:bg-[#faf8f4] transition-colors"
                           onClick={() => setShowUserMenu(false)}
                         >
                           <Shield className="w-4 h-4" />
@@ -213,7 +207,7 @@ function Navigation() {
                       
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center space-x-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="w-full flex items-center space-x-2 px-4 py-2 text-left text-[#2a2520] hover:bg-[#faf8f4] transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
                         <span>Αποσύνδεση</span>
@@ -246,7 +240,7 @@ function Navigation() {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && isAuthenticated && (
-          <div className="md:hidden py-4 border-t border-blue-700">
+          <div className="md:hidden py-4 border-t border-[#1a3aa3]/30">
             <div className="flex flex-col space-y-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -286,14 +280,14 @@ function Navigation() {
 // Footer component
 function Footer() {
   return (
-    <footer className="bg-gray-900 text-white py-8 mt-auto">
+    <footer className="bg-[#1a1815] text-white py-8 mt-auto">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* About */}
           <div>
             <h3 className="text-lg font-semibold mb-4">SW Portal</h3>
-            <p className="text-gray-300 text-sm">
-              Ενιαίο σύστημα διαχείρισης αρχείων, φόρουμ και AI Assistant 
+            <p className="text-[#c0b89e] text-sm">
+              Ενιαίο σύστημα διαχείρισης αρχείων, φόρουμ και AI Assistant
               για την Περιφέρεια Αττικής.
             </p>
           </div>
@@ -302,14 +296,14 @@ function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Γρήγοροι Σύνδεσμοι</h3>
             <div className="space-y-2">
-              <Link to="/apothecary" className="block text-gray-300 hover:text-white text-sm">
-                📁 Αρχεία & Έγγραφα
+              <Link to="/apothecary" className="block text-[#c0b89e] hover:text-white text-sm">
+                <FontAwesomeIcon icon={faFolder} className="mr-2" /> Αρχεία & Έγγραφα
               </Link>
-              <Link to="/forum" className="block text-gray-300 hover:text-white text-sm">
-                💬 Φόρουμ Συζητήσεων
+              <Link to="/forum" className="block text-[#c0b89e] hover:text-white text-sm">
+                <FontAwesomeIcon icon={faComments} className="mr-2" /> Φόρουμ Συζητήσεων
               </Link>
-              <Link to="/assistant" className="block text-gray-300 hover:text-white text-sm">
-                🤖 AI Assistant
+              <Link to="/assistant" className="block text-[#c0b89e] hover:text-white text-sm">
+                <FontAwesomeIcon icon={faRobot} className="mr-2" /> AI Assistant
               </Link>
             </div>
           </div>
@@ -317,16 +311,16 @@ function Footer() {
           {/* Contact */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Επικοινωνία</h3>
-            <div className="space-y-2 text-sm text-gray-300">
-              <p>📧 support@swportal.gr</p>
-              <p>📱 +30 210 1234567</p>
-              <p>🏢 Περιφέρεια Αττικής</p>
+            <div className="space-y-2 text-sm text-[#c0b89e]">
+              <p><FontAwesomeIcon icon={faEnvelope} className="mr-2" /> support@swportal.gr</p>
+              <p><FontAwesomeIcon icon={faMobileAlt} className="mr-2" /> +30 210 1234567</p>
+              <p><FontAwesomeIcon icon={faBuilding} className="mr-2" /> Περιφέρεια Αττικής</p>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-700 mt-8 pt-6 text-center">
-          <p className="text-gray-400 text-sm">
+        <div className="border-t border-[#3a3530] mt-8 pt-6 text-center">
+          <p className="text-[#8a8580] text-sm">
             &copy; {new Date().getFullYear()} SW Portal - Περιφέρεια Αττικής. Όλα τα δικαιώματα διατηρούνται.
           </p>
         </div>
@@ -351,15 +345,15 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#eef1f8] to-[#f0ede6]">
         <div className="text-center">
-          <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[#1a3aa3] rounded-lg flex items-center justify-center mx-auto mb-4">
             <span className="text-white font-bold text-xl">SW</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">SW Portal</h1>
-          <p className="text-gray-600">Φόρτωση...</p>
+          <h1 className="text-2xl font-bold text-[#2a2520] mb-2">SW Portal</h1>
+          <p className="text-[#6b6560]">Φόρτωση...</p>
           <div className="mt-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a3aa3] mx-auto"></div>
           </div>
         </div>
       </div>
@@ -367,7 +361,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-[#faf8f4]">
       <Navigation />
       
       <main className="flex-grow">
@@ -386,15 +380,14 @@ function AppContent() {
               <ApothecaryPage />
             </ProtectedRoute>
           } />
-          {/* New Enhanced Forum Routes */}
           <Route path="/forum" element={
             <ProtectedRoute>
-              <EnhancedForumPage />
+              <ForumPage />
             </ProtectedRoute>
           } />
           <Route path="/forum/:discussionId" element={
             <ProtectedRoute>
-              <EnhancedDiscussionDetail />
+              <DiscussionDetail />
             </ProtectedRoute>
           } />
           <Route path="/messaging" element={
@@ -408,18 +401,6 @@ function AppContent() {
             </ProtectedRoute>
           } />
 
-          {/* Old Forum Routes - Commented out for now */}
-          {/* <Route path="/forum-legacy" element={
-            <ProtectedRoute>
-              <ForumPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/forum-legacy/:discussionId" element={
-            <ProtectedRoute>
-              <DiscussionDetail />
-            </ProtectedRoute>
-          } /> */}
-          
           <Route path="/assistant" element={
             <ProtectedRoute>
               <AssistantPage />
@@ -435,7 +416,7 @@ function AppContent() {
               <PermissionGuard permission="can_access_admin_dashboard" fallback={
                 <div className="container mx-auto px-4 py-8 text-center">
                   <h1 className="text-2xl font-bold text-red-600 mb-4">Δεν έχετε πρόσβαση</h1>
-                  <p className="text-gray-600">Δεν έχετε τα απαραίτητα δικαιώματα για πρόσβαση σε αυτή τη σελίδα.</p>
+                  <p className="text-[#6b6560]">Δεν έχετε τα απαραίτητα δικαιώματα για πρόσβαση σε αυτή τη σελίδα.</p>
                 </div>
               } showFallback={true}>
                 <AdminDashboardPage />
@@ -460,8 +441,8 @@ function AppContent() {
           duration: 4000,
           style: {
             background: 'white',
-            color: '#1f2937',
-            border: '1px solid #e5e7eb',
+            color: '#2a2520',
+            border: '1px solid #e8e2d8',
             fontSize: '14px',
           },
         }}

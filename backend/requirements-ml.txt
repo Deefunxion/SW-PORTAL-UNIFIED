@@ -1,0 +1,12 @@
+# Heavy ML dependencies — NOT needed for basic operation
+# Install only when implementing local embedding models or PII redaction
+-r requirements.txt
+transformers>=4.35.0
+torch>=2.1.0
+sentence-transformers>=2.2.0
+spacy==3.7.2
+unstructured[all-docs]>=0.11.0
+Pillow>=10.0.0
+celery>=5.3.0
+redis>=5.0.0
+Flask-Mail==0.9.1

@@ -17,8 +17,19 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-import { UserAvatarWithPresence } from '@/components/UserPresenceIndicator';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar.jsx';
 import { useAuth } from '@/contexts/AuthContext';
+
+function SimpleUserAvatar({ username, size = "md" }) {
+  const sizes = { sm: "h-8 w-8 text-xs", md: "h-10 w-10 text-sm" };
+  return (
+    <Avatar className={sizes[size] || sizes.md}>
+      <AvatarFallback className="bg-blue-100 text-blue-800 font-medium">
+        {username ? username[0].toUpperCase() : "U"}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
 import api from '@/lib/api';
 
 /**
@@ -135,7 +146,7 @@ function ConversationItem({
               </Badge>
             </div>
           ) : (
-            <UserAvatarWithPresence
+            <SimpleUserAvatar
               userId={getOtherParticipants()[0]?.user_id}
               username={getOtherParticipants()[0]?.user?.username}
               size="md"
@@ -412,7 +423,7 @@ function NewConversationModal({
                         ${isSelected ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'}
                       `}
                     >
-                      <UserAvatarWithPresence
+                      <SimpleUserAvatar
                         userId={user.id}
                         username={user.username}
                         size="sm"

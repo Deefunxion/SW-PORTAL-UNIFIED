@@ -34,12 +34,9 @@ class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.getenv(
         'DATABASE_URL',
-        'sqlite:///sw_portal_dev.db'
+        'postgresql://sw_portal:sw_portal_dev@localhost:5432/sw_portal'
     )
-    
-    # Logging
-    LOG_LEVEL = 'DEBUG'
-    SQLALCHEMY_ECHO = True
+    SQLALCHEMY_ECHO = False  # Set True for SQL debugging
 
 
 class TestingConfig(Config):

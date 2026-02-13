@@ -12,18 +12,18 @@ const baseStyle = {
   padding: '40px',
   borderWidth: 2,
   borderRadius: '0.5rem',
-  borderColor: '#e2e8f0',
+  borderColor: '#e8e2d8',
   borderStyle: 'dashed',
-  backgroundColor: '#f8fafc',
-  color: '#64748b',
+  backgroundColor: '#faf8f4',
+  color: '#6b6560',
   outline: 'none',
   transition: 'border .24s ease-in-out, background-color .24s ease-in-out',
   cursor: 'pointer',
 };
 
 const activeStyle = {
-  borderColor: '#2563eb',
-  backgroundColor: '#eff6ff',
+  borderColor: '#1a3aa3',
+  backgroundColor: '#eef1f8',
 };
 
 const acceptStyle = {
@@ -79,7 +79,7 @@ function DropZone({ onDrop, maxFiles = 10, maxSize = 16 * 1024 * 1024 /* 16MB */
   const getIcon = () => {
     if (isDragAccept) return <FileCheck className="w-16 h-16 text-green-500" />;
     if (isDragReject) return <FileX className="w-16 h-16 text-red-500" />;
-    return <UploadCloud className="w-16 h-16 text-gray-400" />;
+    return <UploadCloud className="w-16 h-16 text-[#8a8580]" />;
   };
 
   const getText = () => {
@@ -93,7 +93,7 @@ function DropZone({ onDrop, maxFiles = 10, maxSize = 16 * 1024 * 1024 /* 16MB */
       <input {...getInputProps()} />
       {getIcon()}
       <p className="mt-4 text-center text-sm">{getText()}</p>
-      <p className="text-xs text-gray-500 mt-1">
+      <p className="text-xs text-[#8a8580] mt-1">
         Μέγιστος αριθμός αρχείων: {maxFiles}, Μέγιστο μέγεθος: {maxSize / 1024 / 1024}MB
       </p>
     </div>
