@@ -22,3 +22,13 @@ def test_chunk_text_empty():
     """Empty text should return empty list."""
     from my_project.ai.embeddings import chunk_text
     assert chunk_text("", chunk_size=100, overlap=10) == []
+
+def test_chunk_size_handles_legislative_text():
+    """Default chunk size should keep ~1100 char legislative articles in one chunk."""
+    from my_project.ai.embeddings import chunk_text
+    # Simulate a legislative article (single paragraph, ~1100 chars)
+    article = "Άρθρο 1. " + ("Σύμφωνα με τις διατάξεις του παρόντος νόμου, " * 25)  # ~1134 chars
+    chunks = chunk_text(article)
+    # With 1200-char default, should fit in exactly 1 chunk
+    assert len(chunks) == 1
+    assert chunks[0].content.startswith("Άρθρο 1.")

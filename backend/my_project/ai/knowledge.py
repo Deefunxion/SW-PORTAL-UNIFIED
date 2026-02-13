@@ -108,7 +108,7 @@ def process_document_text(
     db.session.flush()  # Get the ID
 
     # Chunk the text
-    chunks = chunk_text(text, chunk_size=500, overlap=100)
+    chunks = chunk_text(text, chunk_size=1200, overlap=200)
 
     if not chunks:
         doc_index.status = "ready"
