@@ -777,11 +777,18 @@ def ai_chat():
             ))
             db.session.commit()
 
+    user = User.query.get(user_id)
+    user_context = {
+        'username': user.username,
+        'role': user.role,
+    } if user else None
+
     from my_project.ai.copilot import get_chat_reply
     result = get_chat_reply(
         user_message=message,
         chat_history=chat_history,
         use_rag=True,
+        user_context=user_context,
     )
 
     # Store assistant reply in session

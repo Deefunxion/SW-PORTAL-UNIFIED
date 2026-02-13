@@ -55,6 +55,7 @@ def build_messages(
     user_message: str,
     context_chunks: List[Dict[str, Any]],
     chat_history: List[Dict[str, str]],
+    user_context: Optional[Dict[str, str]] = None,
 ) -> List[Dict[str, str]]:
     """Build the message array for the LLM call.
 
@@ -73,6 +74,15 @@ def build_messages(
             "content": f"Σχετικά έγγραφα για την ερώτηση:\n\n{context_text}",
         })
 
+    # Add user context if available
+    if user_context:
+        user_info = (
+            f"Ο χρήστης που ρωτάει: {user_context.get('username', 'Άγνωστος')}, "
+            f"ρόλος: {user_context.get('role', 'guest')}. "
+            f"Προσάρμοσε το επίπεδο λεπτομέρειας ανάλογα με τον ρόλο."
+        )
+        messages.append({"role": "system", "content": user_info})
+
     # Add chat history (last 20 messages)
     for msg in chat_history[-20:]:
         messages.append({
@@ -90,6 +100,7 @@ def get_chat_reply(
     user_message: str,
     chat_history: Optional[List[Dict[str, str]]] = None,
     use_rag: bool = True,
+    user_context: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """Generate an AI reply using RAG context from document chunks.
 
@@ -97,6 +108,7 @@ def get_chat_reply(
         user_message: The user's question.
         chat_history: Previous messages in the conversation.
         use_rag: Whether to search documents for context.
+        user_context: Dict with 'username' and 'role' for personalization.
 
     Returns:
         Dict with 'reply', 'sources', and 'context_used'.
@@ -113,12 +125,12 @@ def get_chat_reply(
             logger.error(f"RAG search failed: {e}")
 
     # Build messages
-    messages = build_messages(user_message, context_chunks, chat_history)
+    messages = build_messages(user_message, context_chunks, chat_history, user_context)
 
     # Call LLM
     try:
         client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-        model = os.environ.get("LLM_MODEL", "gpt-4o-mini")
+        model = os.environ.get("LLM_MODEL", "gpt-oss-120b")
 
         # Reasoning models (gpt-5*, o1*, o3*) don't support temperature
         is_reasoning = any(model.startswith(p) for p in ("gpt-5", "o1", "o3"))

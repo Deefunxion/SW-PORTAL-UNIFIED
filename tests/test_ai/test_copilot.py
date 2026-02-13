@@ -41,3 +41,18 @@ def test_build_messages_preserves_20_messages():
     # Should keep the LAST 20 (messages 4-23), not the first 20
     assert history_messages[0]["content"] == "Message 4"
     assert history_messages[-1]["content"] == "Message 23"
+
+def test_build_messages_includes_user_context():
+    """Messages should include user context when provided."""
+    from my_project.ai.copilot import build_messages
+    messages = build_messages(
+        user_message="Πώς αδειοδοτώ ΚΔΑΠ;",
+        context_chunks=[],
+        chat_history=[],
+        user_context={"username": "maria", "role": "staff"},
+    )
+    # Should have a system message mentioning the user's role
+    system_msgs = [m for m in messages if m["role"] == "system"]
+    combined = " ".join(m["content"] for m in system_msgs)
+    assert "maria" in combined
+    assert "staff" in combined
