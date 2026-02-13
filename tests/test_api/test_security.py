@@ -79,3 +79,24 @@ def test_security_headers_present(client):
     assert response.headers.get('X-Frame-Options') == 'DENY'
     assert response.headers.get('X-XSS-Protection') == '1; mode=block'
     assert 'Referrer-Policy' in response.headers
+
+
+def test_demo_users_not_seeded_in_production():
+    """Demo users should not be seeded in production mode."""
+    import os
+    os.environ['FLASK_ENV'] = 'production'
+    os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
+    os.environ['SECRET_KEY'] = 'prod-secret-key-long-enough-for-hmac'
+    os.environ['JWT_SECRET_KEY'] = 'prod-jwt-secret-key-long-enough-for-hmac'
+
+    from my_project import create_app
+    from my_project.extensions import db
+    from my_project.models import User
+
+    app = create_app()
+    with app.app_context():
+        admin = User.query.filter_by(username='admin').first()
+        assert admin is None, "Demo admin user should not exist in production"
+
+    # Restore testing env
+    os.environ['FLASK_ENV'] = 'testing'

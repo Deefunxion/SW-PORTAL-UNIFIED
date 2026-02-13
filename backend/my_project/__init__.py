@@ -107,28 +107,28 @@ def create_app():
         # Create all tables
         db.create_all()
 
-        # Seed database with default data (guarded against race conditions
-        # when multiple Gunicorn workers start simultaneously)
-        try:
-            if User.query.count() == 0:
-                print("Seeding database with default users...")
-                default_users = [
-                    {'username': 'admin', 'email': 'admin@portal.gr', 'password': 'admin123', 'role': 'admin'},
-                    {'username': 'staff', 'email': 'staff@portal.gr', 'password': 'staff123', 'role': 'staff'},
-                    {'username': 'guest', 'email': 'guest@portal.gr', 'password': 'guest123', 'role': 'guest'}
-                ]
-                for user_data in default_users:
-                    new_user = User(
-                        username=user_data['username'],
-                        email=user_data['email'],
-                        role=user_data['role']
-                    )
-                    new_user.set_password(user_data['password'])
-                    db.session.add(new_user)
-                db.session.commit()
-                print("Default users created.")
-        except Exception:
-            db.session.rollback()  # Another worker already seeded
+        # Seed demo data ONLY in development mode
+        if app.debug:
+            try:
+                if User.query.count() == 0:
+                    print("Seeding database with default users...")
+                    default_users = [
+                        {'username': 'admin', 'email': 'admin@portal.gr', 'password': 'admin123', 'role': 'admin'},
+                        {'username': 'staff', 'email': 'staff@portal.gr', 'password': 'staff123', 'role': 'staff'},
+                        {'username': 'guest', 'email': 'guest@portal.gr', 'password': 'guest123', 'role': 'guest'}
+                    ]
+                    for user_data in default_users:
+                        new_user = User(
+                            username=user_data['username'],
+                            email=user_data['email'],
+                            role=user_data['role']
+                        )
+                        new_user.set_password(user_data['password'])
+                        db.session.add(new_user)
+                    db.session.commit()
+                    print("Default users created.")
+            except Exception:
+                db.session.rollback()
 
         try:
             if Category.query.count() == 0:
