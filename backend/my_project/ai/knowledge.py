@@ -228,22 +228,28 @@ def search_chunks(
 
 
 def _fallback_keyword_search(query: str, limit: int) -> List[Dict[str, Any]]:
-    """Simple keyword search fallback when vector search is unavailable."""
-    keywords = query.lower().split()
-    results = []
+    """Keyword search fallback using SQL LIKE (no full-table scan in Python)."""
+    keywords = [kw for kw in query.lower().split() if len(kw) >= 2]
+    if not keywords:
+        return []
 
-    all_chunks = FileChunk.query.limit(500).all()
-    for chunk in all_chunks:
+    # Build OR filter: match any keyword via SQL LIKE
+    from sqlalchemy import or_, func
+    filters = [func.lower(FileChunk.content).contains(kw) for kw in keywords]
+    results = FileChunk.query.filter(or_(*filters)).limit(limit * 3).all()
+
+    # Score and sort by number of keywords matched
+    scored = []
+    for chunk in results:
         content_lower = chunk.content.lower()
         score = sum(1 for kw in keywords if kw in content_lower)
-        if score > 0:
-            results.append({
-                "content": chunk.content,
-                "source_path": chunk.source_path,
-                "chunk_type": chunk.chunk_type,
-                "similarity": score / len(keywords),
-                "document_id": chunk.document_id,
-            })
+        scored.append({
+            "content": chunk.content,
+            "source_path": chunk.source_path,
+            "chunk_type": chunk.chunk_type,
+            "similarity": score / len(keywords),
+            "document_id": chunk.document_id,
+        })
 
-    results.sort(key=lambda x: x["similarity"], reverse=True)
-    return results[:limit]
+    scored.sort(key=lambda x: x["similarity"], reverse=True)
+    return scored[:limit]
