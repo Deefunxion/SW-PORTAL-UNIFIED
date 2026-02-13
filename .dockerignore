@@ -5,7 +5,7 @@ __pycache__
 .env
 .venv
 *.db
-content/
+content/uploads/
 uploads/
 logs/
 frontend/node_modules

@@ -20,8 +20,8 @@ env/
 *.db
 *.sqlite3
 
-# Content and uploads
-content/
+# Uploads and logs (content/ tracked for demo documents)
+content/uploads/
 uploads/
 logs/
 
