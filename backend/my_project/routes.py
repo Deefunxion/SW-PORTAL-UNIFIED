@@ -192,8 +192,12 @@ def login():
 
 
 @main_bp.route('/api/auth/register', methods=['POST'])
+@jwt_required()
 def register():
-    """User registration endpoint"""
+    """User registration endpoint (admin only)"""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
     data = request.get_json()
     username = data.get('username')
     email = data.get('email')
@@ -248,6 +252,15 @@ def get_user_permissions_list(role):
     return permission_map.get(role, ['read'])
 
 
+def require_admin():
+    """Check if current user is admin. Returns error response or None."""
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user or user.role != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    return None
+
+
 @main_bp.route('/api/auth/logout', methods=['POST'])
 def logout():
     """User logout endpoint"""
@@ -255,8 +268,12 @@ def logout():
 
 
 @main_bp.route('/api/auth/users', methods=['GET'])
+@jwt_required()
 def get_users():
-    """Get all users"""
+    """Get all users (admin only)"""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
     users = User.query.all()
     return jsonify([user.to_dict() for user in users])
 
@@ -516,6 +533,7 @@ def upload_file():
 
 
 @main_bp.route('/api/folders/create', methods=['POST'])
+@jwt_required()
 def create_folder():
     """Create a new folder"""
     data = request.get_json()
@@ -560,6 +578,7 @@ def get_conversations():
 
 
 @main_bp.route('/api/conversations', methods=['POST'])
+@jwt_required()
 def create_conversation():
     """Create a new conversation"""
     data = request.get_json()
@@ -588,6 +607,7 @@ def create_conversation():
 
 
 @main_bp.route('/api/conversations/<int:conversation_id>/messages', methods=['GET'])
+@jwt_required()
 def get_messages(conversation_id):
     """Get messages in a conversation"""
     messages = PrivateMessage.query.filter_by(

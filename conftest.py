@@ -55,26 +55,47 @@ def runner(app):
 
 
 @pytest.fixture
-def auth_headers(client):
-    """Create test user and return JWT headers."""
-    # Register test user
-    response = client.post('/api/auth/register', json={
-        'username': 'testuser',
-        'email': 'test@example.com',
-        'password': 'testpass123'
-    })
+def auth_headers(app, client):
+    """Create test user via ORM and return JWT headers."""
+    from my_project.models import User
+    from my_project.extensions import db as _db
 
-    # Login to get token
+    with app.app_context():
+        user = User.query.filter_by(username='testuser').first()
+        if not user:
+            user = User(username='testuser', email='test@example.com', role='guest')
+            user.set_password('testpass123')
+            _db.session.add(user)
+            _db.session.commit()
+
     response = client.post('/api/auth/login', json={
         'username': 'testuser',
         'password': 'testpass123'
     })
+    token = response.get_json()['access_token']
+    return {'Authorization': f'Bearer {token}'}
 
-    if response.status_code == 200:
-        token = response.get_json()['access_token']
-        return {'Authorization': f'Bearer {token}'}
 
-    return {}
+@pytest.fixture
+def admin_headers(app, client):
+    """Create admin user via ORM and return JWT headers."""
+    from my_project.models import User
+    from my_project.extensions import db as _db
+
+    with app.app_context():
+        user = User.query.filter_by(username='testadmin').first()
+        if not user:
+            user = User(username='testadmin', email='admin@test.com', role='admin')
+            user.set_password('adminpass123')
+            _db.session.add(user)
+            _db.session.commit()
+
+    response = client.post('/api/auth/login', json={
+        'username': 'testadmin',
+        'password': 'adminpass123'
+    })
+    token = response.get_json()['access_token']
+    return {'Authorization': f'Bearer {token}'}
 
 
 @pytest.fixture
