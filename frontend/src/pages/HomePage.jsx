@@ -14,8 +14,6 @@ import {
   FileText,
   ArrowRight
 } from 'lucide-react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuilding, faShield, faRocket } from '@fortawesome/free-solid-svg-icons';
 import api from '@/lib/api';
 
 function HomePage() {
@@ -107,17 +105,6 @@ function HomePage() {
             <br className="hidden md:block" />
             για την Περιφέρεια Αττικής
           </p>
-          <div className="flex flex-wrap justify-center gap-6 mb-12">
-            <Badge variant="secondary" className="text-lg px-10 py-5 bg-[#eef1f8] text-[#1a3aa3] border-[#d0d8ee] hover:bg-[#dde4f5] transition-colors font-semibold rounded-2xl">
-              <FontAwesomeIcon icon={faBuilding} className="mr-3" /> Περιφέρεια Αττικής
-            </Badge>
-            <Badge variant="secondary" className="text-lg px-10 py-5 bg-[#eef5ee] text-[#2d6b2d] border-[#c8dec8] hover:bg-[#d8ecd8] transition-colors font-semibold rounded-2xl">
-              <FontAwesomeIcon icon={faShield} className="mr-3" /> Ασφαλές Περιβάλλον
-            </Badge>
-            <Badge variant="secondary" className="text-lg px-10 py-5 bg-[#eef1f8] text-[#1a3aa3] border-[#d0d8ee] hover:bg-[#dde4f5] transition-colors font-semibold rounded-2xl">
-              <FontAwesomeIcon icon={faRocket} className="mr-3" /> Τοπική Εγκατάσταση
-            </Badge>
-          </div>
         </div>
       </div>
 
@@ -125,8 +112,8 @@ function HomePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-20">
         <Card className="text-center hover:shadow-2xl transition-all duration-300 border-0 shadow-xl hover:scale-105 p-10">
           <CardHeader className="pb-6">
-            <div className="w-24 h-24 bg-gradient-to-br from-[#1a3aa3] to-[#2548b8] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-              <FileText className="w-12 h-12 text-white" />
+            <div className="w-20 h-20 bg-gradient-to-br from-[#1a3aa3] to-[#2548b8] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+              <FileText className="w-10 h-10 text-white" />
             </div>
             <CardTitle className="text-5xl font-bold bg-gradient-to-r from-[#1a3aa3] to-[#152e82] bg-clip-text text-transparent mb-4" style={{fontFamily: "'Literata', serif"}}>
               {stats.totalFiles}
@@ -137,8 +124,8 @@ function HomePage() {
 
         <Card className="text-center hover:shadow-2xl transition-all duration-300 border-0 shadow-xl hover:scale-105 p-10">
           <CardHeader className="pb-6">
-            <div className="w-24 h-24 bg-gradient-to-br from-[#b8942e] to-[#9a7a24] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-              <MessageSquare className="w-12 h-12 text-white" />
+            <div className="w-20 h-20 bg-gradient-to-br from-[#b8942e] to-[#9a7a24] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+              <MessageSquare className="w-10 h-10 text-white" />
             </div>
             <CardTitle className="text-5xl font-bold bg-gradient-to-r from-[#b8942e] to-[#8a6d1b] bg-clip-text text-transparent mb-4" style={{fontFamily: "'Literata', serif"}}>
               {stats.totalDiscussions}
@@ -149,8 +136,8 @@ function HomePage() {
 
         <Card className="text-center hover:shadow-2xl transition-all duration-300 border-0 shadow-xl hover:scale-105 p-10">
           <CardHeader className="pb-6">
-            <div className="w-24 h-24 bg-gradient-to-br from-[#3d5cc9] to-[#1a3aa3] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-              <Users className="w-12 h-12 text-white" />
+            <div className="w-20 h-20 bg-gradient-to-br from-[#3d5cc9] to-[#1a3aa3] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+              <Users className="w-10 h-10 text-white" />
             </div>
             <CardTitle className="text-5xl font-bold bg-gradient-to-r from-[#3d5cc9] to-[#1a3aa3] bg-clip-text text-transparent mb-4" style={{fontFamily: "'Literata', serif"}}>
               {stats.totalCategories}
@@ -168,8 +155,8 @@ function HomePage() {
             <Card key={index} className="group hover:shadow-2xl transition-all duration-500 border-0 shadow-xl hover:-translate-y-2 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-[#2548b8] to-transparent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
               <CardHeader className="relative p-10">
-                <div className={`w-24 h-24 ${feature.color} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-xl`}>
-                  <Icon className="w-12 h-12 text-white" />
+                <div className={`w-20 h-20 ${feature.color} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-xl`}>
+                  <Icon className="w-10 h-10 text-white" />
                 </div>
                 <CardTitle className="text-3xl mb-6 group-hover:text-[#1a3aa3] transition-colors font-bold">{feature.title}</CardTitle>
                 <CardDescription className="text-[#6b6560] text-xl leading-relaxed">
