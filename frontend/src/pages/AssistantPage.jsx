@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import DOMPurify from 'dompurify';
 import {
-  Bot, Send, User, Trash2, MessageSquare, Lightbulb, Clock, Zap, FileText
+  Bot, Send, User, Trash2, MessageSquare, Lightbulb, Clock, Zap, FileText, AlertTriangle
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -111,6 +111,15 @@ function AssistantPage() {
           Έξυπνος βοηθός με πρόσβαση στη νομοθεσία και τα έγγραφα κοινωνικής μέριμνας
         </p>
       </header>
+
+      {/* AI Disclaimer Banner */}
+      <div className="mb-6 sm:mb-8 bg-amber-50 border border-amber-200 rounded-xl px-4 sm:px-6 py-3 sm:py-4 flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <p className="text-sm sm:text-base text-amber-800 font-medium leading-relaxed">
+          Οι απαντήσεις του AI Βοηθού είναι <strong>ενδεικτικές και συμβουλευτικού χαρακτήρα</strong>.
+          Ελέγξτε πάντα με την ισχύουσα νομοθεσία και τις επίσημες εγκυκλίους.
+        </p>
+      </div>
 
       {/* Feature Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8 sm:mb-12">

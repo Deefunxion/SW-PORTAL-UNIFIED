@@ -138,3 +138,9 @@ def test_failed_login_creates_audit_log(client, app):
     with app.app_context():
         logs = AuditLog.query.filter_by(action='login_failed').all()
         assert len(logs) >= 1
+
+
+def test_ai_reply_includes_disclaimer():
+    """AI replies should include advisory disclaimer."""
+    from my_project.ai.copilot import DISCLAIMER_TEXT
+    assert 'ενδεικτικές' in DISCLAIMER_TEXT or 'ενδεικτικός' in DISCLAIMER_TEXT
