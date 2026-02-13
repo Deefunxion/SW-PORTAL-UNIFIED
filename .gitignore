@@ -22,6 +22,7 @@ env/
 
 # Uploads and logs (content/ tracked for demo documents)
 content/uploads/
+backend/content/
 uploads/
 logs/
 
