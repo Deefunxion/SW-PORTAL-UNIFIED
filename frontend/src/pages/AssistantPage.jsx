@@ -101,75 +101,75 @@ function AssistantPage() {
   ];
 
   return (
-    <div className="container mx-auto px-12 py-20 max-w-8xl">
+    <div className="mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-12 max-w-7xl">
       {/* Header */}
-      <header className="mb-20 text-center">
-        <h1 className="text-7xl font-bold text-[#1a3aa3] mb-6" style={{fontFamily: "'Literata', serif"}}>
+      <header className="mb-8 sm:mb-12 text-center">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1a3aa3] mb-4" style={{fontFamily: "'Literata', serif"}}>
           AI Βοηθός
         </h1>
-        <p className="text-3xl text-[#8a8580] max-w-4xl mx-auto leading-relaxed font-medium">
+        <p className="text-base sm:text-lg lg:text-xl text-[#8a8580] max-w-3xl mx-auto leading-relaxed font-medium">
           Έξυπνος βοηθός με πρόσβαση στη νομοθεσία και τα έγγραφα κοινωνικής μέριμνας
         </p>
       </header>
 
       {/* Feature Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-20">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8 sm:mb-12">
         {[ { icon: Zap, title: '24/7 Διαθέσιμος', desc: 'Άμεσες απαντήσεις βασισμένες στα έγγραφα του φορέα', color: 'from-[#1a3aa3] to-[#2548b8]' },
            { icon: Lightbulb, title: 'Νομοθεσία & Αδειοδότηση', desc: 'Γνώση από ΦΕΚ, αποφάσεις και εγκυκλίους', color: 'from-[#b8942e] to-[#9a7a24]' },
            { icon: MessageSquare, title: 'Αναφορά Πηγών', desc: 'Κάθε απάντηση συνοδεύεται από τα σχετικά έγγραφα', color: 'from-[#3d5cc9] to-[#1a3aa3]' }
         ].map(({ icon: Icon, title, desc, color }) => (
-          <Card key={title} className="text-center hover:shadow-2xl transition-all duration-300 rounded-2xl border-0 shadow-xl hover:scale-105">
-            <CardContent className="p-12">
-              <div className={`w-24 h-24 bg-gradient-to-br ${color} rounded-2xl mx-auto mb-8 flex items-center justify-center shadow-xl`}>
-                <Icon className="w-12 h-12 text-white" />
+          <Card key={title} className="text-center hover:shadow-xl transition-all duration-300 rounded-xl border border-[#e8e2d8] shadow-md">
+            <CardContent className="p-5 sm:p-6">
+              <div className={`w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br ${color} rounded-xl mx-auto mb-4 flex items-center justify-center shadow-lg`}>
+                <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-[#2a2520] mb-4" style={{fontFamily: "'Literata', serif"}}>{title}</h3>
-              <p className="text-[#6b6560] text-lg leading-relaxed">{desc}</p>
+              <h3 className="text-base sm:text-lg font-bold text-[#2a2520] mb-2" style={{fontFamily: "'Literata', serif"}}>{title}</h3>
+              <p className="text-[#6b6560] text-sm sm:text-base leading-relaxed">{desc}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Chat Card */}
-      <Card className="h-[800px] flex flex-col shadow-2xl rounded-3xl border-0 bg-white">
-        <CardHeader className="flex-shrink-0 border-b-2 border-[#e8e2d8] bg-gradient-to-r from-[#eef1f8] to-[#f0ede6] p-8">
+      <Card className="h-[480px] sm:h-[560px] lg:h-[660px] flex flex-col shadow-xl rounded-2xl border border-[#e8e2d8] bg-white">
+        <CardHeader className="flex-shrink-0 border-b border-[#e8e2d8] bg-gradient-to-r from-[#eef1f8] to-[#f0ede6] p-4 sm:p-5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-[#1a3aa3] to-[#152e82] rounded-2xl flex items-center justify-center shadow-xl">
-                <Bot className="w-10 h-10 text-white" />
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#1a3aa3] to-[#152e82] rounded-xl flex items-center justify-center shadow-lg">
+                <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <CardTitle className="text-3xl font-bold text-[#1a3aa3] mb-2" style={{fontFamily: "'Literata', serif"}}>AI Βοηθός</CardTitle>
-                <CardDescription className="flex items-center text-lg">
-                  <div className="w-4 h-4 bg-green-500 rounded-full mr-3 animate-pulse"></div>
-                  Συνδεδεμένος και Έτοιμος
+                <CardTitle className="text-lg sm:text-xl font-bold text-[#1a3aa3]" style={{fontFamily: "'Literata', serif"}}>AI Βοηθός</CardTitle>
+                <CardDescription className="flex items-center text-sm">
+                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                  Συνδεδεμένος
                 </CardDescription>
               </div>
             </div>
             <Button
               variant="outline"
               onClick={clearChat}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-2 border-red-200 rounded-2xl transition-all px-6 py-3 text-lg font-semibold"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-xl transition-all px-3 sm:px-4 py-2 text-sm font-semibold"
             >
-              <Trash2 className="w-5 h-5 mr-3" /> Καθαρισμός
+              <Trash2 className="w-4 h-4 mr-1.5 sm:mr-2" /> <span className="hidden sm:inline">Καθαρισμός</span><span className="sm:hidden">Clear</span>
             </Button>
           </div>
         </CardHeader>
 
         {/* Messages */}
-        <CardContent className="flex-1 overflow-y-auto p-10 space-y-8">
+        <CardContent className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {messages.map(m => (
             <div key={m.id} className={`flex ${m.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] ${m.type === 'user' ? 'rounded-tl-2xl rounded-tr-sm rounded-br-2xl rounded-bl-2xl' : 'rounded-tl-sm rounded-tr-2xl rounded-br-2xl rounded-bl-2xl'} px-8 py-6 ${m.type === 'user' ? 'bg-[#1a3aa3] text-white' : m.isError ? 'bg-red-50 border-2 border-red-200 text-red-800' : 'bg-[#f0ede6] text-[#2a2520]'}`}>
-                <div className="flex items-start space-x-4">
-                  {m.type === 'assistant' && <Bot className={`w-7 h-7 flex-shrink-0 mt-1 ${m.isError ? 'text-red-500' : 'text-[#1a3aa3]'}`} />}
-                  {m.type === 'user' && <User className="w-7 h-7 flex-shrink-0 mt-1 text-blue-100" />}
-                  <div className="flex-1">
+              <div className={`max-w-[90%] sm:max-w-[80%] ${m.type === 'user' ? 'rounded-tl-2xl rounded-tr-sm rounded-br-2xl rounded-bl-2xl' : 'rounded-tl-sm rounded-tr-2xl rounded-br-2xl rounded-bl-2xl'} px-4 sm:px-6 py-3 sm:py-4 ${m.type === 'user' ? 'bg-[#1a3aa3] text-white' : m.isError ? 'bg-red-50 border border-red-200 text-red-800' : 'bg-[#f0ede6] text-[#2a2520]'}`}>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  {m.type === 'assistant' && <Bot className={`w-5 h-5 flex-shrink-0 mt-0.5 ${m.isError ? 'text-red-500' : 'text-[#1a3aa3]'}`} />}
+                  {m.type === 'user' && <User className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-100" />}
+                  <div className="flex-1 min-w-0">
                     {m.type === 'user' ? (
-                      <p className="whitespace-pre-wrap text-xl leading-relaxed font-medium">{m.content}</p>
+                      <p className="whitespace-pre-wrap text-base sm:text-lg leading-relaxed font-medium">{m.content}</p>
                     ) : (
                       <div
-                        className="whitespace-pre-wrap text-xl leading-relaxed font-medium prose prose-lg max-w-none"
+                        className="whitespace-pre-wrap text-base sm:text-lg leading-relaxed font-medium prose prose-sm sm:prose-base max-w-none"
                         dangerouslySetInnerHTML={{ __html: simpleMarkdown(m.content) }}
                       />
                     )}
@@ -199,7 +199,7 @@ function AssistantPage() {
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-[#f0ede6] rounded-tl-sm rounded-tr-2xl rounded-br-2xl rounded-bl-2xl px-8 py-6 max-w-[80%]">
+              <div className="bg-[#f0ede6] rounded-tl-sm rounded-tr-2xl rounded-br-2xl rounded-bl-2xl px-4 sm:px-6 py-3 sm:py-4 max-w-[90%] sm:max-w-[80%]">
                 <div className="flex items-center space-x-3">
                   <Bot className="w-7 h-7 text-[#1a3aa3]" />
                   <div className="flex space-x-2">
@@ -216,37 +216,36 @@ function AssistantPage() {
         </CardContent>
 
         {/* Input */}
-        <div className="flex-shrink-0 border-t-2 border-[#e8e2d8] p-10">
+        <div className="flex-shrink-0 border-t border-[#e8e2d8] p-4 sm:p-5">
           {messages.length <= 1 && (
-            <div className="mb-8">
-              <p className="text-lg text-[#6b6560] mb-4 font-semibold">Προτεινόμενες ερωτήσεις:</p>
-              <div className="flex flex-wrap gap-4">
+            <div className="mb-4">
+              <p className="text-sm sm:text-base text-[#6b6560] mb-3 font-semibold">Προτεινόμενες ερωτήσεις:</p>
+              <div className="flex flex-wrap gap-2">
                 {suggested.map(q => (
-                  <Button key={q} variant="outline" onClick={() => handleSendMessage(q)} className="rounded-2xl px-6 py-3 text-base font-medium border-2 hover:translate-x-1 hover:border-[#1a3aa3] hover:bg-[#eef1f8] hover:text-[#1a3aa3] hover:shadow-md transition-all duration-250">
+                  <Button key={q} variant="outline" onClick={() => handleSendMessage(q)} className="rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border hover:border-[#1a3aa3] hover:bg-[#eef1f8] hover:text-[#1a3aa3] transition-all">
                     {q}
                   </Button>
                 ))}
               </div>
             </div>
           )}
-          <div className="flex gap-6">
+          <div className="flex gap-3">
             <Input
-              placeholder="Γράψτε την ερώτησή σας εδώ..."
+              placeholder="Γράψτε την ερώτησή σας..."
               value={inputMessage}
               onChange={e => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               disabled={isLoading}
-              className="flex-1 text-xl rounded-2xl border-2 border-[#e8e2d8] focus:border-[#1a3aa3] focus:ring-4 focus:ring-[#1a3aa3]/10 px-6 py-4"
+              className="flex-1 text-base rounded-xl border border-[#e8e2d8] focus:border-[#1a3aa3] focus:ring-4 focus:ring-[#1a3aa3]/10 px-4 py-3 min-h-[44px]"
             />
             <Button
               onClick={() => handleSendMessage()}
               disabled={!inputMessage.trim() || isLoading}
-              className="bg-[#1a3aa3] hover:bg-[#152e82] text-white rounded-2xl px-8 py-4 shadow-xl hover:shadow-2xl transition-all text-lg font-bold min-h-[60px]"
+              className="bg-[#1a3aa3] hover:bg-[#152e82] text-white rounded-xl px-4 sm:px-6 py-3 shadow-lg hover:shadow-xl transition-all text-base font-bold min-h-[44px]"
             >
-              <Send className="w-6 h-6" />
+              <Send className="w-5 h-5" />
             </Button>
           </div>
-          <p className="text-base text-[#8a8580] mt-4 text-center font-medium">Enter για αποστολή</p>
         </div>
       </Card>
     </div>

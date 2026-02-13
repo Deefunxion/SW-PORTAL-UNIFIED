@@ -150,7 +150,7 @@ function ChatWidget() {
     <>
       {/* Floating Button */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
           <Button
             onClick={() => { setIsOpen(true); setIsMinimized(false); }}
             className="w-14 h-14 rounded-full bg-[#1a3aa3] hover:bg-[#152e82] hover:shadow-[0_8px_24px_rgba(26,58,163,.35)] hover:scale-110 shadow-lg transition-all duration-300 relative"
@@ -167,8 +167,8 @@ function ChatWidget() {
 
       {/* Chat Widget */}
       {isOpen && (
-        <div className={`fixed bottom-6 right-6 z-50 transition-all duration-300 ${
-          isMinimized ? 'w-80 h-16' : 'w-96 h-[500px]'
+        <div className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 transition-all duration-300 ${
+          isMinimized ? 'w-72 sm:w-80 h-16' : 'w-[calc(100vw-2rem)] sm:w-96 h-[70vh] sm:h-[500px] max-h-[500px]'
         }`}>
           <Card className="h-full flex flex-col shadow-2xl border border-[#e8e2d8] rounded-2xl overflow-hidden">
             {/* Header */}
@@ -191,17 +191,17 @@ function ChatWidget() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsMinimized(!isMinimized)}
-                    className="w-6 h-6 p-0 text-white hover:bg-white hover:bg-opacity-20"
+                    className="w-8 h-8 p-0 text-white hover:bg-white hover:bg-opacity-20 rounded-lg"
                   >
-                    <Minimize2 className="w-3 h-3" />
+                    <Minimize2 className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => { setIsOpen(false); setIsMinimized(false); }}
-                    className="w-6 h-6 p-0 text-white hover:bg-white hover:bg-opacity-20"
+                    className="w-8 h-8 p-0 text-white hover:bg-white hover:bg-opacity-20 rounded-lg"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-4 h-4" />
                   </Button>
                 </div>
               </div>

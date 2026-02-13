@@ -160,7 +160,7 @@ function Navigation() {
 
                 {/* User Dropdown Menu */}
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-[#e8e2d8] py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-white rounded-lg shadow-lg border border-[#e8e2d8] py-2 z-50">
                     <div className="px-4 py-3 border-b border-[#e8e2d8]">
                       <div className="flex items-center space-x-3">
                         <Avatar className="w-10 h-10">
