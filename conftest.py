@@ -42,6 +42,14 @@ def app():
         db.drop_all()
 
 
+@pytest.fixture(autouse=True)
+def reset_rate_limiter(app):
+    """Reset rate limiter storage between tests to prevent cross-test interference."""
+    from my_project.extensions import limiter
+    limiter.reset()
+    yield
+
+
 @pytest.fixture
 def client(app):
     """Flask test client."""

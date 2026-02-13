@@ -60,16 +60,21 @@ def test_get_messages_requires_auth(client):
     assert response.status_code == 401
 
 
-def test_login_rate_limited(client):
+def test_login_rate_limited(app):
     """Login should be rate-limited after too many failed attempts."""
-    # Make 6 rapid failed login attempts (limit is 5/minute)
-    for i in range(6):
-        response = client.post('/api/auth/login', json={
-            'username': 'nonexistent',
-            'password': 'wrong'
-        })
-    # The 6th request should be rate-limited
-    assert response.status_code == 429
+    from my_project.extensions import limiter
+    # Reset limiter storage to clear any counts from prior tests
+    limiter.reset()
+    # Use a fresh test client so no prior rate-limit state carries over
+    with app.test_client() as fresh_client:
+        # Make 6 rapid failed login attempts (limit is 5/minute)
+        for i in range(6):
+            response = fresh_client.post('/api/auth/login', json={
+                'username': 'nonexistent',
+                'password': 'wrong'
+            })
+        # The 6th request should be rate-limited
+        assert response.status_code == 429
 
 
 def test_security_headers_present(client):

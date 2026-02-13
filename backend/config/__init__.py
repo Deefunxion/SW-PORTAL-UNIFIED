@@ -46,6 +46,9 @@ class TestingConfig(Config):
     WTF_CSRF_ENABLED = False
     CORS_ORIGINS = ['http://localhost', 'http://localhost:5173']
 
+    # High default rate limit for tests (avoids cross-test interference)
+    RATELIMIT_DEFAULT = "1000 per minute"
+
     # Disable email sending during tests
     MAIL_SUPPRESS_SEND = True
 
