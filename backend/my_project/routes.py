@@ -1333,81 +1333,23 @@ def serve_content(filename):
 
 @main_bp.route('/api/health', methods=['GET'])
 def health_check():
-    """Enhanced health check endpoint with detailed system status"""
-    try:
-        health_status = {
-            'status': 'healthy',
-            'timestamp': datetime.now().isoformat(),
-            'version': '1.0.0',
-            'environment': current_app.config.get('ENV', 'development'),
-            'components': {}
-        }
-        
-        # Database health check
+    """Liveness probe — always returns 200 so Render/k8s keeps the service alive.
+    Optional ?detail=true returns component diagnostics."""
+    result = {
+        'status': 'ok',
+        'timestamp': datetime.now().isoformat(),
+        'version': '1.0.0',
+    }
+
+    if request.args.get('detail') == 'true':
+        # Database check
         try:
             db.session.execute(db.text('SELECT 1'))
-            health_status['components']['database'] = {
-                'status': 'healthy',
-                'details': 'Connection successful'
-            }
+            result['database'] = 'healthy'
         except Exception as e:
-            health_status['components']['database'] = {
-                'status': 'unhealthy',
-                'details': str(e)
-            }
-            health_status['status'] = 'degraded'
-        
-        # File system health check
-        try:
-            content_dir = current_app.config['UPLOAD_FOLDER']
-            if os.path.exists(content_dir) and os.access(content_dir, os.R_OK | os.W_OK):
-                health_status['components']['files'] = {
-                    'status': 'healthy',
-                    'details': f'Directory accessible at {content_dir}'
-                }
-            else:
-                health_status['components']['files'] = {
-                    'status': 'unhealthy',
-                    'details': 'Directory not accessible'
-                }
-                health_status['status'] = 'degraded'
-        except Exception as e:
-            health_status['components']['files'] = {
-                'status': 'unhealthy',
-                'details': str(e)
-            }
-            health_status['status'] = 'degraded'
-        
-        # AI Assistant health check
-        if hasattr(current_app, 'client') and current_app.client:
-            health_status['components']['ai_assistant'] = {
-                'status': 'configured',
-                'details': 'AI client initialized'
-            }
-        else:
-            health_status['components']['ai_assistant'] = {
-                'status': 'not_configured',
-                'details': 'AI client not initialized - running in demo mode'
-            }
-        
-        # System metrics
-        health_status['metrics'] = {
-            'uptime_seconds': (datetime.now() - datetime.now().replace(second=0, microsecond=0)).total_seconds(),
-            'total_users': User.query.count(),
-            'total_discussions': Discussion.query.count(),
-            'total_files': FileItem.query.count()
-        }
-        
-        # Always return 200 for liveness probes (Render, k8s, etc.)
-        # The 'status' field indicates actual health for monitoring
-        return jsonify(health_status), 200
-        
-    except Exception as e:
-        return jsonify({
-            'status': 'unhealthy',
-            'timestamp': datetime.now().isoformat(),
-            'error': str(e)
-        }), 503
+            result['database'] = f'unhealthy: {e}'
+
+    return jsonify(result), 200
 
 
 @main_bp.route('/api/user/permissions', methods=['GET'])
