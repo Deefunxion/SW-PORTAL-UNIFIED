@@ -26,7 +26,7 @@ from my_project.extensions import db
 from my_project.ai.knowledge import process_file
 from my_project.models import DocumentIndex, FileChunk
 
-SUPPORTED_EXTENSIONS = {'.pdf', '.docx', '.doc', '.txt', '.md'}
+SUPPORTED_EXTENSIONS = {'.txt', '.md'}
 
 
 def find_documents(base_dir: str) -> list:
