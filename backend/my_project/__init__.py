@@ -125,6 +125,21 @@ def create_app():
         # Create all tables
         db.create_all()
 
+        # Auto-migrate: add columns that create_all() can't add to existing tables
+        _migrate_columns = [
+            ('users', 'peripheral_unit', 'VARCHAR(100)'),
+            ('structures', 'peripheral_unit', 'VARCHAR(100)'),
+            ('inspection_reports', 'checklist_data', 'TEXT'),
+        ]
+        for table, column, col_type in _migrate_columns:
+            try:
+                db.session.execute(db.text(
+                    f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {col_type}"
+                ))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
         # Seed demo data ONLY in development mode
         if app.debug:
             try:
@@ -214,7 +229,14 @@ def create_app():
         response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
         if not app.debug:
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-            response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+            response.headers['Content-Security-Policy'] = (
+                "default-src 'self'; "
+                "script-src 'self'; "
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                "font-src 'self' https://fonts.gstatic.com; "
+                "img-src 'self' data: blob:; "
+                "connect-src 'self'"
+            )
         return response
 
     # Ensure content directory exists
