@@ -23,6 +23,7 @@ import {
   Calendar
 } from 'lucide-react';
 import authService from '@/lib/auth';
+import api from '@/lib/api';
 
 const AdminDashboardPage = () => {
   const { user } = useAuth();
@@ -50,13 +51,13 @@ const AdminDashboardPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersResponse, statsResponse] = await Promise.all([
-        authService.api('/api/admin/users'),
-        authService.api('/api/admin/stats')
+      const [usersRes, statsRes] = await Promise.all([
+        api.get('/api/admin/users'),
+        api.get('/api/admin/stats'),
       ]);
-      
-      setUsers(usersResponse.users || []);
-      setStats(statsResponse);
+
+      setUsers(usersRes.data.users || []);
+      setStats(statsRes.data);
     } catch (error) {
       setMessage({ 
         type: 'error', 
@@ -76,10 +77,7 @@ const AdminDashboardPage = () => {
     }
 
     try {
-      await authService.api('/api/admin/users', {
-        method: 'POST',
-        body: JSON.stringify(formData)
-      });
+      await api.post('/api/admin/users', formData);
 
       setMessage({ type: 'success', text: 'Ο χρήστης δημιουργήθηκε επιτυχώς!' });
       setShowCreateForm(false);
@@ -95,10 +93,7 @@ const AdminDashboardPage = () => {
 
   const handleUpdateUser = async (userId) => {
     try {
-      await authService.api(`/api/admin/users/${userId}`, {
-        method: 'PUT',
-        body: JSON.stringify(formData)
-      });
+      await api.put(`/api/admin/users/${userId}`, formData);
 
       setMessage({ type: 'success', text: 'Ο χρήστης ενημερώθηκε επιτυχώς!' });
       setEditingUser(null);
@@ -118,9 +113,7 @@ const AdminDashboardPage = () => {
     }
 
     try {
-      await authService.api(`/api/admin/users/${userId}`, {
-        method: 'DELETE'
-      });
+      await api.delete(`/api/admin/users/${userId}`);
 
       setMessage({ type: 'success', text: `Ο χρήστης "${username}" διαγράφηκε επιτυχώς!` });
       await fetchData();

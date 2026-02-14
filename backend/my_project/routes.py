@@ -1201,6 +1201,84 @@ def knowledge_reindex():
 # ADMIN ROUTES
 # ============================================================================
 
+@main_bp.route('/api/admin/users', methods=['GET'])
+@jwt_required()
+def admin_list_users():
+    """List all users. Admin only."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+    users = User.query.order_by(User.created_at.desc()).all()
+    return jsonify({'users': [u.to_dict() for u in users]}), 200
+
+
+@main_bp.route('/api/admin/stats', methods=['GET'])
+@jwt_required()
+def admin_stats():
+    """Get admin dashboard statistics. Admin only."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+    total_users = User.query.count()
+    active_users = User.query.filter(User.presence_status != 'offline').count()
+    total_discussions = Discussion.query.count()
+    total_posts = Post.query.count()
+    return jsonify({
+        'total_users': total_users,
+        'active_users': active_users,
+        'total_discussions': total_discussions,
+        'total_posts': total_posts,
+    }), 200
+
+
+@main_bp.route('/api/admin/users', methods=['POST'])
+@jwt_required()
+def admin_create_user():
+    """Create a new user. Admin only."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+    data = request.get_json()
+    if not data.get('username') or not data.get('email') or not data.get('password'):
+        return jsonify({'error': 'Username, email, and password are required'}), 400
+    if User.query.filter_by(username=data['username']).first():
+        return jsonify({'error': 'Username already exists'}), 409
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email already exists'}), 409
+    user = User(
+        username=data['username'],
+        email=data['email'],
+        role=data.get('role', 'guest'),
+    )
+    user.set_password(data['password'])
+    db.session.add(user)
+    db.session.commit()
+    return jsonify(user.to_dict()), 201
+
+
+@main_bp.route('/api/admin/users/<int:user_id>', methods=['PUT'])
+@jwt_required()
+def admin_update_user(user_id):
+    """Update a user. Admin only."""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    data = request.get_json()
+    if 'username' in data:
+        user.username = data['username']
+    if 'email' in data:
+        user.email = data['email']
+    if 'role' in data:
+        user.role = data['role']
+    if 'password' in data and data['password']:
+        user.set_password(data['password'])
+    db.session.commit()
+    return jsonify(user.to_dict()), 200
+
+
 @main_bp.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):
