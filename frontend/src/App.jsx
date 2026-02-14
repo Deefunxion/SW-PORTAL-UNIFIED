@@ -45,6 +45,7 @@ import StructureFormPage from '@/features/registry/pages/StructureFormPage';
 import InspectionReportPage from '@/features/registry/pages/InspectionReportPage';
 import CommitteesPage from '@/features/registry/pages/CommitteesPage';
 import OversightDashboardPage from '@/features/registry/pages/OversightDashboardPage';
+import ReportsPage from '@/features/registry/pages/ReportsPage';
 
 import './App.css';
 
@@ -453,6 +454,11 @@ function AppContent() {
           <Route path="/oversight" element={
             <ProtectedRoute>
               <OversightDashboardPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <ReportsPage />
             </ProtectedRoute>
           } />
           <Route path="/admin" element={

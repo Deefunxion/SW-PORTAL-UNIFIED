@@ -329,3 +329,40 @@ def oversight_alerts():
         })
 
     return jsonify(alerts), 200
+
+
+# --- Report Generation ---
+
+@oversight_bp.route('/api/oversight/reports/<report_type>', methods=['GET'])
+@jwt_required()
+def generate_report(report_type):
+    from flask import Response
+    from .reports import REPORT_GENERATORS
+
+    fmt = request.args.get('format', 'pdf')
+    date_from = request.args.get('date_from')
+    date_to = request.args.get('date_to')
+
+    generators = REPORT_GENERATORS.get(report_type)
+    if not generators:
+        return jsonify({'error': f'Unknown report type: {report_type}'}), 400
+
+    generator = generators.get(fmt)
+    if not generator:
+        return jsonify({'error': f'Unknown format: {fmt}'}), 400
+
+    content = generator(date_from=date_from, date_to=date_to)
+
+    if fmt == 'pdf':
+        mimetype = 'application/pdf'
+        ext = 'pdf'
+    else:
+        mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ext = 'xlsx'
+
+    filename = f'{report_type}_{date.today().isoformat()}.{ext}'
+    return Response(
+        content,
+        mimetype=mimetype,
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'},
+    )
