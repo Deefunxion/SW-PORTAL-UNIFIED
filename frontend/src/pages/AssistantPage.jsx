@@ -180,40 +180,34 @@ function AssistantPage() {
 
   return (
     <div className="mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-12 max-w-7xl">
-      {/* Header */}
-      <header className="mb-8 sm:mb-12 text-center">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1a3aa3] mb-4" style={{fontFamily: "'Literata', serif"}}>
+      {/* Compact header + disclaimer */}
+      <div className="flex items-center justify-between mb-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#1a3aa3]" style={{fontFamily: "'Literata', serif"}}>
           AI Βοηθός
         </h1>
-        <p className="text-base sm:text-lg lg:text-xl text-[#8a8580] max-w-3xl mx-auto leading-relaxed font-medium">
-          Έξυπνος βοηθός με πρόσβαση στη Νομοθεσία και τις Αποφάσεις της κοινωνικής μέριμνας
-        </p>
-      </header>
-
-      {/* AI Disclaimer Banner */}
-      <div className="mb-6 sm:mb-8 bg-amber-50 border border-amber-200 rounded-xl px-4 sm:px-6 py-3 sm:py-4 flex items-start gap-3">
-        <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-        <p className="text-sm sm:text-base text-amber-800 font-medium leading-relaxed">
-          Οι απαντήσεις του AI Βοηθού είναι <strong>ενδεικτικές και συμβουλευτικού χαρακτήρα</strong>.
-          Ελέγξτε πάντα με την ισχύουσα νομοθεσία και τις Υπουργικές Αποφάσεις.
-        </p>
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+          <p className="text-xs text-amber-800 font-medium">
+            Ενδεικτικές απαντήσεις — ελέγξτε με την ισχύουσα νομοθεσία
+          </p>
+        </div>
       </div>
 
-      {/* Feature Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8 sm:mb-12">
-        {[ { icon: Zap, title: '24/7 Διαθέσιμος', desc: 'Άμεσες απαντήσεις βασισμένες στα έγγραφα του φορέα', color: 'from-[#1a3aa3] to-[#2548b8]' },
-           { icon: Lightbulb, title: 'Νομοθεσία & Αδειοδότηση', desc: 'Γνώση από ΦΕΚ, αποφάσεις και εγκυκλίους', color: 'from-[#b8942e] to-[#9a7a24]' },
-           { icon: MessageSquare, title: 'Αναφορά Πηγών', desc: 'Κάθε απάντηση συνοδεύεται από τα σχετικά έγγραφα', color: 'from-[#3d5cc9] to-[#1a3aa3]' }
+      {/* Feature Cards — compact */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {[ { icon: Zap, title: '24/7 Διαθέσιμος', desc: 'Απαντήσεις από τα έγγραφα του φορέα', color: 'from-[#1a3aa3] to-[#2548b8]' },
+           { icon: Lightbulb, title: 'Νομοθεσία & Αδειοδότηση', desc: 'ΦΕΚ, αποφάσεις, εγκύκλιοι', color: 'from-[#b8942e] to-[#9a7a24]' },
+           { icon: MessageSquare, title: 'Αναφορά Πηγών', desc: 'Κάθε απάντηση με σχετικά έγγραφα', color: 'from-[#3d5cc9] to-[#1a3aa3]' }
         ].map(({ icon: Icon, title, desc, color }) => (
-          <Card key={title} className="text-center hover:shadow-xl transition-all duration-300 rounded-xl border border-[#e8e2d8] shadow-md">
-            <CardContent className="p-5 sm:p-6">
-              <div className={`w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br ${color} rounded-xl mx-auto mb-4 flex items-center justify-center shadow-lg`}>
-                <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-              </div>
-              <h3 className="text-base sm:text-lg font-bold text-[#2a2520] mb-2" style={{fontFamily: "'Literata', serif"}}>{title}</h3>
-              <p className="text-[#6b6560] text-sm sm:text-base leading-relaxed">{desc}</p>
-            </CardContent>
-          </Card>
+          <div key={title} className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-[#e8e2d8] bg-white">
+            <div className={`w-8 h-8 bg-gradient-to-br ${color} rounded-lg flex items-center justify-center flex-shrink-0`}>
+              <Icon className="w-4 h-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[#2a2520] leading-tight truncate">{title}</p>
+              <p className="text-xs text-[#6b6560] leading-tight truncate">{desc}</p>
+            </div>
+          </div>
         ))}
       </div>
 
