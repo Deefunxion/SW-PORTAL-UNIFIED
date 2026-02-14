@@ -1398,8 +1398,9 @@ def health_check():
             'total_files': FileItem.query.count()
         }
         
-        status_code = 200 if health_status['status'] == 'healthy' else 503
-        return jsonify(health_status), status_code
+        # Always return 200 for liveness probes (Render, k8s, etc.)
+        # The 'status' field indicates actual health for monitoring
+        return jsonify(health_status), 200
         
     except Exception as e:
         return jsonify({
