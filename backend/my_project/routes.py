@@ -894,17 +894,32 @@ def knowledge_search():
 @main_bp.route('/api/knowledge/stats', methods=['GET'])
 @jwt_required()
 def knowledge_stats():
-    """Get statistics about indexed documents."""
-    from my_project.models import DocumentIndex, FileChunk
-
+    """Get statistics about the knowledge base."""
     total_docs = DocumentIndex.query.filter_by(status='ready').count()
     total_chunks = FileChunk.query.count()
     embedded_chunks = FileChunk.query.filter(FileChunk.embedding.isnot(None)).count()
+
+    # Count physical files in knowledge directory
+    knowledge_dir = current_app.config.get('KNOWLEDGE_FOLDER', '')
+    file_count = 0
+    folder_count = 0
+    if os.path.exists(knowledge_dir):
+        for entry in os.listdir(knowledge_dir):
+            full = os.path.join(knowledge_dir, entry)
+            if entry.startswith('.'):
+                continue
+            if os.path.isdir(full):
+                folder_count += 1
+                file_count += len([f for f in os.listdir(full) if not f.startswith('.')])
+            elif os.path.isfile(full):
+                file_count += 1
 
     return jsonify({
         'total_documents': total_docs,
         'total_chunks': total_chunks,
         'embedded_chunks': embedded_chunks,
+        'knowledge_files': file_count,
+        'knowledge_folders': folder_count,
     }), 200
 
 
@@ -1016,6 +1031,31 @@ def knowledge_create_folder():
 KNOWLEDGE_ALLOWED_EXTENSIONS = {'.md', '.txt'}
 
 
+def _safe_filename(filename):
+    """Unicode-safe filename sanitizer (preserves Greek characters).
+
+    secure_filename() strips all non-ASCII, which destroys Greek filenames.
+    This keeps Unicode letters/digits and replaces dangerous characters.
+    """
+    import re
+    import unicodedata
+    # Normalize unicode
+    filename = unicodedata.normalize('NFC', filename)
+    # Get just the filename (no directory components)
+    filename = filename.replace('\\', '/').split('/')[-1]
+    # Replace path separators and null bytes
+    for sep in (os.sep, os.altsep or '', '\x00'):
+        if sep:
+            filename = filename.replace(sep, '')
+    # Keep unicode letters, digits, hyphens, underscores, dots, spaces
+    filename = re.sub(r'[^\w\s\-.]', '', filename, flags=re.UNICODE).strip()
+    # Collapse whitespace to underscore
+    filename = re.sub(r'\s+', '_', filename)
+    # Don't allow hidden files
+    filename = filename.lstrip('.')
+    return filename or 'unnamed'
+
+
 @main_bp.route('/api/knowledge/upload', methods=['POST'])
 @jwt_required()
 def knowledge_upload():
@@ -1037,7 +1077,7 @@ def knowledge_upload():
     if ext not in KNOWLEDGE_ALLOWED_EXTENSIONS:
         return jsonify({'error': f'Only .md and .txt files are allowed (got {ext})'}), 400
 
-    filename = secure_filename(file.filename)
+    filename = _safe_filename(file.filename)
     knowledge_dir = current_app.config['KNOWLEDGE_FOLDER']
 
     if folder:
