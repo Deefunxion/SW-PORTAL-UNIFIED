@@ -17,7 +17,7 @@ import {
 import {
   ArrowLeft, Edit, Building2, FileText, Shield, Scale, Clock,
   User, Phone, Mail, MapPin, Plus, Loader2, Send, CheckCircle, RotateCcw,
-  ExternalLink
+  ExternalLink, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { structuresApi, inspectionsApi, oversightApi } from '../lib/registryApi';
@@ -76,6 +76,7 @@ function InfoTab({ structure }) {
           <InfoRow label="Κατάσταση" value={statusInfo.label} icon={Shield} />
           <InfoRow label="Ιδιοκτησία" value={OWNERSHIP_TYPES[s.ownership] || s.ownership} />
           <InfoRow label="Δυναμικότητα" value={s.capacity} />
+          <InfoRow label="Περιφερειακή Ενότητα" value={s.peripheral_unit} icon={MapPin} />
           <InfoRow label="Αρ. Αδείας" value={s.license_number} />
         </CardContent>
       </Card>
@@ -426,6 +427,21 @@ function ReportsTab({ structureId }) {
     } finally { setActionLoading(null); }
   };
 
+  const handleIridaExport = async (reportId) => {
+    try {
+      const response = await oversightApi.iridaExport('advisor_report', reportId);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `irida_advisor_report_${reportId}.zip`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Αρχείο Ίριδα εξήχθη.');
+    } catch {
+      toast.error('Σφάλμα εξαγωγής Ίριδα.');
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
 
   return (
@@ -503,7 +519,19 @@ function ReportsTab({ structureId }) {
                       </Button>
                     </>
                   )}
-                  {(r.status === 'approved' || r.status === 'returned') && (
+                  {r.status === 'approved' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleIridaExport(r.id)}
+                      className="h-7 text-xs border-purple-200 text-purple-700 hover:bg-purple-50"
+                      title="Εξαγωγή για Ίριδα"
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Ίριδα
+                    </Button>
+                  )}
+                  {r.status === 'returned' && (
                     <span className="text-xs text-[#8a8580]">—</span>
                   )}
                 </div>

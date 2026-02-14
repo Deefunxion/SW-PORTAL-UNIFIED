@@ -366,3 +366,38 @@ def generate_report(report_type):
         mimetype=mimetype,
         headers={'Content-Disposition': f'attachment; filename="{filename}"'},
     )
+
+
+# --- Ίριδα Export ---
+
+@oversight_bp.route('/api/irida-export/<document_type>/<int:record_id>', methods=['GET'])
+@jwt_required()
+def irida_export(document_type, record_id):
+    """Export a document as Ίριδα-compatible ZIP (metadata.json + PDF)."""
+    from flask import send_file
+    from ..integrations.irida_export import create_export_zip
+
+    # Resolve the record based on document_type
+    if document_type == 'advisor_report':
+        record = SocialAdvisorReport.query.get_or_404(record_id)
+    elif document_type == 'inspection_report':
+        from ..inspections.models import InspectionReport
+        record = InspectionReport.query.get_or_404(record_id)
+    elif document_type == 'license':
+        from ..registry.models import License
+        record = License.query.get_or_404(record_id)
+    elif document_type == 'sanction':
+        from ..registry.models import Sanction
+        record = Sanction.query.get_or_404(record_id)
+    else:
+        return jsonify({'error': f'Μη έγκυρος τύπος εγγράφου: {document_type}'}), 400
+
+    upload_folder = current_app.config.get('UPLOAD_FOLDER', 'content')
+    zip_path = create_export_zip(document_type, record, upload_folder)
+
+    return send_file(
+        zip_path,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name=f'irida_{document_type}_{record_id}.zip',
+    )

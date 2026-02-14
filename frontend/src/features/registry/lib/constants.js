@@ -154,6 +154,23 @@ export const INSPECTION_CRITERIA = {
   },
 };
 
+// Peripheral units (Περιφερειακές Ενότητες) for multi-tenant isolation
+export const PERIPHERAL_UNITS = {
+  'PE_ATT_KENTRIKOY': 'Π.Ε. Κεντρικού Τομέα Αθηνών',
+  'PE_ATT_VORIOY': 'Π.Ε. Βόρειου Τομέα Αθηνών',
+  'PE_ATT_NOTIOY': 'Π.Ε. Νότιου Τομέα Αθηνών',
+  'PE_ATT_DYTIKOU': 'Π.Ε. Δυτικού Τομέα Αθηνών',
+  'PE_PIREOS': 'Π.Ε. Πειραιώς',
+  'PE_ANATOLIKIS': 'Π.Ε. Ανατολικής Αττικής',
+  'PE_DYTIKIS': 'Π.Ε. Δυτικής Αττικής',
+  'PE_THESSALONIKIS': 'Π.Ε. Θεσσαλονίκης',
+  'PE_ACHAIAS': 'Π.Ε. Αχαΐας',
+  'PE_IRAKLIOY': 'Π.Ε. Ηρακλείου',
+  'PE_LARISAS': 'Π.Ε. Λάρισας',
+  'PE_MAGNISIAS': 'Π.Ε. Μαγνησίας',
+  'PE_IOANNIKON': 'Π.Ε. Ιωαννίνων',
+};
+
 // Legislation search tags per structure type code
 // Used for auto-searching the knowledge base for relevant legislation
 export const LEGISLATION_TAGS = {

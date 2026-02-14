@@ -42,15 +42,23 @@ def create_structure_type():
 @registry_bp.route('/api/structures', methods=['GET'])
 @jwt_required()
 def list_structures():
+    user_id = int(get_jwt_identity())
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     query = Structure.query
+
+    # Multi-tenant: directors see only their peripheral unit
+    from ..models import User
+    user = User.query.get(user_id)
+    if user and user.role != 'admin' and is_director(user_id) and user.peripheral_unit:
+        query = query.filter_by(peripheral_unit=user.peripheral_unit)
 
     # Filters
     type_id = request.args.get('type_id', type=int)
     status = request.args.get('status')
     advisor_id = request.args.get('advisor_id', type=int)
     search = request.args.get('search')
+    unit = request.args.get('peripheral_unit')
 
     if type_id:
         query = query.filter_by(type_id=type_id)
@@ -58,6 +66,8 @@ def list_structures():
         query = query.filter_by(status=status)
     if advisor_id:
         query = query.filter_by(advisor_id=advisor_id)
+    if unit:
+        query = query.filter_by(peripheral_unit=unit)
     if search:
         query = query.filter(
             db.or_(
@@ -108,6 +118,7 @@ def create_structure():
         license_date=_parse_date(data.get('license_date')),
         license_expiry=_parse_date(data.get('license_expiry')),
         advisor_id=data.get('advisor_id'),
+        peripheral_unit=data.get('peripheral_unit'),
         notes=data.get('notes'),
     )
     db.session.add(structure)
@@ -136,7 +147,7 @@ def update_structure(structure_id):
                   'representative_name', 'representative_afm',
                   'representative_phone', 'representative_email',
                   'capacity', 'status', 'ownership', 'license_number',
-                  'advisor_id', 'notes']:
+                  'advisor_id', 'peripheral_unit', 'notes']:
         if field in data:
             setattr(structure, field, data[field])
 

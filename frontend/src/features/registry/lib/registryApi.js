@@ -51,4 +51,7 @@ export const oversightApi = {
   getAdvisorReport: (id) => api.get(`/api/advisor-reports/${id}`),
   updateAdvisorReport: (id, data) => api.patch(`/api/advisor-reports/${id}`, data),
   approveReport: (id, action) => api.patch(`/api/advisor-reports/${id}/approve`, { action }),
+  iridaExport: (documentType, recordId) => api.get(
+    `/api/irida-export/${documentType}/${recordId}`, { responseType: 'blob' }
+  ),
 };

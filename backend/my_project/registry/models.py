@@ -45,6 +45,7 @@ class Structure(db.Model):
     license_expiry = db.Column(db.Date, nullable=True)
 
     advisor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    peripheral_unit = db.Column(db.String(100), nullable=True)
     notes = db.Column(db.Text, nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -71,6 +72,7 @@ class Structure(db.Model):
             'license_expiry': self.license_expiry.isoformat() if self.license_expiry else None,
             'advisor_id': self.advisor_id,
             'advisor': self.advisor.to_dict() if self.advisor else None,
+            'peripheral_unit': self.peripheral_unit,
             'notes': self.notes,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,

@@ -16,7 +16,7 @@ import {
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { structuresApi } from '../lib/registryApi';
-import { STRUCTURE_STATUS, OWNERSHIP_TYPES } from '../lib/constants';
+import { STRUCTURE_STATUS, OWNERSHIP_TYPES, PERIPHERAL_UNITS } from '../lib/constants';
 
 const structureSchema = z.object({
   code: z.string().min(1, 'Υποχρεωτικό πεδίο'),
@@ -35,6 +35,7 @@ const structureSchema = z.object({
   license_number: z.string().optional(),
   license_date: z.string().optional(),
   license_expiry: z.string().optional(),
+  peripheral_unit: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -56,6 +57,7 @@ export default function StructureFormPage() {
       representative_phone: '', representative_email: '',
       capacity: '', status: 'active', ownership: '',
       license_number: '', license_date: '', license_expiry: '',
+      peripheral_unit: '',
       notes: '',
     },
   });
@@ -89,6 +91,7 @@ export default function StructureFormPage() {
           license_number: data.license_number || '',
           license_date: data.license_date || '',
           license_expiry: data.license_expiry || '',
+          peripheral_unit: data.peripheral_unit || '',
           notes: data.notes || '',
         });
       })
@@ -109,6 +112,7 @@ export default function StructureFormPage() {
         license_date: values.license_date || null,
         license_expiry: values.license_expiry || null,
         representative_email: values.representative_email || null,
+        peripheral_unit: values.peripheral_unit || null,
       };
 
       if (isEdit) {
@@ -267,6 +271,28 @@ export default function StructureFormPage() {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="peripheral_unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Περιφερειακή Ενότητα</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="min-h-[44px] border-[#e8e2d8]">
+                          <SelectValue placeholder="Επιλέξτε Π.Ε." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(PERIPHERAL_UNITS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 

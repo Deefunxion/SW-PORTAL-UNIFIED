@@ -25,7 +25,8 @@ class User(db.Model):
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     presence_status = db.Column(db.String(50), default='offline')
     role = db.Column(db.String(50), default='guest')
-    
+    peripheral_unit = db.Column(db.String(100), nullable=True)
+
     # Relationships
     posts = db.relationship('Post', backref='user', lazy=True)
     
@@ -43,7 +44,8 @@ class User(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_seen': self.last_seen.isoformat() if self.last_seen else None,
             'presence_status': self.presence_status,
-            'role': self.role
+            'role': self.role,
+            'peripheral_unit': self.peripheral_unit,
         }
 
 
