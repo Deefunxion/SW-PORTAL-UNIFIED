@@ -67,97 +67,82 @@ def scan_content_directory():
         os.makedirs(content_dir)
         return []
 
-    def scan_directory(path, is_root=False):
-        """Scan a directory and return categorized structure"""
-        categories = []
-        
+    def list_items(path):
+        """List directory items, handling Greek filenames"""
         try:
-            # Handle Greek characters in filenames
-            items = []
-            try:
-                items = os.listdir(path)
-            except UnicodeDecodeError:
-                # Fallback for encoding issues
-                import glob
-                items = [os.path.basename(p) for p in glob.glob(os.path.join(path, '*'))]
-            
-            # Filter out hidden files and system files
-            items = [item for item in items if not item.startswith('.') and item not in ['uploads', 'welcome.txt', 'README.md']]
-            
-            for item in items:
-                item_path = os.path.join(path, item)
-                
-                if os.path.isdir(item_path):
-                    # This is a category folder
-                    category_files = []
-                    category_subfolders = []
-                    
-                    # Scan the category folder
-                    try:
-                        category_items = []
-                        try:
-                            category_items = os.listdir(item_path)
-                        except UnicodeDecodeError:
-                            import glob
-                            category_items = [os.path.basename(p) for p in glob.glob(os.path.join(item_path, '*'))]
-                        
-                        for category_item in category_items:
-                            if category_item.startswith('.'):
-                                continue
-                                
-                            category_item_path = os.path.join(item_path, category_item)
-                            
-                            if os.path.isdir(category_item_path):
-                                # This is a subfolder - scan it recursively
-                                subfolder_result = scan_directory(category_item_path)
-                                
-                                # Collect all files from this subfolder
-                                subfolder_files = []
-                                for sub_item in subfolder_result:
-                                    if 'files' in sub_item:
-                                        subfolder_files.extend(sub_item['files'])
-                                    if 'subfolders' in sub_item:
-                                        for sub_subfolder in sub_item['subfolders']:
-                                            if 'files' in sub_subfolder:
-                                                subfolder_files.extend(sub_subfolder['files'])
-                                
-                                category_subfolders.append({
-                                    'name': category_item,
-                                    'path': f"{item}/{category_item}",
-                                    'files': subfolder_files
-                                })
-                            else:
-                                # This is a file in the category
-                                try:
-                                    file_info = {
-                                        'name': category_item,
-                                        'path': f"{item}/{category_item}",
-                                        'size': os.path.getsize(category_item_path),
-                                        'modified': datetime.fromtimestamp(os.path.getmtime(category_item_path)).isoformat(),
-                                        'type': get_file_type(category_item)
-                                    }
-                                    category_files.append(file_info)
-                                except (OSError, PermissionError):
-                                    continue
-                    except (OSError, PermissionError):
-                        continue
-                    
-                    # Add this category to the results
-                    categories.append({
-                        'id': item.replace(' ', '_').replace('/', '_').replace('\\', '_'),
-                        'name': item,
-                        'category': item,  # Keep this for compatibility
-                        'path': item,
-                        'files': category_files,
-                        'subfolders': category_subfolders
-                    })
-                    
-        except (OSError, PermissionError):
-            pass
-        
-        return categories
+            return os.listdir(path)
+        except UnicodeDecodeError:
+            import glob
+            return [os.path.basename(p) for p in glob.glob(os.path.join(path, '*'))]
 
-    return scan_directory(content_dir, is_root=True)
+    def make_file_info(name, rel_path, abs_path):
+        """Create a file info dict"""
+        return {
+            'name': name,
+            'path': rel_path,
+            'size': os.path.getsize(abs_path),
+            'modified': datetime.fromtimestamp(os.path.getmtime(abs_path)).isoformat(),
+            'type': get_file_type(name)
+        }
+
+    def scan_folder(abs_path, rel_path):
+        """Scan a folder and return its files and subfolders recursively"""
+        files = []
+        subfolders = []
+
+        try:
+            items = list_items(abs_path)
+        except (OSError, PermissionError):
+            return files, subfolders
+
+        for item in sorted(items):
+            if item.startswith('.'):
+                continue
+            item_abs = os.path.join(abs_path, item)
+            item_rel = f"{rel_path}/{item}" if rel_path else item
+
+            if os.path.isdir(item_abs):
+                sub_files, sub_subfolders = scan_folder(item_abs, item_rel)
+                subfolders.append({
+                    'name': item,
+                    'path': item_rel,
+                    'files': sub_files,
+                    'subfolders': sub_subfolders
+                })
+            elif os.path.isfile(item_abs):
+                try:
+                    files.append(make_file_info(item, item_rel, item_abs))
+                except (OSError, PermissionError):
+                    continue
+
+        return files, subfolders
+
+    # Scan root: each top-level directory becomes a category
+    categories = []
+    skip = {'.', 'uploads', 'welcome.txt', 'README.md'}
+    try:
+        root_items = list_items(content_dir)
+    except (OSError, PermissionError):
+        return []
+
+    for item in sorted(root_items):
+        if item.startswith('.') or item in skip:
+            continue
+        item_path = os.path.join(content_dir, item)
+        if not os.path.isdir(item_path):
+            continue
+
+        files, subfolders = scan_folder(item_path, item)
+        categories.append({
+            'id': item.replace(' ', '_').replace('/', '_').replace('\\', '_'),
+            'name': item,
+            'category': item,
+            'path': item,
+            'files': files,
+            'subfolders': subfolders
+        })
+
+    return categories
 
 
 # ============================================================================
