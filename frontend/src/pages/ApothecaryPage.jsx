@@ -11,6 +11,10 @@ import { toast } from 'sonner';
 import ApothecaryPageSkeleton from '@/components/skeletons/ApothecaryPageSkeleton.jsx';
 import DropZone from '@/components/DropZone.jsx';
 import api from '@/lib/api';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select.jsx';
+import { Label } from '@/components/ui/label.jsx';
 
 function ApothecaryPage() {
   /* --- existing state & logic --- */
@@ -25,7 +29,8 @@ function ApothecaryPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadTargetFolder, setUploadTargetFolder] = useState('');
-  
+  const [folderParent, setFolderParent] = useState('');
+
   // NEW STATE: Track which category dropdown is open and its content
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownContent, setDropdownContent] = useState({});
@@ -114,17 +119,22 @@ function ApothecaryPage() {
   // Existing functions unchanged...
   const handleFileUpload = async (uploadedFiles) => {
     const formData = new FormData();
-    const target = uploadTargetFolder || 'General Documents';
+    const target = (uploadTargetFolder && uploadTargetFolder !== '__root__')
+      ? uploadTargetFolder
+      : 'uploads';
+    const displayTarget = (uploadTargetFolder && uploadTargetFolder !== '__root__')
+      ? uploadTargetFolder
+      : 'Γενικά Αρχεία';
     Array.from(uploadedFiles).forEach(file => formData.append('file', file));
-    formData.append('targetFolder', target);
+    formData.append('category', target);
 
     try {
       setUploadProgress(0);
       await api.post('/api/files/upload', formData);
       setUploadProgress(100);
-      toast.success(`Το αρχείο ανέβηκε στον φάκελο "${target}"!`);
+      toast.success(`Το αρχείο ανέβηκε στον φάκελο "${displayTarget}"!`);
       setTimeout(() => {
-        setShowUploadModal(false); setUploadProgress(0); fetchFiles();
+        setShowUploadModal(false); setUploadProgress(0); setUploadTargetFolder(''); fetchFiles();
       }, 1000);
     } catch {
       toast.error('Σφάλμα ανεβάσματος');
@@ -134,9 +144,11 @@ function ApothecaryPage() {
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
     try {
-      await api.post('/api/folders/create', { name: newFolderName, parentFolder: '' });
-      toast.success('Ο φάκελος δημιουργήθηκε!');
-      setShowFolderModal(false); setNewFolderName(''); fetchFiles();
+      const parent = (folderParent && folderParent !== '__root__') ? folderParent : '';
+      await api.post('/api/folders/create', { name: newFolderName, parent });
+      const parentLabel = parent || 'Αρχειοθήκη';
+      toast.success(`Ο φάκελος "${newFolderName}" δημιουργήθηκε στο "${parentLabel}"!`);
+      setShowFolderModal(false); setNewFolderName(''); setFolderParent(''); fetchFiles();
     } catch {
       toast.error('Σφάλμα δημιουργίας φακέλου');
     }
@@ -145,6 +157,29 @@ function ApothecaryPage() {
   const openUploadModal = (targetFolder = '') => {
     setUploadTargetFolder(targetFolder);
     setShowUploadModal(true);
+  };
+
+  const getFolderOptions = useCallback(() => {
+    const options = [];
+    files.forEach(folder => {
+      const name = folder.category || folder.name;
+      const path = folder.path || name;
+      options.push({ label: name, value: path });
+      if (folder.subfolders) {
+        folder.subfolders.forEach(sub => {
+          const subName = sub.category || sub.name;
+          const subPath = sub.path || `${path}/${subName}`;
+          options.push({ label: `  ${name} / ${subName}`, value: subPath });
+        });
+      }
+    });
+    return options;
+  }, [files]);
+
+  const openFolderModal = (parentFolder = '') => {
+    setFolderParent(parentFolder);
+    setNewFolderName('');
+    setShowFolderModal(true);
   };
 
   // NEW FUNCTION: Handle subfolder click (3rd level navigation)
