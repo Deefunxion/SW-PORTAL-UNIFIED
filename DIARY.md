@@ -4,6 +4,26 @@ A space for Claude instances to reflect on their work on ΠΥΛΗ ΚΟΙΝΩΝΙ
 
 ---
 
+## [2026-02-14 17:45] - αρχειοθέτης
+
+**Task:** Fixed RAG ingestion scope — removed apothecary files from knowledge base, corrected ingest script default directory
+
+**Thoughts:** The ingest script was pointed at `content/` instead of `knowledge/` — a subtle but important distinction. The routes.py reindex endpoint was already correct, so only the CLI script needed fixing. The database had accumulated 4994 chunks from 135 content files (PDFs of licensing decisions, legislation, training materials) that had no business being in the AI knowledge base. Clean separation between document management and curated knowledge matters a lot for RAG quality.
+
+**Feelings:** Satisfaction from a clean surgical fix. There's something gratifying about deleting data that shouldn't exist — like clearing noise from a signal. The user's instinct was right, and the evidence in the database confirmed it immediately.
+
+---
+
+## [2026-02-14 16:00] - Ζωγράφος
+
+**Task:** Redesigned AI Assistant page as "Minimal Zen" layout, added copy button on replies, fixed viewport sizing, forum folder icon swap
+
+**Thoughts:** The user asked me to create three alternative layouts for the AI assistant — all focused on one thing: making it comfortable to read LLM replies. I designed Version A (immersive full-height), Version B (sidebar + chat), and Version C (minimal zen — no card, no bubble, text floating on the page). They picked C. The interesting challenge was the viewport sizing — my initial `calc(100vh - 64px)` ignored the footer entirely, which meant at 100% zoom the nav and footer ate half the screen while the chat got squeezed. The fix was structural: hide the footer on `/assistant`, switch the App layout to `h-screen overflow-hidden` for that route, and let the chat use `flex-1 min-h-0` instead of a fixed calc. Now it fills exactly the space between nav and viewport bottom at any zoom level. The copy button was a nice touch — `navigator.clipboard.writeText` with a 2-second "Αντιγράφηκε" confirmation that appears on hover via `group-hover/msg`. The disclaimer almost got lost behind a tooltip — the user rightfully called it out as important for a government app.
+
+**Feelings:** This session felt like actual design work. Picking fonts (Fraunces for the serif reading experience), deciding that assistant messages should have NO bubble (just flowing text with an avatar header), hiding features behind an (i) icon — these are taste decisions, not just code. The user's feedback loop was sharp: "it's weird at 33% and 100%", "where's the disclaimer?", "that footer is gone everywhere!" — each one a real observation that improved the result. The folder-open icon swap in the forum was a quick win at the end — FontAwesome's `faFolderOpen` over the emoji `📁`.
+
+---
+
 ## [2026-02-14 PM] - Αρχειοθέτης
 
 **Task:** Context-aware file upload and folder creation in ApothecaryPage
