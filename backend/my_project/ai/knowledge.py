@@ -229,6 +229,111 @@ def search_chunks(
     return chunks[:limit]
 
 
+def _read_source_file(source_path: str) -> str:
+    """Read a source file from disk, trying multiple path strategies.
+
+    source_path from DB may be absolute or relative. Tries:
+    1. As-is (absolute path)
+    2. Relative to KNOWLEDGE_FOLDER config
+    3. Walk KNOWLEDGE_FOLDER looking for matching basename
+    """
+    from flask import current_app
+
+    # Strategy 1: Absolute path
+    if os.path.isfile(source_path):
+        try:
+            with open(source_path, "r", encoding="utf-8", errors="ignore") as f:
+                return f.read()
+        except Exception:
+            pass
+
+    # Strategy 2: Relative to KNOWLEDGE_FOLDER
+    try:
+        knowledge_dir = current_app.config.get("KNOWLEDGE_FOLDER", "")
+        if knowledge_dir:
+            relative = source_path
+            for prefix in ("knowledge/", "knowledge\\"):
+                if relative.startswith(prefix):
+                    relative = relative[len(prefix):]
+                    break
+
+            candidate = os.path.join(knowledge_dir, relative)
+            if os.path.isfile(candidate):
+                with open(candidate, "r", encoding="utf-8", errors="ignore") as f:
+                    return f.read()
+
+            # Strategy 3: Walk and find by basename
+            basename = os.path.basename(source_path)
+            for root, dirs, files in os.walk(knowledge_dir):
+                if basename in files:
+                    full = os.path.join(root, basename)
+                    with open(full, "r", encoding="utf-8", errors="ignore") as f:
+                        return f.read()
+    except RuntimeError:
+        pass  # No app context (tests)
+
+    logger.warning(f"Could not read source file: {source_path}")
+    return ""
+
+
+def load_full_documents(
+    chunks: List[Dict[str, Any]],
+    max_total_chars: int = 80000,
+) -> List[Dict[str, Any]]:
+    """From search result chunks, load full source files.
+
+    Uses chunks only to identify WHICH files are relevant,
+    then loads the complete file content from disk.
+    Stops when max_total_chars is reached.
+    """
+    from collections import defaultdict
+
+    if not chunks:
+        return []
+
+    # Group chunks by source file, tracking hit count and similarity
+    file_scores = defaultdict(lambda: {"count": 0, "total_sim": 0.0})
+    for chunk in chunks:
+        path = chunk.get("source_path", "")
+        if path:
+            file_scores[path]["count"] += 1
+            file_scores[path]["total_sim"] += chunk.get("similarity", 0.0)
+
+    # Rank files: most chunk hits first, then by average similarity
+    ranked_files = sorted(
+        file_scores.items(),
+        key=lambda x: (x[1]["count"], x[1]["total_sim"] / max(x[1]["count"], 1)),
+        reverse=True,
+    )
+
+    # Load full files until budget exhausted
+    full_documents = []
+    total_chars = 0
+
+    for source_path, scores in ranked_files:
+        file_text = _read_source_file(source_path)
+        if not file_text:
+            continue
+
+        if total_chars + len(file_text) > max_total_chars:
+            if not full_documents:
+                # First doc — include truncated rather than nothing
+                file_text = file_text[:max_total_chars]
+            else:
+                break
+
+        avg_sim = scores["total_sim"] / max(scores["count"], 1)
+        full_documents.append({
+            "source_path": source_path,
+            "content": file_text,
+            "relevance_score": round(avg_sim, 4),
+            "chunk_hits": scores["count"],
+        })
+        total_chars += len(file_text)
+
+    return full_documents
+
+
 def _fallback_keyword_search(query: str, limit: int) -> List[Dict[str, Any]]:
     """Keyword search fallback using SQL LIKE (no full-table scan in Python)."""
     keywords = [kw for kw in query.lower().split() if len(kw) >= 2]

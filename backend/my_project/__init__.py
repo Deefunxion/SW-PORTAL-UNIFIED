@@ -48,9 +48,10 @@ def create_app():
     CORS(app, origins=app.config.get('CORS_ORIGINS', ['http://localhost:5173']))
 
     # Initialize extensions
-    from .extensions import db, celery, limiter
+    from .extensions import db, migrate, celery, limiter
     from flask_jwt_extended import JWTManager
     db.init_app(app)
+    migrate.init_app(app, db)
     limiter.init_app(app)
     JWTManager(app)
 
@@ -96,10 +97,23 @@ def create_app():
     from .routes import main_bp
     app.register_blueprint(main_bp)
 
+    from .registry import registry_bp
+    app.register_blueprint(registry_bp)
+
+    from .inspections import inspections_bp
+    app.register_blueprint(inspections_bp)
+
+    from .oversight import oversight_bp
+    app.register_blueprint(oversight_bp)
+
     # Create database tables and seed data
     with app.app_context():
         # Import models to ensure they are registered
         from .models import User, Category, Discussion, Post, FileItem, AuditLog, ChatSession, ChatMessage
+        from .registry.models import Structure, StructureType, License, Sanction
+        from .inspections.models import (InspectionCommittee, CommitteeMembership,
+            CommitteeStructureAssignment, Inspection, InspectionReport)
+        from .oversight.models import UserRole, SocialAdvisorReport
 
         # Enable pgvector extension (required for Vector columns)
         try:
@@ -142,7 +156,11 @@ def create_app():
                     {'title': 'Νομικά Θέματα', 'description': 'Ερωτήσεις και συζητήσεις νομικού περιεχομένου.'},
                     {'title': 'Δύσκολα Θέματα', 'description': 'Για πιο σύνθετα και απαιτητικά ζητήματα.'},
                     {'title': 'Νέα-Ανακοινώσεις', 'description': 'Ενημερώσεις και ανακοινώσεις από τη διαχείριση.'},
-                    {'title': 'Προτάσεις', 'description': 'Προτάσεις για τη βελτίωση του portal.'}
+                    {'title': 'Προτάσεις', 'description': 'Προτάσεις για τη βελτίωση του portal.'},
+                    {'title': 'Εποπτεία ΜΦΗ', 'description': 'Θέματα εποπτείας Μονάδων Φροντίδας Ηλικιωμένων.'},
+                    {'title': 'Εποπτεία ΚΔΑΠ', 'description': 'Θέματα εποπτείας Κέντρων Δημιουργικής Απασχόλησης Παιδιών.'},
+                    {'title': 'Εποπτεία ΣΥΔ', 'description': 'Θέματα εποπτείας Στεγών Υποστηριζόμενης Διαβίωσης.'},
+                    {'title': 'Αδειοδότηση Δομών', 'description': 'Θέματα αδειοδότησης και κανονιστικού πλαισίου δομών κοινωνικής φροντίδας.'},
                 ]
                 for cat_data in default_categories:
                     new_cat = Category(title=cat_data['title'], description=cat_data['description'])
@@ -151,6 +169,40 @@ def create_app():
                 print("Default categories created.")
         except Exception:
             db.session.rollback()  # Another worker already seeded
+
+        # Seed structure types
+        try:
+            if StructureType.query.count() == 0:
+                print("Seeding structure types...")
+                types = [
+                    {'code': 'MFH', 'name': 'Μονάδα Φροντίδας Ηλικιωμένων', 'description': 'Γηροκομεία, μονάδες χρόνιας φροντίδας ηλικιωμένων'},
+                    {'code': 'KDAP', 'name': 'Κέντρο Δημιουργικής Απασχόλησης Παιδιών', 'description': 'Δομές δημιουργικής απασχόλησης για παιδιά σχολικής ηλικίας'},
+                    {'code': 'SYD', 'name': 'Στέγη Υποστηριζόμενης Διαβίωσης', 'description': 'Δομές αυτόνομης/ημιαυτόνομης διαβίωσης ΑμεΑ'},
+                    {'code': 'KDHF-KAA', 'name': 'Κέντρο Διημέρευσης-Ημερήσιας Φροντίδας / Κέντρο Αποθεραπείας-Αποκατάστασης', 'description': 'Δομές ημερήσιας φροντίδας και αποκατάστασης'},
+                    {'code': 'MFPAD', 'name': 'Μονάδα Φροντίδας Παιδιών και Ατόμων με Αναπηρία', 'description': 'Ιδρύματα/μονάδες φροντίδας για παιδιά και ΑμεΑ'},
+                    {'code': 'CAMP', 'name': 'Παιδικές Κατασκηνώσεις', 'description': 'Εποχικές δομές κατασκήνωσης'},
+                ]
+                for t in types:
+                    db.session.add(StructureType(**t))
+                db.session.commit()
+                print("Structure types seeded.")
+        except Exception:
+            db.session.rollback()
+
+        # Seed user roles for demo
+        try:
+            if UserRole.query.count() == 0 and User.query.count() > 0:
+                admin = User.query.filter_by(username='admin').first()
+                staff = User.query.filter_by(username='staff').first()
+                if admin:
+                    db.session.add(UserRole(user_id=admin.id, role='director'))
+                    db.session.add(UserRole(user_id=admin.id, role='administrative'))
+                if staff:
+                    db.session.add(UserRole(user_id=staff.id, role='social_advisor'))
+                db.session.commit()
+                print("User roles seeded.")
+        except Exception:
+            db.session.rollback()
 
     # Security headers on every response
     @app.after_request
