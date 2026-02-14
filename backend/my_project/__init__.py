@@ -38,7 +38,7 @@ def create_app():
         'KNOWLEDGE_FOLDER',
         os.path.join(os.path.dirname(__file__), '..', '..', 'knowledge')
     )
-    app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+    app.config['MAX_CONTENT_LENGTH'] = 256 * 1024 * 1024
     app.config['FRONTEND_DIR'] = os.environ.get(
         'FRONTEND_DIR',
         os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'dist')

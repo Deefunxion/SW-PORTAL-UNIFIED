@@ -132,7 +132,8 @@ function ApothecaryPage() {
       setUploadProgress(0);
       await api.post('/api/files/upload', formData);
       setUploadProgress(100);
-      toast.success(`Το αρχείο ανέβηκε στον φάκελο "${displayTarget}"!`);
+      const count = Array.from(uploadedFiles).length;
+      toast.success(`${count} αρχείο(-α) ανέβηκε στον φάκελο "${displayTarget}"!`);
       setTimeout(() => {
         setShowUploadModal(false); setUploadProgress(0); setUploadTargetFolder(''); fetchFiles();
       }, 1000);

@@ -515,25 +515,24 @@ def download_file(file_path):
 @jwt_required()
 def upload_file():
     """Upload a file"""
-    if 'file' not in request.files:
+    uploaded_files = request.files.getlist('file')
+    if not uploaded_files or all(f.filename == '' for f in uploaded_files):
         return jsonify({'error': 'No file provided'}), 400
 
-    file = request.files['file']
     category = request.form.get('category', 'uploads')
     user_id = int(get_jwt_identity())
 
-    if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
+    category_path = os.path.join(current_app.config['UPLOAD_FOLDER'], category)
+    os.makedirs(category_path, exist_ok=True)
 
-    if file:
+    saved = []
+    for file in uploaded_files:
+        if not file or file.filename == '':
+            continue
         filename = secure_filename(file.filename)
-        category_path = os.path.join(current_app.config['UPLOAD_FOLDER'], category)
-        os.makedirs(category_path, exist_ok=True)
-
         file_path = os.path.join(category_path, filename)
         file.save(file_path)
 
-        # Save to database
         file_item = FileItem(
             name=filename,
             original_name=file.filename,
@@ -543,13 +542,17 @@ def upload_file():
             file_size=os.path.getsize(file_path),
             uploaded_by=user_id
         )
-
         db.session.add(file_item)
-        db.session.commit()
+        saved.append(file_item)
 
-        log_action('upload', resource='file', resource_id=file_item.id, user_id=user_id)
+    db.session.commit()
+    for item in saved:
+        log_action('upload', resource='file', resource_id=item.id, user_id=user_id)
 
-        return jsonify({'message': 'File uploaded successfully', 'id': file_item.id}), 201
+    return jsonify({
+        'message': f'{len(saved)} file(s) uploaded successfully',
+        'ids': [item.id for item in saved]
+    }), 201
 
 
 @main_bp.route('/api/folders/create', methods=['POST'])
