@@ -117,7 +117,7 @@ function HomePage() {
           className="text-3xl sm:text-4xl lg:text-[50px] font-extrabold text-[#1a2a1a] mb-4 sm:mb-5 leading-[1.12]"
           style={{ fontFamily: "'Literata', serif" }}
         >
-          Καλώς ήρθατε στο{' '}
+          Καλώς ήρθατε στην{' '}
           <span className="bg-gradient-to-br from-[#1a3aa3] via-[#2d5cd6] to-[#152e82] bg-clip-text text-transparent">
             ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
           </span>
