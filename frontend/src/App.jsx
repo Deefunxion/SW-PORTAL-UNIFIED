@@ -332,6 +332,8 @@ function Footer() {
 function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const isFullScreenPage = location.pathname === '/assistant';
 
   useEffect(() => {
     // Simulate initial loading
@@ -360,10 +362,10 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#faf8f4]">
+    <div className={`flex flex-col bg-[#faf8f4] ${isFullScreenPage ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
       <Navigation />
-      
-      <main className="flex-grow">
+
+      <main className={`flex-1 ${isFullScreenPage ? 'min-h-0 flex flex-col' : ''}`}>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -437,7 +439,7 @@ function AppContent() {
         </Routes>
       </main>
 
-      <Footer />
+      {!isFullScreenPage && <Footer />}
 
       {/* Toast notifications */}
       <Toaster 
