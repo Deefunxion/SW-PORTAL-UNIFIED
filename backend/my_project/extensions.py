@@ -4,11 +4,15 @@ Centralizes initialization of Flask extensions to avoid circular imports
 """
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 # Initialize SQLAlchemy without binding to app
 db = SQLAlchemy()
+
+# Initialize Flask-Migrate (Alembic)
+migrate = Migrate()
 
 # Initialize rate limiter (no default limits — applied per-route)
 limiter = Limiter(
