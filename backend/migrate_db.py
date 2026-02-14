@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SW Portal Database Migration Script
+ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ Database Migration Script
 This script upgrades the database from the stable version to the enhanced version.
 """
 
@@ -114,7 +114,7 @@ def main():
         engine = db.engine
         
         print("=================================================")
-        print("  SW Portal Database Migration Started")
+        print("  ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ Database Migration Started")
         print("=================================================\n")
         
         # Initialize the modules within the app context

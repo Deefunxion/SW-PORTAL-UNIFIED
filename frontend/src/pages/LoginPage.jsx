@@ -78,7 +78,7 @@ const LoginPage = () => {
           <div className="w-20 h-20 bg-gradient-to-r from-[#1a3aa3] to-[#152e82] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <span className="text-white font-bold text-2xl">SW</span>
           </div>
-          <h1 className="text-3xl font-bold text-[#2a2520] mb-2" style={{fontFamily: "'Literata', serif"}}>SW Portal</h1>
+          <h1 className="text-3xl font-bold text-[#2a2520] mb-2" style={{fontFamily: "'Literata', serif"}}>ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ</h1>
           <p className="text-[#6b6560]">Περιφέρεια Αττικής</p>
           <Badge variant="secondary" className="mt-2">
             Ασφαλής Σύνδεση
@@ -206,7 +206,7 @@ const LoginPage = () => {
 
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-[#8a8580]">
-          <p>&copy; {new Date().getFullYear()} SW Portal - Περιφέρεια Αττικής</p>
+          <p>&copy; {new Date().getFullYear()} ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ - Περιφέρεια Αττικής</p>
           <p className="mt-1">Ασφαλής πρόσβαση με JWT authentication</p>
         </div>
       </div>

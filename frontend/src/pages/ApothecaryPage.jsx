@@ -11,6 +11,10 @@ import { toast } from 'sonner';
 import ApothecaryPageSkeleton from '@/components/skeletons/ApothecaryPageSkeleton.jsx';
 import DropZone from '@/components/DropZone.jsx';
 import api from '@/lib/api';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select.jsx';
+import { Label } from '@/components/ui/label.jsx';
 
 function ApothecaryPage() {
   /* --- existing state & logic --- */
@@ -25,7 +29,8 @@ function ApothecaryPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadTargetFolder, setUploadTargetFolder] = useState('');
-  
+  const [folderParent, setFolderParent] = useState('');
+
   // NEW STATE: Track which category dropdown is open and its content
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownContent, setDropdownContent] = useState({});
@@ -114,17 +119,23 @@ function ApothecaryPage() {
   // Existing functions unchanged...
   const handleFileUpload = async (uploadedFiles) => {
     const formData = new FormData();
-    const target = uploadTargetFolder || 'General Documents';
+    const target = (uploadTargetFolder && uploadTargetFolder !== '__root__')
+      ? uploadTargetFolder
+      : 'uploads';
+    const displayTarget = (uploadTargetFolder && uploadTargetFolder !== '__root__')
+      ? uploadTargetFolder
+      : 'Γενικά Αρχεία';
     Array.from(uploadedFiles).forEach(file => formData.append('file', file));
-    formData.append('targetFolder', target);
+    formData.append('category', target);
 
     try {
       setUploadProgress(0);
       await api.post('/api/files/upload', formData);
       setUploadProgress(100);
-      toast.success(`Το αρχείο ανέβηκε στον φάκελο "${target}"!`);
+      const count = Array.from(uploadedFiles).length;
+      toast.success(`${count} αρχείο(-α) ανέβηκε στον φάκελο "${displayTarget}"!`);
       setTimeout(() => {
-        setShowUploadModal(false); setUploadProgress(0); fetchFiles();
+        setShowUploadModal(false); setUploadProgress(0); setUploadTargetFolder(''); fetchFiles();
       }, 1000);
     } catch {
       toast.error('Σφάλμα ανεβάσματος');
@@ -134,9 +145,11 @@ function ApothecaryPage() {
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
     try {
-      await api.post('/api/folders/create', { name: newFolderName, parentFolder: '' });
-      toast.success('Ο φάκελος δημιουργήθηκε!');
-      setShowFolderModal(false); setNewFolderName(''); fetchFiles();
+      const parent = (folderParent && folderParent !== '__root__') ? folderParent : '';
+      await api.post('/api/folders/create', { name: newFolderName, parent });
+      const parentLabel = parent || 'Αρχειοθήκη';
+      toast.success(`Ο φάκελος "${newFolderName}" δημιουργήθηκε στο "${parentLabel}"!`);
+      setShowFolderModal(false); setNewFolderName(''); setFolderParent(''); fetchFiles();
     } catch {
       toast.error('Σφάλμα δημιουργίας φακέλου');
     }
@@ -145,6 +158,29 @@ function ApothecaryPage() {
   const openUploadModal = (targetFolder = '') => {
     setUploadTargetFolder(targetFolder);
     setShowUploadModal(true);
+  };
+
+  const getFolderOptions = useCallback(() => {
+    const options = [];
+    files.forEach(folder => {
+      const name = folder.category || folder.name;
+      const path = folder.path || name;
+      options.push({ label: name, value: path });
+      if (folder.subfolders) {
+        folder.subfolders.forEach(sub => {
+          const subName = sub.category || sub.name;
+          const subPath = sub.path || `${path}/${subName}`;
+          options.push({ label: `  ${name} / ${subName}`, value: subPath });
+        });
+      }
+    });
+    return options;
+  }, [files]);
+
+  const openFolderModal = (parentFolder = '') => {
+    setFolderParent(parentFolder);
+    setNewFolderName('');
+    setShowFolderModal(true);
   };
 
   // NEW FUNCTION: Handle subfolder click (3rd level navigation)
@@ -242,6 +278,24 @@ function ApothecaryPage() {
               <Folder className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <span className="break-words min-w-0">Περιεχόμενα φακέλου: {content.folderName}</span>
             </h4>
+            {/* Contextual actions for this category */}
+            <div className="flex flex-wrap gap-3 mt-4">
+              <Button
+                onClick={(e) => { e.stopPropagation(); openUploadModal(content.folderName); }}
+                className="bg-gradient-to-r from-[#1a3aa3] to-[#152e82] hover:from-[#152e82] hover:to-[#0f2260] text-white font-bold px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 text-sm flex items-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                Ανέβασμα εδώ
+              </Button>
+              <Button
+                variant="outline"
+                onClick={(e) => { e.stopPropagation(); openFolderModal(content.folderName); }}
+                className="border-2 border-[#1a3aa3] text-[#1a3aa3] hover:bg-[#1a3aa3] hover:text-white font-bold px-4 py-2 rounded-xl transition-all duration-300 text-sm flex items-center gap-2 bg-white shadow-md hover:shadow-lg"
+              >
+                <FolderPlus className="w-4 h-4" />
+                Νέος υποφάκελος
+              </Button>
+            </div>
           </div>
         )}
 
@@ -258,7 +312,7 @@ function ApothecaryPage() {
                 const isExpanded = expandedSubfolder === subfolderKey;
                 
                 return (
-                  <div key={idx} className="border-2 border-[#d0d8ee] rounded-xl overflow-hidden">
+                  <div key={idx} className="group/subfolder border-2 border-[#d0d8ee] rounded-xl overflow-hidden">
                     {/* Subfolder Header */}
                     <div
                       className="flex items-center justify-between p-4 sm:p-5 bg-gradient-to-r from-[#eef1f8] to-[#dde4f5] hover:from-[#dde4f5] hover:to-[#d0d8ee] cursor-pointer transition-all duration-300 hover:shadow-md"
@@ -282,6 +336,18 @@ function ApothecaryPage() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openUploadModal(subfolder.path || `${content.folderName}/${subfolder.name || subfolder.category}`);
+                          }}
+                          className="opacity-0 group-hover/subfolder:opacity-100 transition-opacity p-1 h-8 w-8 hover:bg-[#dde4f5] rounded-lg"
+                          title="Ανέβασμα σε αυτόν τον φάκελο"
+                        >
+                          <Upload className="w-4 h-4 text-[#1a3aa3]" />
+                        </Button>
                         {isExpanded ?
                           <ChevronUp className="w-6 h-6 text-[#1a3aa3]" /> :
                           <ChevronDown className="w-6 h-6 text-[#1a3aa3]" />
@@ -492,7 +558,7 @@ function ApothecaryPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => setShowFolderModal(true)}
+              onClick={() => openFolderModal('')}
               className="flex-1 lg:flex-none border-2 border-[#1a3aa3] text-[#1a3aa3] hover:bg-[#1a3aa3] hover:text-white font-bold px-4 sm:px-6 py-3 rounded-xl transition-all duration-300 text-sm sm:text-base min-h-[48px] flex items-center justify-center gap-2 bg-white shadow-md hover:shadow-lg"
             >
               <FolderPlus className="w-5 h-5" />
@@ -522,7 +588,7 @@ function ApothecaryPage() {
         </Card>
       )}
 
-      {/* Modals - Unchanged */}
+      {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-lg sm:max-w-xl rounded-2xl shadow-2xl">
@@ -530,6 +596,37 @@ function ApothecaryPage() {
               <CardTitle className="text-xl sm:text-2xl font-bold text-[#1a3aa3]">Ανέβασμα Αρχείων</CardTitle>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+              {/* Folder selector */}
+              <div className="mb-6">
+                <Label className="text-base font-bold text-[#2a2520] mb-2 block">
+                  Ανέβασμα σε:
+                </Label>
+                <Select
+                  value={uploadTargetFolder || '__root__'}
+                  onValueChange={(val) => setUploadTargetFolder(val)}
+                >
+                  <SelectTrigger className="w-full py-3 px-4 text-base border-2 border-[#d0d8ee] rounded-xl bg-white focus:border-[#1a3aa3]">
+                    <SelectValue placeholder="Επιλέξτε φάκελο..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__root__">Γενικά Αρχεία (uploads)</SelectItem>
+                    {getFolderOptions().map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {uploadTargetFolder && uploadTargetFolder !== '__root__' && (
+                  <div className="mt-2 px-3 py-2 bg-[#eef5ee] border border-[#c8dec8] rounded-lg">
+                    <p className="text-sm font-medium text-[#2d6b2d] flex items-center">
+                      <Folder className="w-4 h-4 mr-2 flex-shrink-0" />
+                      Προορισμός: {uploadTargetFolder}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <DropZone onDrop={handleFileUpload} />
               {uploadProgress > 0 && (
                 <div className="mt-8">
@@ -543,7 +640,7 @@ function ApothecaryPage() {
               )}
               <Button
                 variant="ghost"
-                onClick={() => setShowUploadModal(false)}
+                onClick={() => { setShowUploadModal(false); setUploadTargetFolder(''); }}
                 className="mt-8 w-full py-4 text-lg font-bold hover:bg-[#f0ede6] rounded-2xl transition-all"
               >
                 <X className="w-6 h-6 mr-3" /> Κλείσιμο
@@ -560,6 +657,37 @@ function ApothecaryPage() {
               <CardTitle className="text-xl sm:text-2xl font-bold text-[#1a3aa3]">Δημιουργία Νέου Φακέλου</CardTitle>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+              {/* Parent folder selector */}
+              <div className="mb-6">
+                <Label className="text-base font-bold text-[#2a2520] mb-2 block">
+                  Δημιουργία μέσα σε:
+                </Label>
+                <Select
+                  value={folderParent || '__root__'}
+                  onValueChange={(val) => setFolderParent(val === '__root__' ? '' : val)}
+                >
+                  <SelectTrigger className="w-full py-3 px-4 text-base border-2 border-[#d0d8ee] rounded-xl bg-white focus:border-[#1a3aa3]">
+                    <SelectValue placeholder="Επιλέξτε γονικό φάκελο..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__root__">Αρχειοθήκη (Ρίζα)</SelectItem>
+                    {getFolderOptions().map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {folderParent && (
+                  <div className="mt-2 px-3 py-2 bg-[#eef5ee] border border-[#c8dec8] rounded-lg">
+                    <p className="text-sm font-medium text-[#2d6b2d] flex items-center">
+                      <Folder className="w-4 h-4 mr-2 flex-shrink-0" />
+                      Γονικός φάκελος: {folderParent}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <Input
                 placeholder="Εισάγετε το όνομα του φακέλου..."
                 value={newFolderName}
@@ -577,7 +705,7 @@ function ApothecaryPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setShowFolderModal(false)}
+                  onClick={() => { setShowFolderModal(false); setFolderParent(''); }}
                   className="flex-1 rounded-2xl py-4 text-lg font-bold border-2 hover:bg-[#faf8f4] transition-all"
                 >
                   Ακύρωση

@@ -1,5 +1,5 @@
 """
-Application Factory for SW Portal
+Application Factory for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
 Creates and configures the Flask application instance
 """
 
@@ -38,7 +38,7 @@ def create_app():
         'KNOWLEDGE_FOLDER',
         os.path.join(os.path.dirname(__file__), '..', '..', 'knowledge')
     )
-    app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+    app.config['MAX_CONTENT_LENGTH'] = 256 * 1024 * 1024
     app.config['FRONTEND_DIR'] = os.environ.get(
         'FRONTEND_DIR',
         os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'dist')
@@ -169,7 +169,7 @@ def create_app():
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     # Log startup information
-    print("SW Portal Backend Starting...")
+    print("ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ Backend Starting...")
     print(f"Content directory: {app.config['UPLOAD_FOLDER']}")
     print(f"Database: {app.config['SQLALCHEMY_DATABASE_URI']}")
     print(f"AI Client: {'Configured' if app.client else 'Not configured'}")

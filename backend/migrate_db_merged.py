@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SW Portal Database Migration Script – FIXED
+ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ Database Migration Script – FIXED
 Upgrades the stable DB to v2.0 schema without data loss.
 """
 

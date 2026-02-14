@@ -1,4 +1,4 @@
-"""Security tests for SW Portal — CORS, auth enforcement, rate limiting, headers, audit."""
+"""Security tests for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ — CORS, auth enforcement, rate limiting, headers, audit."""
 import pytest
 
 

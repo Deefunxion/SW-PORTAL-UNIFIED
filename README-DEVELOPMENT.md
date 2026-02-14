@@ -1,4 +1,4 @@
-# SW Portal - Development Setup
+# ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ - Development Setup
 
 ## Quick Start (Lightweight)
 

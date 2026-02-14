@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import api from '@/lib/api';
-import { 
-  MessageSquare, 
-  Plus, 
-  Search, 
-  Clock, 
-  User, 
+import {
+  MessageSquare,
+  Plus,
+  Search,
+  Clock,
+  User,
   MessageCircle,
   TrendingUp,
   X,
@@ -26,6 +26,8 @@ import {
   Eye,
   AlertTriangle
 } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 
 // Pinned categories with icons
 const pinnedCategories = [
@@ -140,17 +142,9 @@ function ForumPage() {
     }) || []
   })).filter(category => category.discussions.length > 0) : [];
 
-  const getCategoryIcon = (categoryTitle) => {
-    const iconMap = {
-      'ΓΕΝΙΚΑ ΘΕΜΑΤΑ': '💬',
-      'ΔΥΣΚΟΛΑ ΘΕΜΑΤΑ': '⚠️',
-      'ΕΜΠΙΣΤΕΥΤΙΚΑ ΘΕΜΑΤΑ': '🔒',
-      'ΝΟΜΙΚΑ ΘΕΜΑΤΑ': '⚖️',
-      'ΠΡΟΤΑΣΕΙΣ': '💡',
-      'ΝΕΑ - ΑΝΑΚΟΙΝΩΣΕΙΣ': '📢'
-    };
-    return iconMap[categoryTitle] || '📁';
-  };
+  const CategoryIcon = () => (
+    <FontAwesomeIcon icon={faFolderOpen} className="text-white/90 text-xl" />
+  );
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Άγνωστη ημερομηνία';
@@ -363,7 +357,7 @@ function ForumPage() {
             <Card key={category.category} className="overflow-hidden">
               <CardHeader className="bg-[#1a3aa3] text-white rounded-t-xl">
                 <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{getCategoryIcon(category.category)}</span>
+                  <CategoryIcon />
                   <div>
                     <CardTitle className="text-xl" style={{fontFamily: "'Literata', serif"}}>{category.category}</CardTitle>
                     <CardDescription className="text-[#c0b89e]">

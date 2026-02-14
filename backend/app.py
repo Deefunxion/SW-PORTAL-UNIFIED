@@ -1,5 +1,5 @@
 """
-SW Portal - Main Application Entry Point
+ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ - Main Application Entry Point
 Clean Flask application using the Application Factory pattern
 """
 

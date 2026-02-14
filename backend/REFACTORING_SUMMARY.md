@@ -1,4 +1,4 @@
-# SW Portal - Backend Refactoring Summary
+# ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ - Backend Refactoring Summary
 
 ## ✅ REFACTORING COMPLETED SUCCESSFULLY
 
@@ -117,6 +117,6 @@ All required dependencies are properly configured:
 
 ## 🎉 Summary
 
-The SW Portal backend has been successfully transformed from a broken, non-functional state with multiple `ModuleNotFoundError` and circular import issues into a **clean, professional, and fully operational Flask application** following best practices and the Application Factory pattern.
+The ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ backend has been successfully transformed from a broken, non-functional state with multiple `ModuleNotFoundError` and circular import issues into a **clean, professional, and fully operational Flask application** following best practices and the Application Factory pattern.
 
 **The refactoring goal has been 100% achieved.**

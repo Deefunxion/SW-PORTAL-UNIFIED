@@ -36,7 +36,7 @@ const rejectStyle = {
   backgroundColor: '#fef2f2',
 };
 
-function DropZone({ onDrop, maxFiles = 10, maxSize = 16 * 1024 * 1024 /* 16MB */ }) {
+function DropZone({ onDrop, maxFiles = 50, maxSize = 64 * 1024 * 1024 /* 64MB */ }) {
   const onDropValidated = useCallback((acceptedFiles, fileRejections) => {
     if (fileRejections.length > 0) {
       fileRejections.forEach(({ file, errors }) => {

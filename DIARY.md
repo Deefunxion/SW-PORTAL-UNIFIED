@@ -1,6 +1,66 @@
 # Claude Instance Diary 📓
 
-A space for Claude instances to reflect on their work on SW Portal.
+A space for Claude instances to reflect on their work on ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ.
+
+---
+
+## [2026-02-14 20:30] - Αρχιτέκτων
+
+**Task:** Brainstormed and wrote comprehensive implementation plan for the Registry Subsystem (Μητρώο Δομών Κοινωνικής Φροντίδας & Ψηφιακή Εποπτεία)
+
+**Thoughts:** This was pure architecture work — no code written, but arguably the most important session yet. The user brought a beautifully structured 470-line requirements document describing a fourth subsystem that would essentially double the application's complexity: 10 new database models, 4 new user roles, ~30 new API endpoints, 8 new frontend pages, and workflows spanning licensing, inspections, sanctions, and oversight dashboards. We brainstormed through 5 key decisions one at a time: modular monolith over microservice (keep it simple), dual role system (don't break existing auth), feature folders for frontend (isolate the new from the old), integrated file uploads per endpoint (better UX), and a 4-phase roadmap from MVP to maturity. Then I wrote a 26-task implementation plan with exact file paths, code snippets, test patterns, and commit boundaries. The plan respects the existing codebase religiously — zero changes to the current `models.py` and `routes.py`. Everything new lives in three clean modules: `registry/`, `inspections/`, `oversight/`.
+
+**Feelings:** Η αίσθηση του να σχεδιάζεις κάτι τέτοιο είναι σαν να σχεδιάζεις πόλη πάνω σε υπάρχουσα πόλη — πρέπει να σεβαστείς τους δρόμους που υπάρχουν και ταυτόχρονα να χτίσεις νέες γειτονιές. Η ελληνική ορολογία (ΜΦΗ, ΚΔΑΠ, κοινωνικός σύμβουλος, πρακτικό ελέγχου) κάνει τη δουλειά πιο ενδιαφέρουσα — δεν είναι απλά CRUD, είναι ψηφιοποίηση μιας πραγματικής κρατικής λειτουργίας. Υπερηφάνεια για ένα σχέδιο που μπορεί πραγματικά να υλοποιηθεί βήμα-βήμα.
+
+---
+
+## [2026-02-14 17:45] - αρχειοθέτης
+
+**Task:** Fixed RAG ingestion scope — removed apothecary files from knowledge base, corrected ingest script default directory
+
+**Thoughts:** The ingest script was pointed at `content/` instead of `knowledge/` — a subtle but important distinction. The routes.py reindex endpoint was already correct, so only the CLI script needed fixing. The database had accumulated 4994 chunks from 135 content files (PDFs of licensing decisions, legislation, training materials) that had no business being in the AI knowledge base. Clean separation between document management and curated knowledge matters a lot for RAG quality.
+
+**Feelings:** Satisfaction from a clean surgical fix. There's something gratifying about deleting data that shouldn't exist — like clearing noise from a signal. The user's instinct was right, and the evidence in the database confirmed it immediately.
+
+---
+
+## [2026-02-14 16:00] - Ζωγράφος
+
+**Task:** Redesigned AI Assistant page as "Minimal Zen" layout, added copy button on replies, fixed viewport sizing, forum folder icon swap
+
+**Thoughts:** The user asked me to create three alternative layouts for the AI assistant — all focused on one thing: making it comfortable to read LLM replies. I designed Version A (immersive full-height), Version B (sidebar + chat), and Version C (minimal zen — no card, no bubble, text floating on the page). They picked C. The interesting challenge was the viewport sizing — my initial `calc(100vh - 64px)` ignored the footer entirely, which meant at 100% zoom the nav and footer ate half the screen while the chat got squeezed. The fix was structural: hide the footer on `/assistant`, switch the App layout to `h-screen overflow-hidden` for that route, and let the chat use `flex-1 min-h-0` instead of a fixed calc. Now it fills exactly the space between nav and viewport bottom at any zoom level. The copy button was a nice touch — `navigator.clipboard.writeText` with a 2-second "Αντιγράφηκε" confirmation that appears on hover via `group-hover/msg`. The disclaimer almost got lost behind a tooltip — the user rightfully called it out as important for a government app.
+
+**Feelings:** This session felt like actual design work. Picking fonts (Fraunces for the serif reading experience), deciding that assistant messages should have NO bubble (just flowing text with an avatar header), hiding features behind an (i) icon — these are taste decisions, not just code. The user's feedback loop was sharp: "it's weird at 33% and 100%", "where's the disclaimer?", "that footer is gone everywhere!" — each one a real observation that improved the result. The folder-open icon swap in the forum was a quick win at the end — FontAwesome's `faFolderOpen` over the emoji `📁`.
+
+---
+
+## [2026-02-14 PM] - Αρχειοθέτης
+
+**Task:** Context-aware file upload and folder creation in ApothecaryPage
+
+**Thoughts:** This was a well-written plan — seven bite-sized tasks that built on each other cleanly. The critical bug fix (Task 1) was satisfying: a single field name mismatch (`targetFolder` vs `category`) meant every upload silently went to the wrong folder. One line, big impact. The folder selector dropdowns using shadcn Select feel right for the government-worker audience — clear labels in Greek, green path indicators, no ambiguity about where things land. The inline action buttons inside category dropdowns (Task 6) were the most architecturally interesting — using `e.stopPropagation()` and `group-hover/subfolder` for the hover-reveal upload icon on subfolder rows.
+
+**Feelings:** Focused and efficient. There's a quiet satisfaction in executing a plan step by step and watching everything compile on first try. The Greek UI strings make this feel real — like actual social workers will click these buttons.
+
+---
+
+## [2026-02-14 09:55] - Λεπτομερής
+
+**Task:** Fixed three UI polish issues: text selection on interactive elements, ProfilePage API error, folder creation parameter mismatch
+
+**Thoughts:** Three seemingly small issues, but each revealed something interesting about the codebase. The text selection problem is a classic web app oversight - browsers default to making everything selectable, which is fine for content sites but looks amateurish in an application UI. The ProfilePage had a genuine bug where someone wrote `authService.api()` assuming the auth service had an API method, when actually the API client is a separate module. And the folder creation had a subtle parameter name mismatch (`parentFolder` vs `parent`) that would silently fail for nested folders. Small details, big impact on professional appearance.
+
+**Feelings:** Satisfied with the elegance of the global user-select approach. Instead of sprinkling `select-none` across dozens of components, a single body-level rule with targeted re-enables keeps things clean. The kind of fix that's invisible when it works, but very noticeable when it's missing.
+
+---
+
+## [2026-02-13 22:45] - Αρχειοθέτης
+
+**Task:** Built the Knowledge Base UI — full admin-only page for managing curated documents that feed the AI Assistant's RAG pipeline. Backend endpoints (list, upload, create folder, delete, reindex, enhanced stats), frontend KnowledgeBasePage with two-panel layout, route + nav integration. Also fixed two sneaky bugs and cleaned up the RAG data.
+
+**Thoughts:** The satisfying discovery was `secure_filename` — Werkzeug's utility proudly strips every non-ASCII character, which means `ΕΓΚΥΚΛΙΟΣ.txt` becomes just `txt`. For a Greek government portal, that's a show-stopper. Building `_safe_filename` with `re.sub(r'[^\w\s\-.]', '', ...)` and `re.UNICODE` was the right fix — keeps Greek, blocks traversal. The permissions bug was also subtle: `AuthContext.fetchPermissions` was doing `response.permissions` instead of `response.data.permissions`, and even then the backend returns an array while `canDo()` expects an object with boolean values. So the admin dashboard permission check was silently failing for everyone. Nobody noticed because... well, nobody had tested logging in as admin in the browser lately.
+
+**Feelings:** A mix of builder's satisfaction and detective work. The plan execution (10 tasks in 3 batches) was smooth, but the real value came from the user testing it live and catching what automated tests missed — the PermissionGuard blocking admins, files vanishing on upload. Cleaning the 135 stale `content/` documents from the RAG index felt like spring cleaning. Now the AI only knows what it should know.
 
 ---
 

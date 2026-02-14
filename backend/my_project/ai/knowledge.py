@@ -1,5 +1,5 @@
 """
-Knowledge service for SW Portal.
+Knowledge service for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ.
 Document parsing, chunking, embedding, and vector search.
 Adapted from Academicon's knowledge_service.py.
 """
@@ -153,18 +153,20 @@ def process_document_text(
 
 def process_file(file_path: str, generate_vectors: bool = False) -> Optional[DocumentIndex]:
     """Process a file from the filesystem into chunks."""
+    file_path = os.path.abspath(file_path)  # Normalize to canonical path
     if not os.path.exists(file_path):
         logger.error(f"File not found: {file_path}")
         return None
 
     file_name = os.path.basename(file_path)
-    file_type = file_name.rsplit(".", 1)[-1] if "." in file_name else "txt"
+    file_type = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else "txt"
 
-    if file_type in ("txt", "md"):
-        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-            text = f.read()
-    else:
-        text = parse_document_content(file_path, file_name, file_type)
+    if file_type not in ("txt", "md"):
+        logger.warning(f"Skipping unsupported file type: {file_name} (only .md and .txt allowed)")
+        return None
+
+    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+        text = f.read()
 
     if not text.strip():
         logger.warning(f"No text extracted from {file_path}")

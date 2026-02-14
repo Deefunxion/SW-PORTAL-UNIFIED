@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test runner script for SW Portal
+Test runner script for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
 Provides different test running options
 """
 import os
@@ -14,7 +14,7 @@ def run_command(cmd):
     return result.returncode == 0
 
 def main():
-    parser = argparse.ArgumentParser(description='Run SW Portal tests')
+    parser = argparse.ArgumentParser(description='Run ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ tests')
     parser.add_argument('--basic', action='store_true', help='Run only basic tests')
     parser.add_argument('--api', action='store_true', help='Run API tests')  
     parser.add_argument('--coverage', action='store_true', help='Run with coverage report')

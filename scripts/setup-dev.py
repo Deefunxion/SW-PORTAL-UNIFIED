@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Development setup script for SW Portal
+Development setup script for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
 Lightweight setup that works on any machine
 """
 import os
@@ -26,7 +26,7 @@ def run_command(cmd, description, check=True):
 
 def main():
     """Setup development environment."""
-    print("Setting up SW Portal development environment...")
+    print("Setting up ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ development environment...")
     
     # Check Python version
     if sys.version_info < (3, 8):

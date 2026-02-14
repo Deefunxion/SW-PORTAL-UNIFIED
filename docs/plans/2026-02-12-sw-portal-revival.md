@@ -1,8 +1,8 @@
-# SW Portal Revival — Implementation Plan
+# ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ Revival — Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Revive the SW Portal into a functional prototype with real authentication, clean codebase, and AI assistant powered by ported Academicon RAG modules — ready for presentation to the Secretary General of the Ministry of Social Cohesion.
+**Goal:** Revive the ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ into a functional prototype with real authentication, clean codebase, and AI assistant powered by ported Academicon RAG modules — ready for presentation to the Secretary General of the Ministry of Social Cohesion.
 
 **Architecture:** Flask (backend) + React/Vite/shadcn (frontend) + PostgreSQL/pgvector (database + vector search) + OpenAI API (embeddings + chat) + Docker (infrastructure). Port AI modules from Academicon (FastAPI→Flask), migrate from SQLite to PostgreSQL, fix fake authentication, remove ~2,500 lines of dead code.
 
@@ -11,7 +11,7 @@
 **Timeline:** 6 days. Phase 1 (Day 1-2): Cleanup & Infra. Phase 2 (Day 3-4): Port AI. Phase 3 (Day 5-6): Polish & Demo.
 
 **Source repos:**
-- SW Portal: `D:\LAPTOP_BACKUP\Development\ΟΠΣΚΜ-UNIFIED`
+- ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ: `D:\LAPTOP_BACKUP\Development\ΟΠΣΚΜ-UNIFIED`
 - Academicon (reference): `D:\Academicon`
 
 ---
@@ -448,7 +448,7 @@ Add tests verifying auth enforcement."
 
 ### Task 7: Create AI module structure and port embedding engine
 
-**Context:** The Academicon project has a production-grade embedding engine in `backend/core/embeddings.py` that uses OpenAI's `text-embedding-3-small` API (no GPU needed). We port this to SW Portal as `backend/my_project/ai/embeddings.py`, adapting from async (FastAPI) to sync (Flask).
+**Context:** The Academicon project has a production-grade embedding engine in `backend/core/embeddings.py` that uses OpenAI's `text-embedding-3-small` API (no GPU needed). We port this to ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ as `backend/my_project/ai/embeddings.py`, adapting from async (FastAPI) to sync (Flask).
 
 **Reference file:** `D:\Academicon\backend\core\embeddings.py` (534 lines)
 
@@ -511,7 +511,7 @@ Create `backend/my_project/ai/embeddings.py`. This is an adapted version of `D:\
 
 ```python
 """
-Embedding engine for SW Portal.
+Embedding engine for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ.
 Ported from Academicon — API-based embeddings via OpenAI.
 No GPU/torch required.
 """
@@ -884,7 +884,7 @@ Expected: FAIL.
 
 ```python
 """
-Knowledge service for SW Portal.
+Knowledge service for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ.
 Document parsing, chunking, embedding, and vector search.
 Adapted from Academicon's knowledge_service.py.
 """
@@ -1193,7 +1193,7 @@ cd backend && python -m pytest ../tests/test_ai/test_copilot.py -v
 
 ```python
 """
-Copilot service for SW Portal AI Assistant.
+Copilot service for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ AI Assistant.
 Context-aware chat using RAG over Greek social welfare documents.
 Adapted from Academicon's copilot_service.py.
 """
@@ -1207,7 +1207,7 @@ from my_project.ai.knowledge import search_chunks
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """Είσαι ο ψηφιακός βοηθός της Πύλης Κοινωνικής Μέριμνας (SW Portal), \
+SYSTEM_PROMPT = """Είσαι ο ψηφιακός βοηθός της Πύλης Κοινωνικής Μέριμνας (ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ), \
 ένα εργαλείο για κοινωνικούς λειτουργούς στην Ελλάδα.
 
 Ο ρόλος σου:

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SW Portal is a Greek government application for social workers combining document management, forum discussions, and AI assistance. Full-stack Flask + React with full separation between backend API and frontend SPA. Designed for presentation to the Secretary General of the Ministry of Social Cohesion.
+ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ is a Greek government application for social workers combining document management, forum discussions, and AI assistance. Full-stack Flask + React with full separation between backend API and frontend SPA. Designed for presentation to the Secretary General of the Ministry of Social Cohesion.
 
 ## Architecture
 

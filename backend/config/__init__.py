@@ -1,5 +1,5 @@
 """
-Configuration module for SW Portal
+Configuration module for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
 Provides different configurations for different environments
 """
 import os
@@ -18,7 +18,7 @@ class Config:
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     
     # Upload Configuration
-    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB max file size
+    MAX_CONTENT_LENGTH = 256 * 1024 * 1024  # 256MB max request size (multi-file uploads)
     UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
     
     # Celery Configuration (basic)

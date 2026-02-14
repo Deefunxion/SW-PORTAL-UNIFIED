@@ -1,5 +1,5 @@
 """
-Extensions module for SW Portal
+Extensions module for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
 Centralizes initialization of Flask extensions to avoid circular imports
 """
 

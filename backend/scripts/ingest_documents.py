@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
-Ingest documents from content/ directory into the knowledge base.
+Ingest documents from knowledge/ directory into the knowledge base.
 Parses files, chunks text, and generates embeddings via OpenAI API.
 
 Usage:
     python scripts/ingest_documents.py                  # Chunk only (no embeddings)
     python scripts/ingest_documents.py --embed           # Chunk + generate embeddings
-    python scripts/ingest_documents.py --embed --dir content/ΝΟΜΟΘΕΣΙΑ  # Specific dir
+    python scripts/ingest_documents.py --embed --dir knowledge/ΝΟΜΟΘΕΣΙΑ  # Specific dir
     python scripts/ingest_documents.py --embed --reset   # Clear + re-ingest everything
 """
 import os
@@ -26,7 +26,7 @@ from my_project.extensions import db
 from my_project.ai.knowledge import process_file
 from my_project.models import DocumentIndex, FileChunk
 
-SUPPORTED_EXTENSIONS = {'.pdf', '.docx', '.doc', '.txt', '.md'}
+SUPPORTED_EXTENSIONS = {'.txt', '.md'}
 
 
 def find_documents(base_dir: str) -> list:
@@ -43,7 +43,7 @@ def find_documents(base_dir: str) -> list:
 def main():
     parser = argparse.ArgumentParser(description="Ingest documents into knowledge base")
     parser.add_argument("--embed", action="store_true", help="Generate embeddings (requires OPENAI_API_KEY)")
-    parser.add_argument("--dir", default=None, help="Specific directory to ingest (default: content/)")
+    parser.add_argument("--dir", default=None, help="Specific directory to ingest (default: knowledge/)")
     parser.add_argument("--reset", action="store_true", help="Clear all existing chunks before ingesting")
     args = parser.parse_args()
 
@@ -57,19 +57,19 @@ def main():
             db.session.commit()
             print("Done.")
 
-        # Find content directory
-        content_dir = args.dir or os.path.join(
-            os.path.dirname(__file__), '..', '..', 'content'
+        # Find knowledge directory
+        knowledge_dir = args.dir or os.path.join(
+            os.path.dirname(__file__), '..', '..', 'knowledge'
         )
-        content_dir = os.path.abspath(content_dir)
+        knowledge_dir = os.path.abspath(knowledge_dir)
 
-        if not os.path.exists(content_dir):
-            print(f"Content directory not found: {content_dir}")
-            print("Make sure the content/ directory exists with documents.")
+        if not os.path.exists(knowledge_dir):
+            print(f"Knowledge directory not found: {knowledge_dir}")
+            print("Make sure the knowledge/ directory exists with documents.")
             sys.exit(1)
 
-        documents = find_documents(content_dir)
-        print(f"Found {len(documents)} documents in {content_dir}")
+        documents = find_documents(knowledge_dir)
+        print(f"Found {len(documents)} documents in {knowledge_dir}")
 
         if not documents:
             print("No supported documents found.")
@@ -80,7 +80,7 @@ def main():
         start_time = time.time()
 
         for i, doc_path in enumerate(documents, 1):
-            rel_path = os.path.relpath(doc_path, content_dir)
+            rel_path = os.path.relpath(doc_path, knowledge_dir)
             print(f"[{i}/{len(documents)}] Processing: {rel_path}...", end=" ", flush=True)
 
             try:
