@@ -1756,6 +1756,165 @@ Seed forum categories: "Εποπτεία ΜΦΗ", "Αδειοδότηση ΚΔΑ
 
 Add `peripheral_unit` field to User and Structure. Data isolation per unit. Director sees only their unit's data. Admin sees all.
 
+### Task 27: IRIS (Ίριδα) Integration — Διαλειτουργικότητα με ΣΗΔΕ
+
+**Context:** Το Ίριδα (IRIS v2.1.22) είναι το Σύστημα Ηλεκτρονικής Διακίνησης Εγγράφων (ΣΗΔΕ) που χρησιμοποιείται στις Περιφέρειες και σε αρκετά Υπουργεία. Διαχειρίζεται τον πλήρη κύκλο ζωής εγγράφων: Σύνταξη → Αλυσίδα Υπογραφών (πολλαπλοί υπογράφοντες, γνωμοδότες) → Πρωτοκόλληση (αυτόματος αρ. πρωτοκόλλου) → Διανομή (εντός/εκτός φορέα). Περιλαμβάνει ψηφιακό πιστοποιητικό φορέα, QR code επαλήθευσης μέσω `iridacloud.gov.gr/validate`, και 24ψήφιο μοναδικό αναγνωριστικό εγγράφου.
+
+**Αρχή σχεδιασμού:** Η Πύλη = domain-specific σύστημα (δομές, έλεγχοι, αξιολογήσεις, κυρώσεις). Το Ίριδα = horizontal σύστημα (υπογραφές, πρωτοκόλληση, διανομή). Η Πύλη δεν αντικαθιστά τη ροή εγγράφων του Ίριδα — τη χρησιμοποιεί.
+
+**Τρία επίπεδα integration (incremental):**
+
+**Επίπεδο 1 — Αναφορά μόνο (ήδη στο plan)**
+Τα πεδία `protocol_number` στα models (InspectionReport, License, Sanction, SocialAdvisorReport) αποθηκεύουν τον αρ. πρωτοκόλλου Ίριδα χειροκίνητα. Ο υπάλληλος πρωτοκολλεί στο Ίριδα, πληκτρολογεί τον αριθμό στην Πύλη. Μηδενικό integration.
+
+**Επίπεδο 2 — Εξαγωγή εγγράφων για εισαγωγή στο Ίριδα (semi-automated)**
+
+Αξιοποίηση της λειτουργίας "Εισαγωγή Εγγράφου" (§4.13 του Ίριδα) — εισαγωγή εγγράφων εκτός συστήματος μέσω γραμματείας.
+
+**Files:**
+- Create: `backend/my_project/integrations/__init__.py`
+- Create: `backend/my_project/integrations/iris_export.py`
+- Frontend: "Εξαγωγή για Ίριδα" button στις φόρμες
+
+```python
+# backend/my_project/integrations/iris_export.py
+
+def export_for_iris(document_type, record, include_pdf=True):
+    """
+    Export a document in IRIS-compatible format.
+
+    Generates a metadata JSON + PDF bundle that can be imported
+    into IRIS via the "Εισαγωγή Εγγράφου" workflow.
+
+    Args:
+        document_type: 'inspection_report' | 'advisor_report' | 'license' | 'sanction'
+        record: SQLAlchemy model instance
+        include_pdf: whether to include the attached PDF
+
+    Returns:
+        dict with 'metadata' (IRIS fields) and 'file_path' (PDF)
+    """
+    # Map to IRIS document fields:
+    # - Τύπος εγγράφου → from document_type
+    # - Φάκελος → from structure type (ΜΦΗ, ΚΔΑΠ, κλπ)
+    # - Θέμα → auto-generated Greek title
+    # - Αρ. Εγγράφου → protocol_number if available
+    # - Αρχεία → attached PDF/DOCX
+
+    iris_type_map = {
+        'inspection_report': 'Πρακτικό Ελέγχου',
+        'advisor_report': 'Έκθεση Αξιολόγησης Κοιν. Συμβούλου',
+        'license': 'Απόφαση Αδειοδότησης',
+        'sanction': 'Απόφαση Κύρωσης',
+    }
+
+    return {
+        'metadata': {
+            'document_type': iris_type_map.get(document_type, 'Έγγραφο'),
+            'subject': generate_iris_subject(document_type, record),
+            'priority': 'Κανονική',
+            'classification': 'Αδιαβάθμητο',
+            'protocol_number': record.protocol_number,
+            'related_structure': record.structure.name if record.structure else None,
+        },
+        'file_path': record.file_path,
+    }
+```
+
+Workflow:
+```
+Πύλη: Χρήστης πατάει "Εξαγωγή για Ίριδα" →
+  → Κατεβάζει ZIP (metadata.json + document.pdf) →
+  → Γραμματεία εισάγει στο Ίριδα μέσω "Εισαγωγή Εγγράφου" →
+  → Ίριδα αποδίδει αρ. πρωτοκόλλου →
+  → Χρήστης καταχωρεί αρ. πρωτοκόλλου στην Πύλη
+```
+
+**Επίπεδο 3 — API Integration (full automation)**
+
+Προϋποθέτει πρόσβαση σε REST API του Ίριδα (ή SOAP/WebService).
+
+**Files:**
+- Create: `backend/my_project/integrations/iris_client.py`
+- Create: `backend/my_project/integrations/iris_webhooks.py`
+- Modify: `backend/my_project/inspections/routes.py` (add push-to-iris action)
+- Modify: `backend/my_project/oversight/routes.py` (add push-to-iris action)
+- Frontend: "Αποστολή στο Ίριδα" button + status indicator
+
+```python
+# backend/my_project/integrations/iris_client.py
+
+class IrisClient:
+    """Client for IRIS ΣΗΔΕ API integration."""
+
+    def __init__(self, base_url, api_key, organization_id):
+        self.base_url = base_url  # e.g. https://iridacloud.gov.gr/api/v1
+        self.api_key = api_key
+        self.org_id = organization_id
+
+    def create_document(self, title, folder, content_pdf,
+                        signatories, recipients, priority='normal',
+                        classification='unclassified', related_docs=None):
+        """
+        Push document to IRIS for signing and protocoling.
+        Returns IRIS document ID for status tracking.
+        """
+        pass
+
+    def get_document_status(self, iris_doc_id):
+        """
+        Check document status in IRIS.
+        Returns: 'for_signature' | 'signed' | 'protocoled' | 'distributed' | 'rejected'
+        """
+        pass
+
+    def get_protocol_number(self, iris_doc_id):
+        """Retrieve protocol number after protocoling."""
+        pass
+
+    def get_signed_pdf(self, iris_doc_id):
+        """Download signed PDF with digital certificate."""
+        pass
+```
+
+New DB fields needed:
+```python
+# Add to InspectionReport, SocialAdvisorReport, License, Sanction:
+iris_document_id = db.Column(db.String(100), nullable=True)  # IRIS 24-digit ID
+iris_status = db.Column(db.String(50), nullable=True)  # IRIS document status
+iris_protocol_date = db.Column(db.DateTime, nullable=True)
+```
+
+API endpoints:
+```
+POST /api/inspections/<id>/report/push-to-iris     → Push report to IRIS
+GET  /api/inspections/<id>/report/iris-status       → Check IRIS status
+POST /api/advisor-reports/<id>/push-to-iris          → Push advisor report
+POST /api/structures/<id>/licenses/<id>/push-to-iris → Push license decision
+POST /api/sanctions/<id>/push-to-iris                → Push sanction decision
+```
+
+Full automated workflow:
+```
+Πύλη: Χρήστης πατάει "Αποστολή στο Ίριδα" →
+  → API call: IrisClient.create_document() →
+  → Ίριδα: Αλυσίδα υπογραφών (Πρόεδρος → Μέλη → Δ/ντής) →
+  → Ίριδα: Πρωτοκόλληση + Ψηφιακό πιστοποιητικό →
+  → Webhook/polling: IrisClient.get_document_status() →
+  → Πύλη: Αυτόματη ενημέρωση:
+      - report.status = 'approved'
+      - report.protocol_number = αρ. πρωτοκόλλου Ίριδα
+      - report.iris_document_id = 24ψήφιο ID
+      - report.file_path = signed PDF from Ίριδα
+      - Notification → χρήστη
+```
+
+**Σημειώσεις υλοποίησης:**
+- Το Επίπεδο 2 μπορεί να υλοποιηθεί χωρίς πρόσβαση στο API του Ίριδα
+- Το Επίπεδο 3 απαιτεί συνεργασία με ΓΕΑ/ΚΜΗ (developers Ίριδα) για API access
+- Config: `IRIS_API_URL`, `IRIS_API_KEY`, `IRIS_ORG_ID` στο `.env`
+- Fallback: αν το Ίριδα δεν είναι διαθέσιμο, ο χρήστης χρησιμοποιεί Επίπεδο 1 (χειροκίνητα)
+
 ---
 
 ## Appendix A: File Paths Reference
@@ -1775,6 +1934,10 @@ backend/my_project/oversight/models.py
 backend/my_project/oversight/routes.py
 backend/my_project/oversight/reports.py
 backend/scripts/seed_registry.py
+backend/my_project/integrations/__init__.py
+backend/my_project/integrations/iris_export.py
+backend/my_project/integrations/iris_client.py
+backend/my_project/integrations/iris_webhooks.py
 ```
 
 ### Backend (modified files)
