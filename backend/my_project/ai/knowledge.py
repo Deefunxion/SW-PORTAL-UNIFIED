@@ -1,5 +1,5 @@
 """
-Knowledge service for SW Portal.
+Knowledge service for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ.
 Document parsing, chunking, embedding, and vector search.
 Adapted from Academicon's knowledge_service.py.
 """
@@ -153,6 +153,7 @@ def process_document_text(
 
 def process_file(file_path: str, generate_vectors: bool = False) -> Optional[DocumentIndex]:
     """Process a file from the filesystem into chunks."""
+    file_path = os.path.abspath(file_path)  # Normalize to canonical path
     if not os.path.exists(file_path):
         logger.error(f"File not found: {file_path}")
         return None

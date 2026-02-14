@@ -1,5 +1,5 @@
 """
-Flask Routes for SW Portal
+Flask Routes for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
 Consolidated routes file containing all Flask endpoints organized in a Blueprint
 """
 
@@ -951,7 +951,8 @@ def _scan_knowledge_dir(base_dir):
                         continue
                     fpath = os.path.join(full_path, fname)
                     if os.path.isfile(fpath):
-                        doc = DocumentIndex.query.filter_by(file_path=fpath).first()
+                        fpath_abs = os.path.abspath(fpath)
+                        doc = DocumentIndex.query.filter_by(file_path=fpath_abs).first()
                         files.append({
                             'name': fname,
                             'path': os.path.relpath(fpath, base_dir),
@@ -966,7 +967,8 @@ def _scan_knowledge_dir(base_dir):
                     'file_count': len(files),
                 })
             elif os.path.isfile(full_path):
-                doc = DocumentIndex.query.filter_by(file_path=full_path).first()
+                full_path_abs = os.path.abspath(full_path)
+                doc = DocumentIndex.query.filter_by(file_path=full_path_abs).first()
                 result.append({
                     'name': entry,
                     'path': rel_path,
@@ -1515,7 +1517,7 @@ def serve_frontend(path):
     build_dir = os.path.abspath(current_app.config.get('FRONTEND_DIR', ''))
 
     if not os.path.isdir(build_dir):
-        return jsonify({'message': 'SW Portal API is running. Frontend not built.'}), 200
+        return jsonify({'message': 'ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API is running. Frontend not built.'}), 200
 
     # Serve static files directly if they exist
     if path and os.path.exists(os.path.join(build_dir, path)):
@@ -1526,4 +1528,4 @@ def serve_frontend(path):
     if os.path.exists(index_path):
         return send_from_directory(build_dir, 'index.html')
 
-    return jsonify({'message': 'SW Portal API is running. Frontend not built.'}), 200
+    return jsonify({'message': 'ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API is running. Frontend not built.'}), 200
