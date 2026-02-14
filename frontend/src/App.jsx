@@ -42,6 +42,8 @@ import KnowledgeBasePage from '@/pages/KnowledgeBasePage';
 import RegistryListPage from '@/features/registry/pages/RegistryListPage';
 import StructureDetailPage from '@/features/registry/pages/StructureDetailPage';
 import StructureFormPage from '@/features/registry/pages/StructureFormPage';
+import InspectionReportPage from '@/features/registry/pages/InspectionReportPage';
+import CommitteesPage from '@/features/registry/pages/CommitteesPage';
 
 import './App.css';
 
@@ -435,6 +437,16 @@ function AppContent() {
           <Route path="/registry/:id/edit" element={
             <ProtectedRoute>
               <StructureFormPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/inspections/:id/report" element={
+            <ProtectedRoute>
+              <InspectionReportPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/committees" element={
+            <ProtectedRoute>
+              <CommitteesPage />
             </ProtectedRoute>
           } />
           <Route path="/admin" element={
