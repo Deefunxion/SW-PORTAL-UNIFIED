@@ -10,6 +10,7 @@ export const structuresApi = {
   createLicense: (id, data) => api.post(`/api/structures/${id}/licenses`, data),
   sanctions: (id) => api.get(`/api/structures/${id}/sanctions`),
   createSanction: (id, data) => api.post(`/api/structures/${id}/sanctions`, data),
+  updateSanction: (id, data) => api.patch(`/api/sanctions/${id}`, data),
   advisorReports: (id) => api.get(`/api/structures/${id}/advisor-reports`),
   timeline: (id) => api.get(`/api/structures/${id}/timeline`),
 };

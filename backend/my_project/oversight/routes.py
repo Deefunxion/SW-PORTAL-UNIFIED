@@ -93,6 +93,8 @@ def update_advisor_report(report_id):
             setattr(report, field, data[field])
     if 'status' in data and data['status'] == 'submitted':
         report.status = 'submitted'
+        from .notifications import notify_report_submitted
+        notify_report_submitted(report, report_kind='advisor')
     if 'drafted_date' in data:
         report.drafted_date = _parse_date(data['drafted_date'])
 
@@ -122,6 +124,9 @@ def approve_advisor_report(report_id):
         report.status = 'returned'
     else:
         return jsonify({'error': 'Invalid action'}), 400
+
+    from .notifications import notify_report_decision
+    notify_report_decision(report, action, report_kind='advisor')
 
     db.session.commit()
     return jsonify(report.to_dict()), 200
@@ -191,23 +196,83 @@ def remove_user_role(role_id):
 @oversight_bp.route('/api/oversight/dashboard', methods=['GET'])
 @jwt_required()
 def oversight_dashboard():
-    from ..registry.models import Structure, License, Sanction
+    from ..registry.models import Structure, StructureType, License, Sanction
     from ..inspections.models import Inspection, InspectionReport
+    from sqlalchemy import func, extract
+    from datetime import timedelta
 
     total_structures = Structure.query.count()
     active_structures = Structure.query.filter_by(status='active').count()
     total_inspections = Inspection.query.count()
     completed_inspections = Inspection.query.filter_by(status='completed').count()
     pending_reports = SocialAdvisorReport.query.filter_by(status='draft').count()
+    submitted_reports = SocialAdvisorReport.query.filter_by(status='submitted').count()
     total_sanctions = Sanction.query.count()
 
+    # Structures by type
+    structures_by_type = []
+    type_counts = (
+        db.session.query(StructureType.name, func.count(Structure.id))
+        .join(Structure, Structure.type_id == StructureType.id)
+        .group_by(StructureType.name)
+        .all()
+    )
+    for name, count in type_counts:
+        structures_by_type.append({'name': name, 'count': count})
+
+    # Inspections by month (last 12 months)
+    inspections_by_month = []
+    today = date.today()
+    for i in range(11, -1, -1):
+        m = today.month - i
+        y = today.year
+        while m <= 0:
+            m += 12
+            y -= 1
+        count = Inspection.query.filter(
+            extract('year', Inspection.scheduled_date) == y,
+            extract('month', Inspection.scheduled_date) == m
+        ).count()
+        inspections_by_month.append({
+            'month': f'{y}-{m:02d}',
+            'count': count,
+        })
+
+    # Sanctions by status
+    sanctions_by_status = []
+    status_counts = (
+        db.session.query(Sanction.status, func.count(Sanction.id))
+        .group_by(Sanction.status)
+        .all()
+    )
+    for status, count in status_counts:
+        sanctions_by_status.append({'status': status, 'count': count})
+
+    # Recent inspections (5)
+    recent_inspections = Inspection.query.order_by(
+        Inspection.scheduled_date.desc()
+    ).limit(5).all()
+
+    # Recent advisor reports (5)
+    recent_reports = SocialAdvisorReport.query.order_by(
+        SocialAdvisorReport.created_at.desc()
+    ).limit(5).all()
+
     return jsonify({
-        'total_structures': total_structures,
-        'active_structures': active_structures,
-        'total_inspections': total_inspections,
-        'completed_inspections': completed_inspections,
-        'pending_reports': pending_reports,
-        'total_sanctions': total_sanctions,
+        'stats': {
+            'total_structures': total_structures,
+            'active_structures': active_structures,
+            'total_inspections': total_inspections,
+            'completed_inspections': completed_inspections,
+            'pending_reports': pending_reports,
+            'submitted_reports': submitted_reports,
+            'total_sanctions': total_sanctions,
+        },
+        'structures_by_type': structures_by_type,
+        'inspections_by_month': inspections_by_month,
+        'sanctions_by_status': sanctions_by_status,
+        'recent_inspections': [i.to_dict() for i in recent_inspections],
+        'recent_reports': [r.to_dict() for r in recent_reports],
     }), 200
 
 

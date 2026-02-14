@@ -222,3 +222,66 @@ def update_sanction(sanction_id):
             setattr(sanction, field, data[field])
     db.session.commit()
     return jsonify(sanction.to_dict()), 200
+
+
+# Timeline endpoint
+@registry_bp.route('/api/structures/<int:structure_id>/timeline', methods=['GET'])
+@jwt_required()
+def structure_timeline(structure_id):
+    """Merge all events for a structure into a single chronological list."""
+    Structure.query.get_or_404(structure_id)
+    from ..inspections.models import Inspection, InspectionReport
+    from ..oversight.models import SocialAdvisorReport
+
+    events = []
+
+    # Licenses
+    for lic in License.query.filter_by(structure_id=structure_id).all():
+        events.append({
+            'type': 'license',
+            'date': (lic.issued_date or lic.created_at.date()).isoformat() if lic.issued_date else lic.created_at.date().isoformat(),
+            'title': f'Άδεια: {lic.type}',
+            'status': lic.status,
+            'detail': f'Αρ. πρωτ. {lic.protocol_number}' if lic.protocol_number else None,
+            'id': lic.id,
+        })
+
+    # Sanctions
+    for s in Sanction.query.filter_by(structure_id=structure_id).all():
+        dt = s.imposed_date or s.created_at.date()
+        events.append({
+            'type': 'sanction',
+            'date': dt.isoformat(),
+            'title': f'Κύρωση: {s.type}',
+            'status': s.status,
+            'detail': f'{s.amount} €' if s.amount else None,
+            'id': s.id,
+        })
+
+    # Inspections
+    for insp in Inspection.query.filter_by(structure_id=structure_id).all():
+        dt = insp.scheduled_date or insp.created_at.date()
+        events.append({
+            'type': 'inspection',
+            'date': dt.isoformat(),
+            'title': f'Έλεγχος: {insp.type}',
+            'status': insp.status,
+            'detail': insp.conclusion,
+            'id': insp.id,
+        })
+
+    # Advisor reports
+    for r in SocialAdvisorReport.query.filter_by(structure_id=structure_id).all():
+        dt = r.drafted_date or r.created_at.date()
+        events.append({
+            'type': 'report',
+            'date': dt.isoformat(),
+            'title': f'Έκθεση: {r.type}',
+            'status': r.status,
+            'detail': (r.assessment or '')[:80] or None,
+            'id': r.id,
+        })
+
+    # Sort newest first
+    events.sort(key=lambda e: e['date'], reverse=True)
+    return jsonify(events), 200

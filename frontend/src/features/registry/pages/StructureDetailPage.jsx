@@ -27,6 +27,8 @@ import {
   ADVISOR_REPORT_TYPES, REPORT_STATUS,
 } from '../lib/constants';
 import LicenseBadge from '../components/LicenseBadge';
+import SanctionForm from '../components/SanctionForm';
+import StructureTimeline from '../components/StructureTimeline';
 
 function InfoRow({ label, value, icon: Icon }) {
   return (
@@ -484,63 +486,142 @@ function ReportsTab({ structureId }) {
 function SanctionsTab({ structureId }) {
   const [sanctions, setSanctions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null);
 
-  useEffect(() => {
+  const fetchSanctions = useCallback(() => {
+    setLoading(true);
     structuresApi.sanctions(structureId)
       .then(({ data }) => setSanctions(data))
       .catch(() => toast.error('Σφάλμα φόρτωσης κυρώσεων'))
       .finally(() => setLoading(false));
   }, [structureId]);
 
+  useEffect(() => { fetchSanctions(); }, [fetchSanctions]);
+
+  const handleStatusChange = async (sanctionId, newStatus) => {
+    setActionLoading(sanctionId);
+    try {
+      await structuresApi.updateSanction(sanctionId, { status: newStatus });
+      const statusLabels = { paid: 'εξοφληθείσα', appealed: 'σε ένσταση', cancelled: 'ακυρωθείσα' };
+      toast.success(`Η κύρωση ενημερώθηκε σε ${statusLabels[newStatus] || newStatus}.`);
+      fetchSanctions();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Σφάλμα ενημέρωσης κύρωσης.');
+    } finally { setActionLoading(null); }
+  };
+
   if (loading) return <LoadingSpinner />;
 
-  if (sanctions.length === 0) {
-    return <EmptyState message="Δεν υπάρχουν καταγεγραμμένες κυρώσεις." />;
-  }
-
   return (
-    <div className="rounded-xl border border-[#e8e2d8] overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-[#f5f2ec] hover:bg-[#f5f2ec]">
-            <TableHead>Τύπος</TableHead>
-            <TableHead>Ποσό</TableHead>
-            <TableHead>Ημ. Επιβολής</TableHead>
-            <TableHead>Κατάσταση</TableHead>
-            <TableHead>Αρ. Πρωτοκόλλου</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sanctions.map((s) => (
-            <TableRow key={s.id}>
-              <TableCell className="font-medium">
-                {SANCTION_TYPES[s.type] || s.type}
-              </TableCell>
-              <TableCell>
-                {s.amount ? `${s.amount.toLocaleString('el-GR')} €` : '—'}
-              </TableCell>
-              <TableCell>{formatDate(s.imposed_date)}</TableCell>
-              <TableCell><StatusBadge status={s.status} map={SANCTION_STATUS} /></TableCell>
-              <TableCell className="font-mono text-sm">{s.protocol_number || '—'}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <p className="text-sm text-[#8a8580]">{sanctions.length} κυρώσεις</p>
+        <Button
+          onClick={() => setShowCreate(true)}
+          className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[40px]"
+          size="sm"
+        >
+          <Plus className="w-4 h-4 mr-1.5" />
+          Νέα Κύρωση
+        </Button>
+      </div>
+
+      {sanctions.length === 0 ? (
+        <EmptyState message="Δεν υπάρχουν καταγεγραμμένες κυρώσεις." />
+      ) : (
+        <div className="rounded-xl border border-[#e8e2d8] overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-[#f5f2ec] hover:bg-[#f5f2ec]">
+                <TableHead>Τύπος</TableHead>
+                <TableHead>Ποσό</TableHead>
+                <TableHead>Ημ. Επιβολής</TableHead>
+                <TableHead>Κατάσταση</TableHead>
+                <TableHead>Αρ. Πρωτοκόλλου</TableHead>
+                <TableHead className="w-44">Ενέργειες</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sanctions.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-medium">
+                    {SANCTION_TYPES[s.type] || s.type}
+                  </TableCell>
+                  <TableCell>
+                    {s.amount ? `${s.amount.toLocaleString('el-GR')} €` : '—'}
+                  </TableCell>
+                  <TableCell>{formatDate(s.imposed_date)}</TableCell>
+                  <TableCell><StatusBadge status={s.status} map={SANCTION_STATUS} /></TableCell>
+                  <TableCell className="font-mono text-sm">{s.protocol_number || '—'}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      {s.status === 'imposed' && (
+                        <>
+                          <Button
+                            size="sm" variant="outline"
+                            onClick={() => handleStatusChange(s.id, 'paid')}
+                            disabled={actionLoading === s.id}
+                            className="h-7 text-xs border-green-200 text-green-700 hover:bg-green-50"
+                          >
+                            {actionLoading === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3 mr-1" />}
+                            Εξόφληση
+                          </Button>
+                          <Button
+                            size="sm" variant="outline"
+                            onClick={() => handleStatusChange(s.id, 'appealed')}
+                            disabled={actionLoading === s.id}
+                            className="h-7 text-xs border-orange-200 text-orange-700 hover:bg-orange-50"
+                          >
+                            Ένσταση
+                          </Button>
+                        </>
+                      )}
+                      {s.status === 'appealed' && (
+                        <>
+                          <Button
+                            size="sm" variant="outline"
+                            onClick={() => handleStatusChange(s.id, 'cancelled')}
+                            disabled={actionLoading === s.id}
+                            className="h-7 text-xs border-gray-200 text-gray-700 hover:bg-gray-50"
+                          >
+                            Ακύρωση
+                          </Button>
+                          <Button
+                            size="sm" variant="outline"
+                            onClick={() => handleStatusChange(s.id, 'imposed')}
+                            disabled={actionLoading === s.id}
+                            className="h-7 text-xs border-red-200 text-red-700 hover:bg-red-50"
+                          >
+                            Επιβολή
+                          </Button>
+                        </>
+                      )}
+                      {(s.status === 'paid' || s.status === 'cancelled') && (
+                        <span className="text-xs text-[#8a8580]">—</span>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <SanctionForm
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        structureId={structureId}
+        onCreated={fetchSanctions}
+      />
     </div>
   );
 }
 
-// ---- Tab: Timeline (placeholder) ----
-function TimelineTab() {
-  return (
-    <div className="text-center py-16">
-      <Clock className="w-12 h-12 text-[#b0a99e] mx-auto mb-4" />
-      <p className="text-[#8a8580] text-lg">Χρονολόγιο</p>
-      <p className="text-[#b0a99e] text-sm mt-1">
-        Η ενοποιημένη χρονολογική προβολή θα υλοποιηθεί στη Φάση 3.
-      </p>
-    </div>
-  );
+// ---- Tab: Timeline ----
+function TimelineTab({ structureId }) {
+  return <StructureTimeline structureId={structureId} />;
 }
 
 // ---- Helpers ----
@@ -674,7 +755,7 @@ export default function StructureDetailPage() {
             <SanctionsTab structureId={structure.id} />
           </TabsContent>
           <TabsContent value="timeline">
-            <TimelineTab />
+            <TimelineTab structureId={structure.id} />
           </TabsContent>
         </div>
       </Tabs>

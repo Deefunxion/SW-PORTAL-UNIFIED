@@ -9,10 +9,15 @@ class TestOversightAPI:
         response = client.get('/api/oversight/dashboard', headers=auth_headers)
         assert response.status_code == 200
         data = response.get_json()
-        assert 'total_structures' in data
-        assert 'active_structures' in data
-        assert 'total_inspections' in data
-        assert 'pending_reports' in data
+        assert 'stats' in data
+        assert 'total_structures' in data['stats']
+        assert 'active_structures' in data['stats']
+        assert 'total_inspections' in data['stats']
+        assert 'pending_reports' in data['stats']
+        assert 'structures_by_type' in data
+        assert 'inspections_by_month' in data
+        assert 'recent_inspections' in data
+        assert 'recent_reports' in data
 
     def test_alerts(self, client, auth_headers):
         response = client.get('/api/oversight/alerts', headers=auth_headers)

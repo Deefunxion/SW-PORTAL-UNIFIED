@@ -151,6 +151,10 @@ def submit_report(inspection_id):
         inspection.status = 'completed'
 
     db.session.add(report)
+
+    from ..oversight.notifications import notify_report_submitted
+    notify_report_submitted(report, report_kind='inspection')
+
     db.session.commit()
     return jsonify(report.to_dict()), 201
 
@@ -257,6 +261,10 @@ def add_committee_member(committee_id):
         role=data.get('role', 'member'),
     )
     db.session.add(membership)
+
+    from ..oversight.notifications import notify_committee_appointment
+    notify_committee_appointment(membership)
+
     db.session.commit()
     return jsonify(membership.to_dict()), 201
 
