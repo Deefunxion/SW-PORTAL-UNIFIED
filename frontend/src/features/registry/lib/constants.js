@@ -127,6 +127,18 @@ export const INSPECTION_CRITERIA = {
       { id: 'waiting_area', label: 'Χώρος αναμονής', category: 'Υποδομές' },
     ],
   },
+  'KDHF-KAA': {
+    label: 'Κέντρο Διημέρευσης / Αποκατάστασης',
+    categories: ['Στελέχωση', 'Υπηρεσίες', 'Υποδομές'],
+    criteria: [
+      { id: 'staff_qualifications', label: 'Ειδικότητες θεραπευτών', category: 'Στελέχωση' },
+      { id: 'staff_ratio', label: 'Αναλογία προσωπικού / ωφελούμενων', category: 'Στελέχωση' },
+      { id: 'therapy_programs', label: 'Θεραπευτικά προγράμματα', category: 'Υπηρεσίες' },
+      { id: 'individual_plans', label: 'Εξατομικευμένα πλάνα αποκατάστασης', category: 'Υπηρεσίες' },
+      { id: 'equipment', label: 'Εξοπλισμός αποκατάστασης', category: 'Υποδομές' },
+      { id: 'accessibility', label: 'Προσβασιμότητα ΑμεΑ', category: 'Υποδομές' },
+    ],
+  },
   // Fallback for unknown structure types
   DEFAULT: {
     label: 'Γενικά κριτήρια',
@@ -140,4 +152,64 @@ export const INSPECTION_CRITERIA = {
       { id: 'capacity_compliance', label: 'Τήρηση δυναμικότητας', category: 'Υποδομές' },
     ],
   },
+};
+
+// Legislation search tags per structure type code
+// Used for auto-searching the knowledge base for relevant legislation
+export const LEGISLATION_TAGS = {
+  MFH: {
+    label: 'Νομοθεσία ΜΦΗ',
+    queries: [
+      'αδειοδότηση μονάδων φροντίδας ηλικιωμένων',
+      'κανονισμός λειτουργίας γηροκομείων',
+      'προδιαγραφές μονάδων ηλικιωμένων',
+    ],
+  },
+  KDAP: {
+    label: 'Νομοθεσία ΚΔΑΠ',
+    queries: [
+      'κέντρα δημιουργικής απασχόλησης παιδιών',
+      'αδειοδότηση ΚΔΑΠ',
+      'προδιαγραφές παιδικών σταθμών',
+    ],
+  },
+  SYD: {
+    label: 'Νομοθεσία ΣΥΔ',
+    queries: [
+      'στέγες υποστηριζόμενης διαβίωσης',
+      'δικαιώματα ΑμεΑ αυτόνομη διαβίωση',
+      'προδιαγραφές δομών ΑμεΑ',
+    ],
+  },
+  'KDHF-KAA': {
+    label: 'Νομοθεσία ΚΔΗΦ/ΚΑΑ',
+    queries: [
+      'κέντρα ημερήσιας φροντίδας αποκατάσταση',
+      'αδειοδότηση δομών αποκατάστασης',
+    ],
+  },
+  MFPAD: {
+    label: 'Νομοθεσία ΜΦΠΑΔ',
+    queries: [
+      'μονάδες φροντίδας παιδιών αναπηρία',
+      'ιδρύματα φροντίδας ΑμεΑ',
+    ],
+  },
+  CAMP: {
+    label: 'Νομοθεσία Κατασκηνώσεων',
+    queries: [
+      'αδειοδότηση παιδικών κατασκηνώσεων',
+      'κανονισμός λειτουργίας κατασκηνώσεων',
+    ],
+  },
+};
+
+// Forum categories linked to structure types
+export const STRUCTURE_FORUM_CATEGORIES = {
+  MFH: 'Εποπτεία ΜΦΗ',
+  KDAP: 'Εποπτεία ΚΔΑΠ',
+  SYD: 'Εποπτεία ΣΥΔ',
+  'KDHF-KAA': 'Εποπτεία ΚΔΗΦ/ΚΑΑ',
+  MFPAD: 'Εποπτεία ΜΦΠΑΔ',
+  CAMP: 'Εποπτεία Κατασκηνώσεων',
 };

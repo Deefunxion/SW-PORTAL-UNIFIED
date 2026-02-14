@@ -29,6 +29,7 @@ import {
 import LicenseBadge from '../components/LicenseBadge';
 import SanctionForm from '../components/SanctionForm';
 import StructureTimeline from '../components/StructureTimeline';
+import LegislationPanel from '../components/LegislationPanel';
 
 function InfoRow({ label, value, icon: Icon }) {
   return (
@@ -115,6 +116,28 @@ function InfoTab({ structure }) {
           {s.notes && <InfoRow label="Σημειώσεις" value={s.notes} />}
         </CardContent>
       </Card>
+
+      {/* Legislation auto-tags from knowledge base */}
+      <div className="md:col-span-2">
+        <LegislationPanel structureTypeCode={s.type?.code} />
+      </div>
+
+      {/* Forum link for this structure type */}
+      {s.type?.code && (
+        <div className="md:col-span-2">
+          <Card className="border-[#e8e2d8]">
+            <CardContent className="py-4">
+              <Link
+                to={`/forum?category=${encodeURIComponent('Εποπτεία ' + (s.type?.code || ''))}`}
+                className="inline-flex items-center gap-2 text-[#1a3aa3] hover:text-[#152e82] text-sm font-medium transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Συζήτηση στο Forum — Εποπτεία {s.type?.code}
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

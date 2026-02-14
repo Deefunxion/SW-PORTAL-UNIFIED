@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
@@ -61,19 +61,38 @@ const pinnedCategories = [
     color: 'bg-[#c94444] hover:bg-[#a83838]',
     description: 'Νομικές υποθέσεις'
   },
-  { 
-    name: 'Προτάσεις', 
-    icon: Lightbulb, 
+  {
+    name: 'Προτάσεις',
+    icon: Lightbulb,
     color: 'bg-[#b8942e] hover:bg-[#9a7a24]',
     description: 'Ιδέες και βελτιώσεις'
-  }
+  },
+  {
+    name: 'Εποπτεία ΜΦΗ',
+    icon: Eye,
+    color: 'bg-[#6b4c9a] hover:bg-[#583d82]',
+    description: 'Μονάδες Φροντίδας Ηλικιωμένων'
+  },
+  {
+    name: 'Εποπτεία ΚΔΑΠ',
+    icon: Eye,
+    color: 'bg-[#2d8b8b] hover:bg-[#24706e]',
+    description: 'Κέντρα Δημιουργικής Απασχόλησης'
+  },
+  {
+    name: 'Αδειοδότηση Δομών',
+    icon: AlertTriangle,
+    color: 'bg-[#c9723d] hover:bg-[#b56232]',
+    description: 'Αδειοδότηση & κανονιστικό πλαίσιο'
+  },
 ];
 
 function ForumPage() {
+  const [searchParams] = useSearchParams();
   const [discussions, setDiscussions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newDiscussion, setNewDiscussion] = useState({
     title: '',
