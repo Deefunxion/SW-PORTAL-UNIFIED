@@ -18,6 +18,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import authService from '../lib/auth';
+import api from '../lib/api';
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
@@ -39,9 +40,9 @@ const ProfilePage = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const response = await authService.api('/api/user/profile');
-      setProfile(response);
-      setEmail(response.email || '');
+      const { data } = await api.get('/api/auth/me');
+      setProfile(data);
+      setEmail(data.email || '');
     } catch (error) {
       setMessage({ 
         type: 'error', 
@@ -85,10 +86,7 @@ const ProfilePage = () => {
         updateData.new_password = newPassword;
       }
 
-      await authService.api('/api/user/profile', {
-        method: 'PUT',
-        body: JSON.stringify(updateData)
-      });
+      await api.put('/api/users/profile', updateData);
 
       setMessage({ type: 'success', text: 'Το προφίλ ενημερώθηκε επιτυχώς!' });
       

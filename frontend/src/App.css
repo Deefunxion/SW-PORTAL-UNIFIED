@@ -121,4 +121,25 @@
     @apply bg-background text-foreground;
     font-family: 'Fira Sans', sans-serif;
   }
+
+  /* App-wide: prevent text selection on UI chrome */
+  body {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Re-enable text selection in content areas */
+  input,
+  textarea,
+  [contenteditable="true"],
+  [contenteditable="true"] *,
+  .prose,
+  .prose *,
+  pre,
+  code,
+  .select-text,
+  .select-text * {
+    user-select: text;
+    -webkit-user-select: text;
+  }
 }
