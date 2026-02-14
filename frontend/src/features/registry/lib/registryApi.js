@@ -48,6 +48,7 @@ export const oversightApi = {
     `/api/structures/${structureId}/advisor-reports`, formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   ),
+  getAdvisorReport: (id) => api.get(`/api/advisor-reports/${id}`),
   updateAdvisorReport: (id, data) => api.patch(`/api/advisor-reports/${id}`, data),
   approveReport: (id, action) => api.patch(`/api/advisor-reports/${id}/approve`, { action }),
 };

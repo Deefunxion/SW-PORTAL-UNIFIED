@@ -89,6 +89,9 @@ def get_inspection(inspection_id):
     if inspection.report:
         result['report'] = inspection.report.to_dict()
     result['committee'] = inspection.committee.to_dict(include_members=True) if inspection.committee else None
+    # Include structure type info for checklist selection
+    if inspection.structure and inspection.structure.structure_type:
+        result['structure']['type'] = inspection.structure.structure_type.to_dict()
     return jsonify(result), 200
 
 
@@ -123,6 +126,14 @@ def submit_report(inspection_id):
     recommendations = request.form.get('recommendations', '')
     protocol_number = request.form.get('protocol_number', '')
     conclusion = request.form.get('conclusion')
+    checklist_json = request.form.get('checklist_data')
+    checklist_data = None
+    if checklist_json:
+        import json
+        try:
+            checklist_data = json.loads(checklist_json)
+        except (json.JSONDecodeError, TypeError):
+            pass
 
     file_path = None
     if 'file' in request.files:
@@ -141,6 +152,7 @@ def submit_report(inspection_id):
         drafted_date=date.today(),
         findings=findings,
         recommendations=recommendations,
+        checklist_data=checklist_data,
         file_path=file_path,
         status='submitted',
         submitted_by=user_id,

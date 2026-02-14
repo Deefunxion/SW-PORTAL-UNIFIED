@@ -15,14 +15,18 @@ import { inspectionsApi } from '../lib/registryApi';
 import {
   INSPECTION_TYPES, INSPECTION_CONCLUSIONS, INSPECTION_STATUS
 } from '../lib/constants';
+import InspectionChecklist from './InspectionChecklist';
 
 export default function InspectionForm({ inspection, onSuccess }) {
   const [findings, setFindings] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [conclusion, setConclusion] = useState('');
   const [protocolNumber, setProtocolNumber] = useState('');
+  const [checklistData, setChecklistData] = useState(null);
   const [file, setFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const structureTypeCode = inspection?.structure?.type?.code;
 
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0];
@@ -60,6 +64,7 @@ export default function InspectionForm({ inspection, onSuccess }) {
       formData.append('recommendations', recommendations);
       formData.append('protocol_number', protocolNumber);
       if (conclusion) formData.append('conclusion', conclusion);
+      if (checklistData) formData.append('checklist_data', JSON.stringify(checklistData));
       if (file) formData.append('file', file);
 
       await inspectionsApi.submitReport(inspection.id, formData);
@@ -146,6 +151,15 @@ export default function InspectionForm({ inspection, onSuccess }) {
           />
         </CardContent>
       </Card>
+
+      {/* Structured Checklist */}
+      {structureTypeCode && (
+        <InspectionChecklist
+          structureTypeCode={structureTypeCode}
+          value={checklistData}
+          onChange={setChecklistData}
+        />
+      )}
 
       {/* Findings */}
       <Card className="border-[#e8e2d8]">

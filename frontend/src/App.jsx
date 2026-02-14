@@ -46,6 +46,7 @@ import InspectionReportPage from '@/features/registry/pages/InspectionReportPage
 import CommitteesPage from '@/features/registry/pages/CommitteesPage';
 import OversightDashboardPage from '@/features/registry/pages/OversightDashboardPage';
 import ReportsPage from '@/features/registry/pages/ReportsPage';
+import AdvisorReportPage from '@/features/registry/pages/AdvisorReportPage';
 
 import './App.css';
 
@@ -444,6 +445,16 @@ function AppContent() {
           <Route path="/inspections/:id/report" element={
             <ProtectedRoute>
               <InspectionReportPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/registry/:structureId/advisor-report" element={
+            <ProtectedRoute>
+              <AdvisorReportPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/registry/:structureId/advisor-report/:reportId" element={
+            <ProtectedRoute>
+              <AdvisorReportPage />
             </ProtectedRoute>
           } />
           <Route path="/committees" element={

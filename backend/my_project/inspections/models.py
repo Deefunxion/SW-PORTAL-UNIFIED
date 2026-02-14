@@ -106,6 +106,7 @@ class InspectionReport(db.Model):
     drafted_date = db.Column(db.Date)
     findings = db.Column(db.Text)
     recommendations = db.Column(db.Text, nullable=True)
+    checklist_data = db.Column(db.JSON, nullable=True)  # structured inspection criteria
     file_path = db.Column(db.String(500), nullable=True)
     status = db.Column(db.String(50), default='draft')
     submitted_by = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -120,6 +121,7 @@ class InspectionReport(db.Model):
             'protocol_number': self.protocol_number,
             'drafted_date': self.drafted_date.isoformat() if self.drafted_date else None,
             'findings': self.findings, 'recommendations': self.recommendations,
+            'checklist_data': self.checklist_data,
             'file_path': self.file_path, 'status': self.status,
             'submitted_by': self.submitted_by,
             'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None,

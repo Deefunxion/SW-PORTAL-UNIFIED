@@ -355,6 +355,7 @@ function InspectionsTab({ structureId }) {
 
 // ---- Tab: Εκθέσεις ----
 function ReportsTab({ structureId }) {
+  const navigate = useNavigate();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
@@ -404,12 +405,22 @@ function ReportsTab({ structureId }) {
 
   if (loading) return <LoadingSpinner />;
 
-  if (reports.length === 0) {
-    return <EmptyState message="Δεν υπάρχουν εκθέσεις κοινωνικού συμβούλου." />;
-  }
-
   return (
-    <div className="rounded-xl border border-[#e8e2d8] overflow-hidden">
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button
+          onClick={() => navigate(`/registry/${structureId}/advisor-report`)}
+          className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[44px]"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Νέα Αναφορά
+        </Button>
+      </div>
+
+      {reports.length === 0 ? (
+        <EmptyState message="Δεν υπάρχουν εκθέσεις κοινωνικού συμβούλου." />
+      ) : (
+      <div className="rounded-xl border border-[#e8e2d8] overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow className="bg-[#f5f2ec] hover:bg-[#f5f2ec]">
@@ -478,6 +489,8 @@ function ReportsTab({ structureId }) {
           ))}
         </TableBody>
       </Table>
+    </div>
+      )}
     </div>
   );
 }

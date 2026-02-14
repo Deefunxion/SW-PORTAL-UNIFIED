@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card.jsx';
 import { inspectionsApi } from '../lib/registryApi';
 import InspectionForm from '../components/InspectionForm';
+import InspectionChecklist from '../components/InspectionChecklist';
 
 export default function InspectionReportPage() {
   const { id } = useParams();
@@ -76,6 +77,15 @@ export default function InspectionReportPage() {
                     <div
                       className="prose prose-sm text-[#6b6560]"
                       dangerouslySetInnerHTML={{ __html: inspection.report.recommendations }}
+                    />
+                  </div>
+                )}
+                {inspection.report.checklist_data && inspection.structure?.type?.code && (
+                  <div className="mt-4">
+                    <InspectionChecklist
+                      structureTypeCode={inspection.structure.type.code}
+                      value={inspection.report.checklist_data}
+                      readOnly
                     />
                   </div>
                 )}
