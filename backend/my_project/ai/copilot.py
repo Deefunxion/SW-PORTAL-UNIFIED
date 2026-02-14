@@ -1,5 +1,5 @@
 """
-Copilot service for SW Portal AI Assistant.
+Copilot service for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ AI Assistant.
 Context-aware chat using RAG over Greek social welfare documents.
 Adapted from Academicon's copilot_service.py.
 
@@ -20,7 +20,7 @@ from my_project.ai.knowledge import search_chunks
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """Είσαι ο ψηφιακός βοηθός της Πύλης Κοινωνικής Μέριμνας (SW Portal), \
+SYSTEM_PROMPT = """Είσαι ο ψηφιακός βοηθός της Πύλης Κοινωνικής Μέριμνας (ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ), \
 ένα εργαλείο για κοινωνικούς λειτουργούς στην Ελλάδα.
 
 Ο ρόλος σου:
@@ -42,7 +42,7 @@ SYSTEM_PROMPT = """Είσαι ο ψηφιακός βοηθός της Πύλης
 DISCLAIMER_TEXT = (
     "\n\n---\n"
     "*Οι απαντήσεις του AI Βοηθού είναι ενδεικτικές και συμβουλευτικού χαρακτήρα. "
-    "Ελέγξτε πάντα με την ισχύουσα νομοθεσία και τις επίσημες εγκυκλίους.*"
+    "Ελέγξτε πάντα με την ισχύουσα νομοθεσία και τις Υπουργικές Αποφάσεις.*"
 )
 
 

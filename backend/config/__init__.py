@@ -1,5 +1,5 @@
 """
-Configuration module for SW Portal
+Configuration module for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
 Provides different configurations for different environments
 """
 import os

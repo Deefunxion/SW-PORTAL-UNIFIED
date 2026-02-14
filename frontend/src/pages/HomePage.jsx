@@ -119,7 +119,7 @@ function HomePage() {
         >
           Καλώς ήρθατε στο{' '}
           <span className="bg-gradient-to-br from-[#1a3aa3] via-[#2d5cd6] to-[#152e82] bg-clip-text text-transparent">
-            SW Portal
+            ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
           </span>
         </h1>
         <p className="text-lg sm:text-xl text-[#6b6560] max-w-[660px] mx-auto leading-relaxed">

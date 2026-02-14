@@ -1,5 +1,5 @@
 #!/bin/bash
-# SW Portal — one-command launcher
+# ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ — one-command launcher
 # Starts Docker containers, backend (Flask :5000), and frontend (Vite :5173)
 
 set -e
@@ -41,7 +41,7 @@ trap cleanup INT TERM
 
 echo ""
 echo "==================================="
-echo "  SW Portal is running!"
+echo "  ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ is running!"
 echo "  Frontend: http://localhost:5173"
 echo "  Backend:  http://localhost:5000"
 echo "  Login:    admin / admin123"

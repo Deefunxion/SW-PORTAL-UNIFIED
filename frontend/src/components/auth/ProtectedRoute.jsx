@@ -15,7 +15,7 @@ const ProtectedRoute = ({ children, requiredRole = null, requiredRoles = null })
           <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
             <span className="text-white font-bold text-xl">SW</span>
           </div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">SW Portal</h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ</h2>
           <div className="flex items-center justify-center space-x-2">
             <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
             <span className="text-gray-600">Έλεγχος πρόσβασης...</span>

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SW Portal API Documentation Module
+ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API Documentation Module
 Provides OpenAPI 3.1 specification and Swagger UI integration
 """
 
@@ -9,16 +9,16 @@ from flask import Blueprint, render_template_string, jsonify, current_app
 from datetime import datetime
 
 def create_openapi_spec():
-    """Create OpenAPI 3.1 specification for SW Portal API"""
+    """Create OpenAPI 3.1 specification for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API"""
     
     spec = {
         "openapi": "3.1.0",
         "info": {
-            "title": "SW Portal API",
+            "title": "ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API",
             "description": """
-# SW Portal API Documentation
+# ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API Documentation
 
-Comprehensive API for the SW Portal system of Περιφέρεια Αττικής.
+Comprehensive API for the ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ system of Περιφέρεια Αττικής.
 
 ## Features
 
@@ -63,7 +63,7 @@ The API uses standard HTTP status codes and returns error details in JSON format
             """,
             "version": "2.0.0",
             "contact": {
-                "name": "SW Portal Team",
+                "name": "ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ Team",
                 "email": "support@swportal.gr",
                 "url": "https://swportal.gr"
             },
@@ -590,7 +590,7 @@ def create_swagger_ui_html():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SW Portal API Documentation</title>
+    <title>ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API Documentation</title>
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui.css" />
     <style>
         html {
@@ -669,14 +669,14 @@ def create_swagger_ui_html():
 </head>
 <body>
     <div class="custom-header">
-        <h1>🏛️ SW Portal API</h1>
+        <h1>🏛️ ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API</h1>
         <p>Comprehensive API Documentation - Περιφέρεια Αττικής</p>
     </div>
     
     <div class="api-info">
-        <h2>📚 Καλώς ήρθατε στην τεκμηρίωση του SW Portal API</h2>
+        <h2>📚 Καλώς ήρθατε στην τεκμηρίωση του ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API</h2>
         <p>
-            Αυτή η τεκμηρίωση παρέχει πλήρη πληροφόρηση για όλα τα διαθέσιμα endpoints του SW Portal API.
+            Αυτή η τεκμηρίωση παρέχει πλήρη πληροφόρηση για όλα τα διαθέσιμα endpoints του ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API.
             Μπορείτε να δοκιμάσετε τα endpoints απευθείας από αυτή τη σελίδα.
         </p>
         
@@ -783,7 +783,7 @@ def init_api_docs(app):
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SW Portal API - ReDoc</title>
+    <title>ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API - ReDoc</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">

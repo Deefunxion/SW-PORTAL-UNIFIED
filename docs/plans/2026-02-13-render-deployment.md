@@ -1,8 +1,8 @@
-# SW Portal — Render Deployment Plan
+# ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ — Render Deployment Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Deploy the SW Portal monolith (Flask API + React SPA) to Render with managed PostgreSQL+pgvector, so it's live at a single URL for the Secretary General demo.
+**Goal:** Deploy the ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ monolith (Flask API + React SPA) to Render with managed PostgreSQL+pgvector, so it's live at a single URL for the Secretary General demo.
 
 **Architecture:** Multi-stage Docker build — Node stage builds the React frontend, Python stage serves it via Flask+Gunicorn. Render managed PostgreSQL provides pgvector. All `/api/*` routes hit Flask; all other paths serve the SPA's `index.html`. No CORS needed (same origin).
 
@@ -89,7 +89,7 @@ def serve_frontend(path):
     build_dir = os.path.abspath(current_app.config.get('FRONTEND_DIR', ''))
 
     if not os.path.isdir(build_dir):
-        return jsonify({'message': 'SW Portal API is running. Frontend not built.'}), 200
+        return jsonify({'message': 'ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API is running. Frontend not built.'}), 200
 
     # Serve static files directly if they exist
     if path and os.path.exists(os.path.join(build_dir, path)):
@@ -100,7 +100,7 @@ def serve_frontend(path):
     if os.path.exists(index_path):
         return send_from_directory(build_dir, 'index.html')
 
-    return jsonify({'message': 'SW Portal API is running. Frontend not built.'}), 200
+    return jsonify({'message': 'ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ API is running. Frontend not built.'}), 200
 ```
 
 **Step 3:** Verify the route doesn't interfere with API routes by running tests:
@@ -644,7 +644,7 @@ docker run --rm -p 10000:10000 \
   ΟΠΣΚΜ
 ```
 
-Visit `http://localhost:10000` — should see the SW Portal frontend.
+Visit `http://localhost:10000` — should see the ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ frontend.
 Visit `http://localhost:10000/api/health` — should return health JSON.
 
 **Step 5:** Commit any remaining fixes:

@@ -1,5 +1,5 @@
 """
-Celery Tasks for SW Portal
+Celery Tasks for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
 Contains all background tasks for document processing and other async operations
 """
 

@@ -1,6 +1,6 @@
 # Claude Instance Diary 📓
 
-A space for Claude instances to reflect on their work on SW Portal.
+A space for Claude instances to reflect on their work on ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ.
 
 ---
 

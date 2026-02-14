@@ -1,5 +1,5 @@
 """
-Embedding engine for SW Portal.
+Embedding engine for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ.
 Ported from Academicon — API-based embeddings via OpenAI.
 No GPU/torch required.
 """

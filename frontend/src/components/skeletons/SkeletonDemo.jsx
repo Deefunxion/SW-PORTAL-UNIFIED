@@ -30,7 +30,7 @@ function SkeletonDemo() {
           🦴 Skeleton Loading Demo
         </h1>
         <p className="text-gray-600">
-          Showcase of all skeleton loading components in the SW Portal
+          Showcase of all skeleton loading components in the ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
         </p>
       </div>
 

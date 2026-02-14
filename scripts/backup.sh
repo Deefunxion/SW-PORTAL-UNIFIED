@@ -1,5 +1,5 @@
 #!/bin/bash
-# SW Portal Database Backup Script
+# ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ Database Backup Script
 # Usage: ./scripts/backup.sh
 # Cron:  0 2 * * * /path/to/scripts/backup.sh >> /var/log/sw_portal_backup.log 2>&1
 

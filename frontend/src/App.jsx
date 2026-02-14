@@ -100,8 +100,8 @@ function Navigation() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <img src={`${import.meta.env.BASE_URL}favicon.ico`} alt="SW Portal" className="w-8 h-8 rounded-lg" />
-            <span className="text-xl font-bold" style={{fontFamily: "'Literata', serif"}}>SW PORTAL</span>
+            <img src={`${import.meta.env.BASE_URL}favicon.ico`} alt="ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ" className="w-8 h-8 rounded-lg" />
+            <span className="text-xl font-bold" style={{fontFamily: "'Literata', serif"}}>ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ</span>
             <Badge variant="secondary" className="hidden sm:inline-flex">
               Περιφέρεια Αττικής
             </Badge>
@@ -284,7 +284,7 @@ function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* About */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">SW Portal</h3>
+            <h3 className="text-lg font-semibold mb-4">ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ</h3>
             <p className="text-[#c0b89e] text-sm">
               Ενιαίο σύστημα διαχείρισης αρχείων, φόρουμ και AI Assistant
               για την Περιφέρεια Αττικής.
@@ -320,7 +320,7 @@ function Footer() {
 
         <div className="border-t border-[#3a3530] mt-8 pt-6 text-center">
           <p className="text-[#8a8580] text-sm">
-            &copy; {new Date().getFullYear()} SW Portal - Περιφέρεια Αττικής. Όλα τα δικαιώματα διατηρούνται.
+            &copy; {new Date().getFullYear()} ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ - Περιφέρεια Αττικής. Όλα τα δικαιώματα διατηρούνται.
           </p>
         </div>
       </div>
@@ -349,7 +349,7 @@ function AppContent() {
           <div className="w-16 h-16 bg-[#1a3aa3] rounded-lg flex items-center justify-center mx-auto mb-4">
             <span className="text-white font-bold text-xl">SW</span>
           </div>
-          <h1 className="text-2xl font-bold text-[#2a2520] mb-2">SW Portal</h1>
+          <h1 className="text-2xl font-bold text-[#2a2520] mb-2">ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ</h1>
           <p className="text-[#6b6560]">Φόρτωση...</p>
           <div className="mt-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a3aa3] mx-auto"></div>

@@ -1,5 +1,5 @@
 """
-Database Models for SW Portal
+Database Models for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
 Consolidated models file containing all SQLAlchemy model classes
 """
 

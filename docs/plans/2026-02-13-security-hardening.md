@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Close every CRITICAL and HIGH vulnerability identified in the SW Portal security audit — CORS lockdown, auth enforcement on all endpoints, rate limiting, security headers, safe credential seeding, audit logging, PII warnings, AI disclaimers, GDPR deletion, and Docker secrets.
+**Goal:** Close every CRITICAL and HIGH vulnerability identified in the ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ security audit — CORS lockdown, auth enforcement on all endpoints, rate limiting, security headers, safe credential seeding, audit logging, PII warnings, AI disclaimers, GDPR deletion, and Docker secrets.
 
 **Architecture:** All backend changes in the existing Flask app factory + single Blueprint pattern. No new services. New dependencies: `Flask-Limiter` (rate limiting), no `Flask-Talisman` (manual headers to avoid HTTPS enforcement in dev). New model: `AuditLog`. Frontend changes limited to two components (AssistantPage, ForumPage). PII detection is regex-only — no spaCy dependency (the existing `pii_redactor.py` requires ML deps we're not installing).
 
@@ -696,7 +696,7 @@ In `backend/my_project/ai/copilot.py`, add after the SYSTEM_PROMPT constant:
 DISCLAIMER_TEXT = (
     "\n\n---\n"
     "*Οι απαντήσεις του AI Βοηθού είναι ενδεικτικές και συμβουλευτικού χαρακτήρα. "
-    "Ελέγξτε πάντα με την ισχύουσα νομοθεσία και τις επίσημες εγκυκλίους.*"
+    "Ελέγξτε πάντα με την ισχύουσα νομοθεσία και τις Υπουργικές Αποφάσεις.*"
 )
 ```
 
@@ -721,7 +721,7 @@ In `frontend/src/pages/AssistantPage.jsx`, add an `AlertTriangle` import from lu
         <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
         <p className="text-sm sm:text-base text-amber-800 font-medium leading-relaxed">
           Οι απαντήσεις του AI Βοηθού είναι <strong>ενδεικτικές και συμβουλευτικού χαρακτήρα</strong>.
-          Ελέγξτε πάντα με την ισχύουσα νομοθεσία και τις επίσημες εγκυκλίους.
+          Ελέγξτε πάντα με την ισχύουσα νομοθεσία και τις Υπουργικές Αποφάσεις.
         </p>
       </div>
 ```
@@ -954,7 +954,7 @@ Create `scripts/backup.sh`:
 
 ```bash
 #!/bin/bash
-# SW Portal Database Backup Script
+# ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ Database Backup Script
 # Usage: ./scripts/backup.sh
 # Cron:  0 2 * * * /path/to/scripts/backup.sh >> /var/log/sw_portal_backup.log 2>&1
 
@@ -1009,7 +1009,7 @@ At the top of `backend/my_project/ai/copilot.py`, update the module docstring:
 
 ```python
 """
-Copilot service for SW Portal AI Assistant.
+Copilot service for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ AI Assistant.
 Context-aware chat using RAG over Greek social welfare documents.
 Adapted from Academicon's copilot_service.py.
 

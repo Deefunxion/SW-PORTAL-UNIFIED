@@ -173,7 +173,7 @@ function HomePage() {
         >
           Καλώς ήρθατε στο{' '}
           <span className="bg-gradient-to-br from-[#1a3aa3] via-[#2d5cd6] to-[#152e82] bg-clip-text text-transparent">
-            SW Portal
+            ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ
           </span>
         </h1>
         <p className="text-lg sm:text-xl text-[#6b6560] max-w-[660px] mx-auto leading-relaxed">
@@ -335,7 +335,7 @@ export default HomePage;
 - Kept imports: `Files`, `MessageSquare`, `Bot`, `Download`, `TrendingUp`, `Clock`, `ArrowRight`
 - `features` array: renamed `features` field to `badges` (now objects with `{label, style}` instead of plain strings), added `gradient`/`accentGradient`/`statColor` fields, removed `color` field
 - Added `quickActions` array for bottom-right section
-- Hero: larger text (50px on desktop), gradient text for "SW Portal"
+- Hero: larger text (50px on desktop), gradient text for "ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ"
 - Cards: plain divs with Tailwind instead of shadcn Card components, 4px gradient accent bar, proper rounded pill badges, "Μετάβαση →" text link replaces full-width Button
 - Bottom: matching rounded-2xl card containers with icon box headers
 

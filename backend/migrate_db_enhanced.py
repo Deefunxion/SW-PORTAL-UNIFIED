@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SW Portal Forum Enhanced - Database Migration Script
+ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ Forum Enhanced - Database Migration Script
 Adapted for the existing Flask application context.
 """
 
@@ -54,9 +54,9 @@ messaging_models = create_messaging_models(db)
 # --- Migration Logic ---
 
 def run_migration():
-    """Run database migration from existing SW Portal to Enhanced version."""
+    """Run database migration from existing ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ to Enhanced version."""
     with app.app_context():
-        print("Starting SW Portal Forum Enhanced Migration...")
+        print("Starting ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ Forum Enhanced Migration...")
         print(f"Migration started at: {datetime.now()}")
         
         try:

@@ -1,5 +1,5 @@
 """
-Test configuration for SW Portal project
+Test configuration for ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ project
 Pytest fixtures for backend testing
 """
 import pytest

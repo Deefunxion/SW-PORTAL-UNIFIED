@@ -186,7 +186,7 @@ function AssistantPage() {
           AI Βοηθός
         </h1>
         <p className="text-base sm:text-lg lg:text-xl text-[#8a8580] max-w-3xl mx-auto leading-relaxed font-medium">
-          Έξυπνος βοηθός με πρόσβαση στη νομοθεσία και τα έγγραφα κοινωνικής μέριμνας
+          Έξυπνος βοηθός με πρόσβαση στη Νομοθεσία και τις Αποφάσεις της κοινωνικής μέριμνας
         </p>
       </header>
 
@@ -195,7 +195,7 @@ function AssistantPage() {
         <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
         <p className="text-sm sm:text-base text-amber-800 font-medium leading-relaxed">
           Οι απαντήσεις του AI Βοηθού είναι <strong>ενδεικτικές και συμβουλευτικού χαρακτήρα</strong>.
-          Ελέγξτε πάντα με την ισχύουσα νομοθεσία και τις επίσημες εγκυκλίους.
+          Ελέγξτε πάντα με την ισχύουσα νομοθεσία και τις Υπουργικές Αποφάσεις.
         </p>
       </div>
 

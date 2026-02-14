@@ -33,7 +33,7 @@ const TestWrapper = ({ children }) => (
   </BrowserRouter>
 )
 
-describe('🧪 SW Portal UI Component Tests', () => {
+describe('🧪 ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ UI Component Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -43,7 +43,7 @@ describe('🧪 SW Portal UI Component Tests', () => {
       render(<HomePage />, { wrapper: TestWrapper })
       
       expect(screen.getByText(/Καλώς ήρθατε στο/)).toBeInTheDocument()
-      expect(screen.getByText(/SW Portal/)).toBeInTheDocument()
+      expect(screen.getByText(/ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ/)).toBeInTheDocument()
     })
 
     test('✅ displays government badges with Font Awesome icons', async () => {
@@ -213,7 +213,7 @@ describe('⚡ Performance Tests', () => {
     render(<HomePage />, { wrapper: TestWrapper })
     
     await waitFor(() => {
-      expect(screen.getByText(/SW Portal/)).toBeInTheDocument()
+      expect(screen.getByText(/ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ/)).toBeInTheDocument()
     })
     
     const endTime = performance.now()
