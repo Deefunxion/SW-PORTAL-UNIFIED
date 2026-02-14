@@ -13,7 +13,8 @@ import {
   LogOut,
   User,
   Shield,
-  Database
+  Database,
+  ClipboardList
 } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFolder, faComments, faRobot, faEnvelope, faMobileAlt, faBuilding } from '@fortawesome/free-solid-svg-icons';
@@ -38,6 +39,9 @@ import AdminDashboardPage from '@/pages/AdminDashboardPage';
 import NotificationBell from '@/components/NotificationBell';
 import PrivateMessagingPage from '@/pages/PrivateMessagingPage';
 import KnowledgeBasePage from '@/pages/KnowledgeBasePage';
+import RegistryListPage from '@/features/registry/pages/RegistryListPage';
+import StructureDetailPage from '@/features/registry/pages/StructureDetailPage';
+import StructureFormPage from '@/features/registry/pages/StructureFormPage';
 
 import './App.css';
 
@@ -54,6 +58,7 @@ function Navigation() {
     { path: '/apothecary', label: 'Αρχεία', icon: Files },
     { path: '/forum', label: 'Φόρουμ', icon: MessageSquare },
     { path: '/assistant', label: 'AI Βοηθός', icon: Bot },
+    { path: '/registry', label: 'Εποπτεία', icon: ClipboardList },
   ];
 
   // Add admin-only navigation items
@@ -410,6 +415,26 @@ function AppContent() {
           <Route path="/profile" element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/registry" element={
+            <ProtectedRoute>
+              <RegistryListPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/registry/new" element={
+            <ProtectedRoute>
+              <StructureFormPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/registry/:id" element={
+            <ProtectedRoute>
+              <StructureDetailPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/registry/:id/edit" element={
+            <ProtectedRoute>
+              <StructureFormPage />
             </ProtectedRoute>
           } />
           <Route path="/admin" element={
