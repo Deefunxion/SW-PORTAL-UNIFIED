@@ -119,6 +119,56 @@ def sample_user_data():
 
 
 @pytest.fixture
+def staff_headers(app, client):
+    """Create staff user with social_advisor role and return JWT headers."""
+    from my_project.models import User
+    from my_project.oversight.models import UserRole
+    from my_project.extensions import db as _db
+
+    with app.app_context():
+        user = User.query.filter_by(username='teststaff').first()
+        if not user:
+            user = User(username='teststaff', email='staff@test.com', role='staff')
+            user.set_password('staffpass123')
+            _db.session.add(user)
+            _db.session.commit()
+        if not UserRole.query.filter_by(user_id=user.id, role='social_advisor').first():
+            _db.session.add(UserRole(user_id=user.id, role='social_advisor'))
+            _db.session.commit()
+
+    response = client.post('/api/auth/login', json={
+        'username': 'teststaff', 'password': 'staffpass123'
+    })
+    token = response.get_json()['access_token']
+    return {'Authorization': f'Bearer {token}'}
+
+
+@pytest.fixture
+def director_headers(app, client):
+    """Create director user and return JWT headers."""
+    from my_project.models import User
+    from my_project.oversight.models import UserRole
+    from my_project.extensions import db as _db
+
+    with app.app_context():
+        user = User.query.filter_by(username='testdirector').first()
+        if not user:
+            user = User(username='testdirector', email='director@test.com', role='staff')
+            user.set_password('dirpass123')
+            _db.session.add(user)
+            _db.session.commit()
+        if not UserRole.query.filter_by(user_id=user.id, role='director').first():
+            _db.session.add(UserRole(user_id=user.id, role='director'))
+            _db.session.commit()
+
+    response = client.post('/api/auth/login', json={
+        'username': 'testdirector', 'password': 'dirpass123'
+    })
+    token = response.get_json()['access_token']
+    return {'Authorization': f'Bearer {token}'}
+
+
+@pytest.fixture
 def sample_post_data():
     """Sample forum post data for testing."""
     return {
