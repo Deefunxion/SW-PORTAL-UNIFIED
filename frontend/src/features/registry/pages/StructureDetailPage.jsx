@@ -1,18 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
+import { Input } from '@/components/ui/input.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table.jsx';
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select.jsx';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
+} from '@/components/ui/dialog.jsx';
+import {
   ArrowLeft, Edit, Building2, FileText, Shield, Scale, Clock,
-  User, Phone, Mail, MapPin, AlertTriangle
+  User, Phone, Mail, MapPin, Plus, Loader2, Send, CheckCircle, RotateCcw,
+  ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { structuresApi, inspectionsApi } from '../lib/registryApi';
+import { structuresApi, inspectionsApi, oversightApi } from '../lib/registryApi';
 import {
   STRUCTURE_STATUS, OWNERSHIP_TYPES, LICENSE_STATUS, SANCTION_STATUS,
   SANCTION_TYPES, INSPECTION_STATUS, INSPECTION_TYPES, INSPECTION_CONCLUSIONS,
@@ -113,45 +121,172 @@ function InfoTab({ structure }) {
 function LicensesTab({ structureId }) {
   const [licenses, setLicenses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
 
-  useEffect(() => {
+  const fetchLicenses = useCallback(() => {
+    setLoading(true);
     structuresApi.licenses(structureId)
       .then(({ data }) => setLicenses(data))
       .catch(() => toast.error('Σφάλμα φόρτωσης αδειών'))
       .finally(() => setLoading(false));
   }, [structureId]);
 
+  useEffect(() => { fetchLicenses(); }, [fetchLicenses]);
+
   if (loading) return <LoadingSpinner />;
 
-  if (licenses.length === 0) {
-    return <EmptyState message="Δεν υπάρχουν καταγεγραμμένες άδειες." />;
-  }
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <p className="text-sm text-[#8a8580]">{licenses.length} άδειες</p>
+        <Button
+          onClick={() => setShowCreate(true)}
+          className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[40px]"
+          size="sm"
+        >
+          <Plus className="w-4 h-4 mr-1.5" />
+          Νέα Άδεια
+        </Button>
+      </div>
+
+      {licenses.length === 0 ? (
+        <EmptyState message="Δεν υπάρχουν καταγεγραμμένες άδειες." />
+      ) : (
+        <div className="rounded-xl border border-[#e8e2d8] overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-[#f5f2ec] hover:bg-[#f5f2ec]">
+                <TableHead>Τύπος</TableHead>
+                <TableHead>Αρ. Πρωτοκόλλου</TableHead>
+                <TableHead>Ημ. Έκδοσης</TableHead>
+                <TableHead>Λήξη</TableHead>
+                <TableHead>Κατάσταση</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {licenses.map((lic) => (
+                <TableRow key={lic.id}>
+                  <TableCell className="font-medium">{lic.type}</TableCell>
+                  <TableCell className="font-mono text-sm">{lic.protocol_number || '—'}</TableCell>
+                  <TableCell>{formatDate(lic.issued_date)}</TableCell>
+                  <TableCell><LicenseBadge expiryDate={lic.expiry_date} /></TableCell>
+                  <TableCell><StatusBadge status={lic.status} map={LICENSE_STATUS} /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <CreateLicenseDialog
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        structureId={structureId}
+        onCreated={fetchLicenses}
+      />
+    </div>
+  );
+}
+
+function CreateLicenseDialog({ open, onOpenChange, structureId, onCreated }) {
+  const [type, setType] = useState('');
+  const [protocolNumber, setProtocolNumber] = useState('');
+  const [issuedDate, setIssuedDate] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [status, setStatus] = useState('active');
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleCreate = async () => {
+    if (!type) { toast.error('Επιλέξτε τύπο αδείας.'); return; }
+    setSaving(true);
+    try {
+      await structuresApi.createLicense(structureId, {
+        type,
+        protocol_number: protocolNumber || null,
+        issued_date: issuedDate || null,
+        expiry_date: expiryDate || null,
+        status,
+        notes: notes || null,
+      });
+      toast.success('Η άδεια δημιουργήθηκε.');
+      onCreated();
+      onOpenChange(false);
+      setType(''); setProtocolNumber(''); setIssuedDate(''); setExpiryDate('');
+      setStatus('active'); setNotes('');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Σφάλμα δημιουργίας αδείας.');
+    } finally { setSaving(false); }
+  };
 
   return (
-    <div className="rounded-xl border border-[#e8e2d8] overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-[#f5f2ec] hover:bg-[#f5f2ec]">
-            <TableHead>Τύπος</TableHead>
-            <TableHead>Αρ. Πρωτοκόλλου</TableHead>
-            <TableHead>Ημ. Έκδοσης</TableHead>
-            <TableHead>Λήξη</TableHead>
-            <TableHead>Κατάσταση</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {licenses.map((lic) => (
-            <TableRow key={lic.id}>
-              <TableCell className="font-medium">{lic.type}</TableCell>
-              <TableCell className="font-mono text-sm">{lic.protocol_number || '—'}</TableCell>
-              <TableCell>{formatDate(lic.issued_date)}</TableCell>
-              <TableCell><LicenseBadge expiryDate={lic.expiry_date} /></TableCell>
-              <TableCell><StatusBadge status={lic.status} map={LICENSE_STATUS} /></TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Νέα Άδεια</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div>
+            <label className="text-sm font-medium text-[#2a2520]">Τύπος *</label>
+            <Input
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              placeholder="π.χ. Άδεια Ίδρυσης, Άδεια Λειτουργίας"
+              className="mt-1 min-h-[44px] border-[#e8e2d8]"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-[#2a2520]">Αρ. Πρωτοκόλλου</label>
+            <Input
+              value={protocolNumber}
+              onChange={(e) => setProtocolNumber(e.target.value)}
+              className="mt-1 min-h-[44px] border-[#e8e2d8]"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-[#2a2520]">Ημ. Έκδοσης</label>
+              <Input type="date" value={issuedDate} onChange={(e) => setIssuedDate(e.target.value)}
+                className="mt-1 min-h-[44px] border-[#e8e2d8]" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-[#2a2520]">Ημ. Λήξης</label>
+              <Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)}
+                className="mt-1 min-h-[44px] border-[#e8e2d8]" />
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-[#2a2520]">Κατάσταση</label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="mt-1 min-h-[44px] border-[#e8e2d8]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(LICENSE_STATUS).map(([key, { label }]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-[#2a2520]">Σημειώσεις</label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)}
+              placeholder="Προαιρετικές σημειώσεις..."
+              className="mt-1 min-h-[44px] border-[#e8e2d8]" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="border-[#e8e2d8]">
+            Ακύρωση
+          </Button>
+          <Button onClick={handleCreate} disabled={saving}
+            className="bg-[#1a3aa3] hover:bg-[#152e82] text-white">
+            {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            Δημιουργία
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -182,6 +317,7 @@ function InspectionsTab({ structureId }) {
             <TableHead>Ημ. Ελέγχου</TableHead>
             <TableHead>Κατάσταση</TableHead>
             <TableHead>Συμπέρασμα</TableHead>
+            <TableHead className="w-24">Έκθεση</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -198,6 +334,15 @@ function InspectionsTab({ structureId }) {
                   : <span className="text-[#8a8580]">—</span>
                 }
               </TableCell>
+              <TableCell>
+                <Link
+                  to={`/inspections/${insp.id}/report`}
+                  className="inline-flex items-center text-[#1a3aa3] hover:text-[#152e82] text-sm transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  {insp.status === 'completed' ? 'Προβολή' : 'Σύνταξη'}
+                </Link>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -210,13 +355,50 @@ function InspectionsTab({ structureId }) {
 function ReportsTab({ structureId }) {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(null);
 
-  useEffect(() => {
+  const fetchReports = useCallback(() => {
+    setLoading(true);
     structuresApi.advisorReports(structureId)
       .then(({ data }) => setReports(data))
       .catch(() => toast.error('Σφάλμα φόρτωσης εκθέσεων'))
       .finally(() => setLoading(false));
   }, [structureId]);
+
+  useEffect(() => { fetchReports(); }, [fetchReports]);
+
+  const handleSubmit = async (reportId) => {
+    setActionLoading(reportId);
+    try {
+      await oversightApi.updateAdvisorReport(reportId, { status: 'submitted' });
+      toast.success('Η έκθεση υποβλήθηκε.');
+      fetchReports();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Σφάλμα υποβολής.');
+    } finally { setActionLoading(null); }
+  };
+
+  const handleApprove = async (reportId) => {
+    setActionLoading(reportId);
+    try {
+      await oversightApi.approveReport(reportId, 'approve');
+      toast.success('Η έκθεση εγκρίθηκε.');
+      fetchReports();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Σφάλμα έγκρισης.');
+    } finally { setActionLoading(null); }
+  };
+
+  const handleReturn = async (reportId) => {
+    setActionLoading(reportId);
+    try {
+      await oversightApi.approveReport(reportId, 'return');
+      toast.success('Η έκθεση επιστράφηκε.');
+      fetchReports();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Σφάλμα επιστροφής.');
+    } finally { setActionLoading(null); }
+  };
 
   if (loading) return <LoadingSpinner />;
 
@@ -233,6 +415,7 @@ function ReportsTab({ structureId }) {
             <TableHead>Ημερομηνία</TableHead>
             <TableHead>Κατάσταση</TableHead>
             <TableHead>Αξιολόγηση</TableHead>
+            <TableHead className="w-40">Ενέργειες</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -245,6 +428,49 @@ function ReportsTab({ structureId }) {
               <TableCell><StatusBadge status={r.status} map={REPORT_STATUS} /></TableCell>
               <TableCell className="max-w-xs truncate text-[#6b6560]">
                 {r.assessment || '—'}
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-1">
+                  {r.status === 'draft' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSubmit(r.id)}
+                      disabled={actionLoading === r.id}
+                      className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+                    >
+                      {actionLoading === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                      Υποβολή
+                    </Button>
+                  )}
+                  {r.status === 'submitted' && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleApprove(r.id)}
+                        disabled={actionLoading === r.id}
+                        className="h-7 text-xs border-green-200 text-green-700 hover:bg-green-50"
+                      >
+                        {actionLoading === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3 mr-1" />}
+                        Έγκριση
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleReturn(r.id)}
+                        disabled={actionLoading === r.id}
+                        className="h-7 text-xs border-orange-200 text-orange-700 hover:bg-orange-50"
+                      >
+                        <RotateCcw className="w-3 h-3 mr-1" />
+                        Επιστροφή
+                      </Button>
+                    </>
+                  )}
+                  {(r.status === 'approved' || r.status === 'returned') && (
+                    <span className="text-xs text-[#8a8580]">—</span>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}

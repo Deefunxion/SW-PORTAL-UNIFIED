@@ -23,6 +23,7 @@ export const inspectionsApi = {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   getReport: (id) => api.get(`/api/inspections/${id}/report`),
+  updateReportStatus: (reportId, data) => api.patch(`/api/inspection-reports/${reportId}`, data),
 };
 
 export const committeesApi = {
@@ -46,5 +47,6 @@ export const oversightApi = {
     `/api/structures/${structureId}/advisor-reports`, formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   ),
+  updateAdvisorReport: (id, data) => api.patch(`/api/advisor-reports/${id}`, data),
   approveReport: (id, action) => api.patch(`/api/advisor-reports/${id}/approve`, { action }),
 };
