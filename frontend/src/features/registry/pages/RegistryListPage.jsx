@@ -7,7 +7,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select.jsx';
 import {
-  Plus, Search, Building2, ChevronLeft, ChevronRight
+  Plus, Search, Building2, ChevronLeft, ChevronRight,
+  BarChart3, Gavel, Users, FileText,
 } from 'lucide-react';
 import { structuresApi } from '../lib/registryApi';
 import { STRUCTURE_STATUS } from '../lib/constants';
@@ -51,6 +52,34 @@ export default function RegistryListPage() {
           <Button className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[48px] px-6">
             <Plus className="w-5 h-5 mr-2" />
             Νέα Δομή
+          </Button>
+        </Link>
+      </div>
+
+      {/* Sub-navigation */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <Link to="/oversight">
+          <Button variant="outline" size="sm" className="border-[#e8e2d8] min-h-[36px]">
+            <BarChart3 className="w-4 h-4 mr-1.5" />
+            Πίνακας Εποπτείας
+          </Button>
+        </Link>
+        <Link to="/sanctions">
+          <Button variant="outline" size="sm" className="border-[#e8e2d8] min-h-[36px]">
+            <Gavel className="w-4 h-4 mr-1.5" />
+            Κυρώσεις
+          </Button>
+        </Link>
+        <Link to="/committees">
+          <Button variant="outline" size="sm" className="border-[#e8e2d8] min-h-[36px]">
+            <Users className="w-4 h-4 mr-1.5" />
+            Επιτροπές
+          </Button>
+        </Link>
+        <Link to="/reports">
+          <Button variant="outline" size="sm" className="border-[#e8e2d8] min-h-[36px]">
+            <FileText className="w-4 h-4 mr-1.5" />
+            Εκθέσεις
           </Button>
         </Link>
       </div>

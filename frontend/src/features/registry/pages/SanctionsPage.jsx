@@ -58,7 +58,7 @@ export default function SanctionsPage() {
 
   const handleCalculate = useCallback(async () => {
     if (!selectedRule || !selectedStructure) {
-      toast.error('\u0395\u03c0\u03b9\u03bb\u03ad\u03be\u03c4\u03b5 \u03c0\u03b1\u03c1\u03ac\u03b2\u03b1\u03c3\u03b7 \u03ba\u03b1\u03b9 \u03b4\u03bf\u03bc\u03ae');
+      toast.error('Επιλέξτε παράβαση και δομή');
       return;
     }
     setCalculating(true);
@@ -69,7 +69,7 @@ export default function SanctionsPage() {
       });
       setCalculation(resp.data);
     } catch (err) {
-      toast.error(err.response?.data?.error || '\u03a3\u03c6\u03ac\u03bb\u03bc\u03b1 \u03c5\u03c0\u03bf\u03bb\u03bf\u03b3\u03b9\u03c3\u03bc\u03bf\u03cd');
+      toast.error(err.response?.data?.error || 'Σφάλμα υπολογισμού');
       setCalculation(null);
     } finally {
       setCalculating(false);
@@ -86,13 +86,13 @@ export default function SanctionsPage() {
         notes: `violation_code:${calculation.violation_code} | ${calculation.violation_name} | ${calculation.legal_basis || ''}`,
         status: 'imposed',
       });
-      toast.success('\u0397 \u03ba\u03cd\u03c1\u03c9\u03c3\u03b7 \u03ba\u03b1\u03c4\u03b1\u03c7\u03c9\u03c1\u03ae\u03b8\u03b7\u03ba\u03b5');
+      toast.success('Η κύρωση καταχωρήθηκε');
       setCalculation(null);
       // Refresh sanctions list
       const resp = await structuresApi.sanctions(selectedStructure);
       setRecentSanctions(resp.data);
     } catch (err) {
-      toast.error('\u03a3\u03c6\u03ac\u03bb\u03bc\u03b1 \u03ba\u03b1\u03c4\u03b1\u03c7\u03ce\u03c1\u03b7\u03c3\u03b7\u03c2');
+      toast.error('Σφάλμα καταχώρησης');
     } finally {
       setCreating(false);
     }
@@ -103,7 +103,7 @@ export default function SanctionsPage() {
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return '\u2014';
+    if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('el-GR');
   };
 
@@ -117,9 +117,9 @@ export default function SanctionsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-[#2a2520]" style={{ fontFamily: 'Literata, serif' }}>
-              \u039a\u03c5\u03c1\u03ce\u03c3\u03b5\u03b9\u03c2 & \u03a0\u03c1\u03cc\u03c3\u03c4\u03b9\u03bc\u03b1
+              Κυρώσεις & Πρόστιμα
             </h1>
-            <p className="text-sm text-[#6b6560]">\u03a5\u03c0\u03bf\u03bb\u03bf\u03b3\u03b9\u03c3\u03bc\u03cc\u03c2 \u03c0\u03c1\u03bf\u03c3\u03c4\u03af\u03bc\u03c9\u03bd \u03bc\u03b5 \u03b2\u03ac\u03c3\u03b7 \u03c4\u03bf\u03bd \u039d.4756/2020</p>
+            <p className="text-sm text-[#6b6560]">Υπολογισμός προστίμων με βάση τον Ν.4756/2020</p>
           </div>
         </div>
       </div>
@@ -131,16 +131,16 @@ export default function SanctionsPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
                 <Calculator className="w-5 h-5 text-[#1a3aa3]" />
-                \u03a5\u03c0\u03bf\u03bb\u03bf\u03b3\u03b9\u03c3\u03c4\u03ae\u03c2 \u03a0\u03c1\u03bf\u03c3\u03c4\u03af\u03bc\u03bf\u03c5
+                Υπολογιστής Προστίμου
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Structure selector */}
               <div>
-                <label className="block text-sm font-medium text-[#2a2520] mb-1">\u0394\u03bf\u03bc\u03ae</label>
+                <label className="block text-sm font-medium text-[#2a2520] mb-1">Δομή</label>
                 <Select value={selectedStructure} onValueChange={setSelectedStructure}>
                   <SelectTrigger className="border-[#e8e2d8]">
-                    <SelectValue placeholder="\u0395\u03c0\u03b9\u03bb\u03ad\u03be\u03c4\u03b5 \u03b4\u03bf\u03bc\u03ae..." />
+                    <SelectValue placeholder="Επιλέξτε δομή..." />
                   </SelectTrigger>
                   <SelectContent>
                     {structures.map(s => (
@@ -154,10 +154,10 @@ export default function SanctionsPage() {
 
               {/* Violation type selector */}
               <div>
-                <label className="block text-sm font-medium text-[#2a2520] mb-1">\u03a4\u03cd\u03c0\u03bf\u03c2 \u03a0\u03b1\u03c1\u03ac\u03b2\u03b1\u03c3\u03b7\u03c2</label>
+                <label className="block text-sm font-medium text-[#2a2520] mb-1">Τύπος Παράβασης</label>
                 <Select value={selectedRule} onValueChange={setSelectedRule}>
                   <SelectTrigger className="border-[#e8e2d8]">
-                    <SelectValue placeholder="\u0395\u03c0\u03b9\u03bb\u03ad\u03be\u03c4\u03b5 \u03c0\u03b1\u03c1\u03ac\u03b2\u03b1\u03c3\u03b7..." />
+                    <SelectValue placeholder="Επιλέξτε παράβαση..." />
                   </SelectTrigger>
                   <SelectContent>
                     {rules.map(r => (
@@ -175,9 +175,9 @@ export default function SanctionsPage() {
                 className="w-full bg-[#1a3aa3] hover:bg-[#152e82] text-white"
               >
                 {calculating ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> \u03a5\u03c0\u03bf\u03bb\u03bf\u03b3\u03b9\u03c3\u03bc\u03cc\u03c2...</>
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Υπολογισμός...</>
                 ) : (
-                  <><Scale className="w-4 h-4 mr-2" /> \u03a5\u03c0\u03bf\u03bb\u03bf\u03b3\u03b9\u03c3\u03bc\u03cc\u03c2 \u03a0\u03c1\u03bf\u03c3\u03c4\u03af\u03bc\u03bf\u03c5</>
+                  <><Scale className="w-4 h-4 mr-2" /> Υπολογισμός Προστίμου</>
                 )}
               </Button>
             </CardContent>
@@ -188,7 +188,7 @@ export default function SanctionsPage() {
             <Card className="border-[#1a3aa3]/30 bg-[#1a3aa3]/5">
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center">
-                  <p className="text-sm text-[#6b6560] mb-1">\u03a4\u03b5\u03bb\u03b9\u03ba\u03cc \u03a0\u03c1\u03cc\u03c3\u03c4\u03b9\u03bc\u03bf</p>
+                  <p className="text-sm text-[#6b6560] mb-1">Τελικό Πρόστιμο</p>
                   <p className="text-4xl font-bold text-[#1a3aa3]" style={{ fontFamily: 'Literata, serif' }}>
                     {formatCurrency(calculation.final_amount)}
                   </p>
@@ -196,15 +196,15 @@ export default function SanctionsPage() {
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="bg-white rounded-lg p-3 border border-[#e8e2d8]">
-                    <p className="text-[#8a8580] text-xs">\u0392\u03b1\u03c3\u03b9\u03ba\u03cc \u03c0\u03c1\u03cc\u03c3\u03c4\u03b9\u03bc\u03bf</p>
+                    <p className="text-[#8a8580] text-xs">Βασικό πρόστιμο</p>
                     <p className="font-semibold text-[#2a2520]">{formatCurrency(calculation.base_fine)}</p>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-[#e8e2d8]">
-                    <p className="text-[#8a8580] text-xs">\u03a0\u03bf\u03bb\u03bb\u03b1\u03c0\u03bb\u03b1\u03c3\u03b9\u03b1\u03c3\u03c4\u03ae\u03c2</p>
+                    <p className="text-[#8a8580] text-xs">Πολλαπλασιαστής</p>
                     <p className="font-semibold text-[#2a2520]">{calculation.multiplier}x</p>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-[#e8e2d8]">
-                    <p className="text-[#8a8580] text-xs">\u03a5\u03c0\u03bf\u03c4\u03c1\u03bf\u03c0\u03ad\u03c2</p>
+                    <p className="text-[#8a8580] text-xs">Υποτροπές</p>
                     <p className="font-semibold text-[#2a2520]">
                       {calculation.recidivism_count}
                       {calculation.recidivism_count > 0 && (
@@ -213,7 +213,7 @@ export default function SanctionsPage() {
                     </p>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-[#e8e2d8]">
-                    <p className="text-[#8a8580] text-xs">\u03a0\u03b1\u03c1\u03ac\u03b2\u03b1\u03c3\u03b7</p>
+                    <p className="text-[#8a8580] text-xs">Παράβαση</p>
                     <p className="font-semibold text-[#2a2520] text-xs">{calculation.violation_name}</p>
                   </div>
                 </div>
@@ -223,7 +223,7 @@ export default function SanctionsPage() {
                     <div className="flex items-start gap-2">
                       <FileText className="w-4 h-4 text-[#1a3aa3] mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-xs text-[#8a8580]">\u039d\u03bf\u03bc\u03b9\u03ba\u03ae \u0392\u03ac\u03c3\u03b7</p>
+                        <p className="text-xs text-[#8a8580]">Νομική Βάση</p>
                         <p className="text-sm text-[#2a2520]">{calculation.legal_basis}</p>
                       </div>
                     </div>
@@ -234,7 +234,7 @@ export default function SanctionsPage() {
                   <div className="bg-orange-50 rounded-lg p-3 border border-orange-200 flex items-start gap-2">
                     <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
                     <p className="text-sm text-orange-800">
-                      \u03a0\u03c1\u03bf\u03c3\u03bf\u03c7\u03ae: \u039f \u03b1\u03c1\u03b9\u03b8\u03bc\u03cc\u03c2 \u03c5\u03c0\u03bf\u03c4\u03c1\u03bf\u03c0\u03ce\u03bd \u03c5\u03c0\u03b5\u03c1\u03b2\u03b1\u03af\u03bd\u03b5\u03b9 \u03c4\u03bf \u03cc\u03c1\u03b9\u03bf \u03b3\u03b9\u03b1 \u03b1\u03bd\u03b1\u03c3\u03c4\u03bf\u03bb\u03ae \u03bb\u03b5\u03b9\u03c4\u03bf\u03c5\u03c1\u03b3\u03af\u03b1\u03c2.
+                      Προσοχή: Ο αριθμός υποτροπών υπερβαίνει το όριο για αναστολή λειτουργίας.
                     </p>
                   </div>
                 )}
@@ -245,9 +245,9 @@ export default function SanctionsPage() {
                   className="w-full bg-red-600 hover:bg-red-700 text-white"
                 >
                   {creating ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> \u039a\u03b1\u03c4\u03b1\u03c7\u03ce\u03c1\u03b7\u03c3\u03b7...</>
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Καταχώρηση...</>
                   ) : (
-                    <><Gavel className="w-4 h-4 mr-2" /> \u0395\u03c0\u03b9\u03b2\u03bf\u03bb\u03ae \u039a\u03cd\u03c1\u03c9\u03c3\u03b7\u03c2</>
+                    <><Gavel className="w-4 h-4 mr-2" /> Επιβολή Κύρωσης</>
                   )}
                 </Button>
               </CardContent>
@@ -257,7 +257,7 @@ export default function SanctionsPage() {
           {/* Rules reference table */}
           <Card className="border-[#e8e2d8]">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base text-[#2a2520]">\u039a\u03b1\u03bd\u03cc\u03bd\u03b5\u03c2 \u03a0\u03c1\u03bf\u03c3\u03c4\u03af\u03bc\u03c9\u03bd</CardTitle>
+              <CardTitle className="text-base text-[#2a2520]">Κανόνες Προστίμων</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -267,7 +267,7 @@ export default function SanctionsPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-[#1a3aa3]">{formatCurrency(r.base_fine)}</span>
                       {r.can_trigger_suspension && (
-                        <AlertTriangle className="w-3.5 h-3.5 text-orange-500" title="\u039c\u03c0\u03bf\u03c1\u03b5\u03af \u03bd\u03b1 \u03bf\u03b4\u03b7\u03b3\u03ae\u03c3\u03b5\u03b9 \u03c3\u03b5 \u03b1\u03bd\u03b1\u03c3\u03c4\u03bf\u03bb\u03ae" />
+                        <AlertTriangle className="w-3.5 h-3.5 text-orange-500" title="Μπορεί να οδηγήσει σε αναστολή" />
                       )}
                     </div>
                   </div>
@@ -283,7 +283,7 @@ export default function SanctionsPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
                 <Scale className="w-5 h-5 text-[#1a3aa3]" />
-                \u03a0\u03c1\u03cc\u03c3\u03c6\u03b1\u03c4\u03b5\u03c2 \u039a\u03c5\u03c1\u03ce\u03c3\u03b5\u03b9\u03c2
+                Πρόσφατες Κυρώσεις
                 {selectedStructure && (
                   <Badge variant="outline" className="ml-2 text-xs">
                     {structures.find(s => String(s.id) === selectedStructure)?.name || ''}
@@ -295,22 +295,22 @@ export default function SanctionsPage() {
               {!selectedStructure ? (
                 <div className="text-center py-12 text-[#8a8580]">
                   <Scale className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>\u0395\u03c0\u03b9\u03bb\u03ad\u03be\u03c4\u03b5 \u03b4\u03bf\u03bc\u03ae \u03b3\u03b9\u03b1 \u03bd\u03b1 \u03b4\u03b5\u03af\u03c4\u03b5 \u03c4\u03b9\u03c2 \u03ba\u03c5\u03c1\u03ce\u03c3\u03b5\u03b9\u03c2 \u03c4\u03b7\u03c2</p>
+                  <p>Επιλέξτε δομή για να δείτε τις κυρώσεις της</p>
                 </div>
               ) : recentSanctions.length === 0 ? (
                 <div className="text-center py-12 text-[#8a8580]">
                   <Scale className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>\u0394\u03b5\u03bd \u03c5\u03c0\u03ac\u03c1\u03c7\u03bf\u03c5\u03bd \u03ba\u03c5\u03c1\u03ce\u03c3\u03b5\u03b9\u03c2 \u03b3\u03b9\u03b1 \u03b1\u03c5\u03c4\u03ae \u03c4\u03b7 \u03b4\u03bf\u03bc\u03ae</p>
+                  <p>Δεν υπάρχουν κυρώσεις για αυτή τη δομή</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>\u03a4\u03cd\u03c0\u03bf\u03c2</TableHead>
-                      <TableHead>\u03a0\u03bf\u03c3\u03cc</TableHead>
-                      <TableHead>\u0397\u03bc\u03b5\u03c1\u03bf\u03bc\u03b7\u03bd\u03af\u03b1</TableHead>
-                      <TableHead>\u039a\u03b1\u03c4\u03ac\u03c3\u03c4\u03b1\u03c3\u03b7</TableHead>
-                      <TableHead>\u03a3\u03b7\u03bc\u03b5\u03b9\u03ce\u03c3\u03b5\u03b9\u03c2</TableHead>
+                      <TableHead>Τύπος</TableHead>
+                      <TableHead>Ποσό</TableHead>
+                      <TableHead>Ημερομηνία</TableHead>
+                      <TableHead>Κατάσταση</TableHead>
+                      <TableHead>Σημειώσεις</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -320,7 +320,7 @@ export default function SanctionsPage() {
                         <TableRow key={s.id}>
                           <TableCell className="font-medium capitalize">{s.type}</TableCell>
                           <TableCell>
-                            {s.amount ? formatCurrency(s.amount) : '\u2014'}
+                            {s.amount ? formatCurrency(s.amount) : '—'}
                           </TableCell>
                           <TableCell className="text-sm">{formatDate(s.imposed_date)}</TableCell>
                           <TableCell>
@@ -334,7 +334,7 @@ export default function SanctionsPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-xs text-[#6b6560] max-w-[200px] truncate">
-                            {s.notes || '\u2014'}
+                            {s.notes || '—'}
                           </TableCell>
                         </TableRow>
                       );
