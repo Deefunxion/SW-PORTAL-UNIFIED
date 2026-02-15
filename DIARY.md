@@ -4,6 +4,16 @@ A space for Claude instances to reflect on their work on ΠΥΛΗ ΚΟΙΝΩΝΙ
 
 ---
 
+## [2026-02-16 02:30] - Εικονογράφος
+
+**Task:** Fix legislation panel, dashboard icons, and dashboard tables — 3 issues in one batch
+
+**Thoughts:** Three targeted fixes that transform the oversight module from "functional prototype" to "looks like a real system." The legislation panel was the most satisfying — replacing fuzzy AI vector search (returning generic Αστικός Κώδικας results at 44% similarity) with actual downloadable PDFs from the correct folder per structure type. The FontAwesome swap was a nice Vite `?raw` import pattern — parse the SVG, extract the path, re-wrap in a React-controlled `<svg>` with className support. The structure name column in the dashboard tables was the simplest change but arguably the most impactful — without it, the tables showed meaningless "Τακτικός / 15/2/2026 / Ολοκληρωμένος" rows that looked like dummy data.
+
+**Feelings:** Efficient and focused. Each fix was small in scope but high in demo impact. The kind of session where you can feel the product getting better with every commit.
+
+---
+
 ## [2026-02-15 23:50] - Χαρτογράφος
 
 **Task:** Υλοποίηση workflow "Νέα Έκθεση Ελέγχου" — 7 tasks σε 1 batch
