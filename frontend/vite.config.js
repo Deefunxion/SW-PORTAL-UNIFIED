@@ -10,6 +10,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@fa-solid": path.resolve(__dirname, "../assets/fontawesome/svgs/solid"),
     },
   },
   server: {
