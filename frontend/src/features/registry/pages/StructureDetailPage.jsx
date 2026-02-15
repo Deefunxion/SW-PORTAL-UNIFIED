@@ -581,14 +581,22 @@ function SanctionsTab({ structureId }) {
     <div>
       <div className="flex justify-between items-center mb-4">
         <p className="text-sm text-[#8a8580]">{sanctions.length} κυρώσεις</p>
-        <Button
-          onClick={() => setShowCreate(true)}
-          className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[40px]"
-          size="sm"
-        >
-          <Plus className="w-4 h-4 mr-1.5" />
-          Νέα Κύρωση
-        </Button>
+        <div className="flex gap-2">
+          <Link to={`/sanctions?structure=${structureId}`}>
+            <Button variant="outline" className="border-[#e8e2d8] min-h-[40px]" size="sm">
+              <Scale className="w-4 h-4 mr-1.5" />
+              Υπολογισμός Προστίμου
+            </Button>
+          </Link>
+          <Button
+            onClick={() => setShowCreate(true)}
+            className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[40px]"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Νέα Κύρωση
+          </Button>
+        </div>
       </div>
 
       {sanctions.length === 0 ? (

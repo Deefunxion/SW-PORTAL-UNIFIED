@@ -5,8 +5,10 @@ import { Badge } from '@/components/ui/badge.jsx';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table.jsx';
+import { Button } from '@/components/ui/button.jsx';
 import {
-  AlertTriangle, AlertCircle, Info, ExternalLink, FileText, Shield
+  AlertTriangle, AlertCircle, Info, ExternalLink, FileText, Shield,
+  Scale, Building2, Users
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { oversightApi } from '../lib/registryApi';
@@ -85,6 +87,26 @@ export default function OversightDashboardPage() {
         <p className="text-[#6b6560] mt-1">
           Συγκεντρωτική εικόνα δομών, ελέγχων, εκθέσεων και κυρώσεων
         </p>
+        <div className="flex gap-2 mt-3">
+          <Link to="/registry">
+            <Button variant="outline" size="sm" className="border-[#e8e2d8] min-h-[36px]">
+              <Building2 className="w-4 h-4 mr-1.5" />
+              Μητρώο
+            </Button>
+          </Link>
+          <Link to="/sanctions">
+            <Button variant="outline" size="sm" className="border-[#e8e2d8] min-h-[36px]">
+              <Scale className="w-4 h-4 mr-1.5" />
+              Κυρώσεις
+            </Button>
+          </Link>
+          <Link to="/committees">
+            <Button variant="outline" size="sm" className="border-[#e8e2d8] min-h-[36px]">
+              <Users className="w-4 h-4 mr-1.5" />
+              Επιτροπές
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -169,7 +191,12 @@ export default function OversightDashboardPage() {
                     {dashboard.recent_inspections.map((insp) => (
                       <TableRow key={insp.id}>
                         <TableCell className="text-sm">
-                          {INSPECTION_TYPES[insp.type] || insp.type}
+                          <Link
+                            to={`/inspections/${insp.id}/report`}
+                            className="text-[#1a3aa3] hover:text-[#152e82] hover:underline transition-colors"
+                          >
+                            {INSPECTION_TYPES[insp.type] || insp.type}
+                          </Link>
                         </TableCell>
                         <TableCell className="text-sm">
                           {formatDate(insp.scheduled_date)}

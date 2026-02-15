@@ -17,6 +17,7 @@ import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { structuresApi } from '../lib/registryApi';
 import { STRUCTURE_STATUS, OWNERSHIP_TYPES, PERIPHERAL_UNITS } from '../lib/constants';
+import AfmLookup from '../components/AfmLookup';
 
 const structureSchema = z.object({
   code: z.string().min(1, 'Υποχρεωτικό πεδίο'),
@@ -369,7 +370,15 @@ export default function StructureFormPage() {
                     <FormItem>
                       <FormLabel>ΑΦΜ</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="9 ψηφία" className="min-h-[44px] border-[#e8e2d8]" />
+                        <AfmLookup
+                          value={field.value}
+                          onChange={field.onChange}
+                          onResult={(data) => {
+                            if (data?.name && !form.getValues('representative_name')) {
+                              form.setValue('representative_name', data.name);
+                            }
+                          }}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
