@@ -185,6 +185,19 @@ def create_license(structure_id):
 
 
 # Sanction endpoints
+@registry_bp.route('/api/sanctions', methods=['GET'])
+@jwt_required()
+def list_all_sanctions():
+    sanctions = Sanction.query.order_by(Sanction.imposed_date.desc()).all()
+    result = []
+    for s in sanctions:
+        d = s.to_dict()
+        d['structure_name'] = s.structure.name if s.structure else None
+        d['structure_code'] = s.structure.code if s.structure else None
+        result.append(d)
+    return jsonify(result), 200
+
+
 @registry_bp.route('/api/structures/<int:structure_id>/sanctions', methods=['GET'])
 @jwt_required()
 def list_sanctions(structure_id):

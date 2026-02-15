@@ -271,8 +271,16 @@ def oversight_dashboard():
         'structures_by_type': structures_by_type,
         'inspections_by_month': inspections_by_month,
         'sanctions_by_status': sanctions_by_status,
-        'recent_inspections': [i.to_dict() for i in recent_inspections],
-        'recent_reports': [r.to_dict() for r in recent_reports],
+        'recent_inspections': [{
+            **i.to_dict(),
+            'structure_name': i.structure.name if i.structure else None,
+            'report': i.report.to_dict() if i.report else None,
+        } for i in recent_inspections],
+        'recent_reports': [{
+            **r.to_dict(),
+            'structure_name': r.structure.name if r.structure else None,
+            'author_name': r.author.username if r.author else None,
+        } for r in recent_reports],
     }), 200
 
 

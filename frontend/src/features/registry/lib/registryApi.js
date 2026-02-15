@@ -38,6 +38,7 @@ export const committeesApi = {
 };
 
 export const sanctionsApi = {
+  list: () => api.get('/api/sanctions'),
   rules: () => api.get('/api/sanction-rules'),
   createRule: (data) => api.post('/api/sanction-rules', data),
   calculate: (data) => api.post('/api/sanctions/calculate', data),

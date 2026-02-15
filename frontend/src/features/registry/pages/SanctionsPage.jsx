@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table.jsx';
-import { Calculator, Scale, AlertTriangle, TrendingUp, Gavel, FileText, Loader2 } from 'lucide-react';
+import { Calculator, Scale, AlertTriangle, TrendingUp, Gavel, FileText, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { sanctionsApi, structuresApi } from '../lib/registryApi';
 import { SANCTION_STATUS } from '../lib/constants';
@@ -45,12 +45,20 @@ export default function SanctionsPage() {
     structuresApi.list({ per_page: 100 }).then(r => {
       setStructures(r.data.structures || r.data);
     }).catch(() => {});
+    // Load all sanctions initially
+    sanctionsApi.list()
+      .then(r => setRecentSanctions(r.data))
+      .catch(() => {});
   }, []);
 
-  // Load sanctions for selected structure
+  // Load sanctions for selected structure (or all if none selected)
   useEffect(() => {
     if (selectedStructure) {
       structuresApi.sanctions(selectedStructure)
+        .then(r => setRecentSanctions(r.data))
+        .catch(() => setRecentSanctions([]));
+    } else {
+      sanctionsApi.list()
         .then(r => setRecentSanctions(r.data))
         .catch(() => setRecentSanctions([]));
     }
@@ -109,6 +117,10 @@ export default function SanctionsPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <Link to="/registry" className="inline-flex items-center gap-1 text-sm text-[#1a3aa3] hover:underline mb-4">
+        <ArrowLeft className="w-4 h-4" />
+        Μητρώο Δομών
+      </Link>
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
@@ -284,20 +296,15 @@ export default function SanctionsPage() {
               <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
                 <Scale className="w-5 h-5 text-[#1a3aa3]" />
                 Πρόσφατες Κυρώσεις
-                {selectedStructure && (
-                  <Badge variant="outline" className="ml-2 text-xs">
-                    {structures.find(s => String(s.id) === selectedStructure)?.name || ''}
-                  </Badge>
-                )}
+                <Badge variant="outline" className="ml-2 text-xs">
+                  {selectedStructure
+                    ? structures.find(s => String(s.id) === selectedStructure)?.name || ''
+                    : 'Όλες οι Δομές'}
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!selectedStructure ? (
-                <div className="text-center py-12 text-[#8a8580]">
-                  <Scale className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>Επιλέξτε δομή για να δείτε τις κυρώσεις της</p>
-                </div>
-              ) : recentSanctions.length === 0 ? (
+              {recentSanctions.length === 0 ? (
                 <div className="text-center py-12 text-[#8a8580]">
                   <Scale className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p>Δεν υπάρχουν κυρώσεις για αυτή τη δομή</p>
@@ -306,6 +313,7 @@ export default function SanctionsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {!selectedStructure && <TableHead>Δομή</TableHead>}
                       <TableHead>Τύπος</TableHead>
                       <TableHead>Ποσό</TableHead>
                       <TableHead>Ημερομηνία</TableHead>
@@ -318,6 +326,11 @@ export default function SanctionsPage() {
                       const statusInfo = SANCTION_STATUS[s.status] || { label: s.status, color: 'gray' };
                       return (
                         <TableRow key={s.id}>
+                          {!selectedStructure && (
+                            <TableCell className="text-sm font-medium">
+                              {s.structure_name || structures.find(st => st.id === s.structure_id)?.name || '—'}
+                            </TableCell>
+                          )}
                           <TableCell className="font-medium capitalize">{s.type}</TableCell>
                           <TableCell>
                             {s.amount ? formatCurrency(s.amount) : '—'}
