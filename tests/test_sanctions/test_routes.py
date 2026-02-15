@@ -9,6 +9,13 @@ def test_list_sanction_rules(client, auth_headers):
     assert isinstance(resp.get_json(), list)
 
 
+def test_calculate_fine_requires_auth(client):
+    resp = client.post('/api/sanctions/calculate', json={
+        'violation_code': 'NO_LICENSE', 'structure_id': 1,
+    })
+    assert resp.status_code == 401
+
+
 def test_calculate_fine_endpoint(client, auth_headers, app):
     from my_project.sanctions.models import SanctionRule
     from my_project.registry.models import Structure, StructureType
