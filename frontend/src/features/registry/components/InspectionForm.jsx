@@ -7,13 +7,13 @@ import {
 } from '@/components/ui/select.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import {
-  Calendar, Building2, Users, FileText, Send, Save, Loader2, Upload, X
+  Calendar, Building2, Users, FileText, Send, Save, Loader2, Upload, X, ClipboardCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
 import RichTextEditor from '@/components/RichTextEditor';
 import { inspectionsApi } from '../lib/registryApi';
 import {
-  INSPECTION_TYPES, INSPECTION_CONCLUSIONS, INSPECTION_STATUS
+  INSPECTION_TYPES, INSPECTION_CONCLUSIONS, INSPECTION_STATUS, INSPECTION_CRITERIA
 } from '../lib/constants';
 import InspectionChecklist from './InspectionChecklist';
 
@@ -136,6 +136,28 @@ export default function InspectionForm({ inspection, onSuccess }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Ministerial Decision Template Info */}
+      {structureTypeCode && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-3">
+              <ClipboardCheck className="w-5 h-5 text-[#1a3aa3]" />
+              <div>
+                <p className="text-sm font-semibold text-[#1a3aa3]">
+                  Πρότυπο Υπουργικής Απόφασης
+                </p>
+                <p className="text-xs text-[#6b6560]">
+                  Έκθεση Αξιολόγησης — {INSPECTION_CRITERIA[structureTypeCode]?.label || INSPECTION_CRITERIA.DEFAULT.label}
+                  {INSPECTION_CRITERIA[structureTypeCode]?.legal_ref && (
+                    <span className="ml-2 text-[#8a8580]">({INSPECTION_CRITERIA[structureTypeCode].legal_ref})</span>
+                  )}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Protocol Number */}
       <Card className="border-[#e8e2d8]">

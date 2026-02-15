@@ -1,0 +1,14 @@
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc3MTE4MTk2MSwianRpIjoiMmM1MGUwZDEtMDM4OC00MzE3LThhMTUtYjdlZGQ4MmUyZDcyIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjIiLCJuYmYiOjE3NzExODE5NjEsImNzcmYiOiIyMGZjNzM5Zi0yZmRjLTRhNTYtYTJiYS1hMzZiNTkxZWNiNWMiLCJleHAiOjE3NzEyNjgzNjF9.zRWMPHl2SCg7MgkRj75QQztQfwAAvT9c4Ckr1EkDM6k",
+  "message": "Login successful",
+  "user": {
+    "created_at": "2026-02-15T16:38:48.744430",
+    "email": "m.papadopoulou@portal.gr",
+    "id": 2,
+    "last_seen": "2026-02-15T18:59:21.355619",
+    "peripheral_unit": null,
+    "presence_status": "online",
+    "role": "staff",
+    "username": "mpapadopoulou"
+  }
+}

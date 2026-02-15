@@ -14,13 +14,15 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from '@/components/ui/dialog.jsx';
+import { Label } from '@/components/ui/label.jsx';
+import { Textarea } from '@/components/ui/textarea.jsx';
 import {
   ArrowLeft, Edit, Building2, FileText, Shield, Scale, Clock,
   User, Phone, Mail, MapPin, Plus, Loader2, Send, CheckCircle, RotateCcw,
   ExternalLink, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { structuresApi, inspectionsApi, oversightApi } from '../lib/registryApi';
+import { structuresApi, inspectionsApi, committeesApi, oversightApi } from '../lib/registryApi';
 import {
   STRUCTURE_STATUS, OWNERSHIP_TYPES, LICENSE_STATUS, SANCTION_STATUS,
   SANCTION_TYPES, INSPECTION_STATUS, INSPECTION_TYPES, INSPECTION_CONCLUSIONS,
@@ -318,8 +320,18 @@ function CreateLicenseDialog({ open, onOpenChange, structureId, onCreated }) {
 
 // ---- Tab: Έλεγχοι ----
 function InspectionsTab({ structureId }) {
+  const navigate = useNavigate();
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [committees, setCommittees] = useState([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newInspection, setNewInspection] = useState({
+    type: 'regular',
+    committee_id: '',
+    scheduled_date: new Date().toISOString().split('T')[0],
+    notes: '',
+  });
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     inspectionsApi.list({ structure_id: structureId })
@@ -328,56 +340,197 @@ function InspectionsTab({ structureId }) {
       .finally(() => setLoading(false));
   }, [structureId]);
 
+  useEffect(() => {
+    committeesApi.list()
+      .then(({ data }) => setCommittees(data))
+      .catch(() => {});
+  }, []);
+
+  const handleCreateInspection = async () => {
+    if (!newInspection.committee_id) {
+      toast.error('Επιλέξτε επιτροπή ελέγχου.');
+      return;
+    }
+    setCreating(true);
+    try {
+      const { data } = await inspectionsApi.create({
+        structure_id: structureId,
+        ...newInspection,
+        committee_id: parseInt(newInspection.committee_id),
+      });
+      toast.success('Ο έλεγχος δημιουργήθηκε.');
+      setShowCreate(false);
+      navigate(`/inspections/${data.id}/report`);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Σφάλμα δημιουργίας.');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
 
-  if (inspections.length === 0) {
-    return <EmptyState message="Δεν υπάρχουν καταγεγραμμένοι έλεγχοι." />;
-  }
-
   return (
-    <div className="rounded-xl border border-[#e8e2d8] overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-[#f5f2ec] hover:bg-[#f5f2ec]">
-            <TableHead>Τύπος</TableHead>
-            <TableHead>Ημ. Ελέγχου</TableHead>
-            <TableHead>Κατάσταση</TableHead>
-            <TableHead>Συμπέρασμα</TableHead>
-            <TableHead className="w-24">Έκθεση</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {inspections.map((insp) => (
-            <TableRow key={insp.id}>
-              <TableCell className="font-medium">
-                {INSPECTION_TYPES[insp.type] || insp.type}
-              </TableCell>
-              <TableCell>{formatDate(insp.scheduled_date)}</TableCell>
-              <TableCell><StatusBadge status={insp.status} map={INSPECTION_STATUS} /></TableCell>
-              <TableCell>
-                {insp.conclusion
-                  ? <StatusBadge status={insp.conclusion} map={INSPECTION_CONCLUSIONS} />
-                  : <span className="text-[#8a8580]">—</span>
-                }
-              </TableCell>
-              <TableCell>
-                <Link
-                  to={`/inspections/${insp.id}/report`}
-                  className="inline-flex items-center text-[#1a3aa3] hover:text-[#152e82] text-sm transition-colors"
-                >
-                  <ExternalLink className="w-3 h-3 mr-1" />
-                  {insp.status === 'completed' ? 'Προβολή' : 'Σύνταξη'}
-                </Link>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="space-y-4">
+      {/* Action bar */}
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-[#8a8580]">{inspections.length} έλεγχοι</p>
+        <Button
+          onClick={() => setShowCreate(true)}
+          className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[44px]"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Νέος Έλεγχος
+        </Button>
+      </div>
+
+      {/* Inspections table or empty state */}
+      {inspections.length === 0 ? (
+        <div className="text-center py-16 border-2 border-dashed border-[#e8e2d8] rounded-xl bg-[#faf8f4]">
+          <Shield className="w-12 h-12 text-[#8a8580] mx-auto mb-4" />
+          <p className="text-[#6b6560] mb-4">Δεν υπάρχουν καταγεγραμμένοι έλεγχοι.</p>
+          <Button
+            onClick={() => setShowCreate(true)}
+            className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[48px] px-6"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Δημιουργία Πρώτου Ελέγχου
+          </Button>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-[#e8e2d8] overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-[#f5f2ec] hover:bg-[#f5f2ec]">
+                <TableHead>Τύπος</TableHead>
+                <TableHead>Ημ. Ελέγχου</TableHead>
+                <TableHead>Κατάσταση</TableHead>
+                <TableHead>Συμπέρασμα</TableHead>
+                <TableHead className="w-36">Έκθεση</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {inspections.map((insp) => (
+                <TableRow key={insp.id}>
+                  <TableCell className="font-medium">
+                    {INSPECTION_TYPES[insp.type] || insp.type}
+                  </TableCell>
+                  <TableCell>{formatDate(insp.scheduled_date)}</TableCell>
+                  <TableCell><StatusBadge status={insp.status} map={INSPECTION_STATUS} /></TableCell>
+                  <TableCell>
+                    {insp.conclusion
+                      ? <StatusBadge status={insp.conclusion} map={INSPECTION_CONCLUSIONS} />
+                      : <span className="text-[#8a8580]">—</span>
+                    }
+                  </TableCell>
+                  <TableCell>
+                    {insp.report ? (
+                      <Link
+                        to={`/inspections/${insp.id}/report`}
+                        className="inline-flex items-center text-[#1a3aa3] hover:text-[#152e82] text-sm transition-colors"
+                      >
+                        <FileText className="w-3 h-3 mr-1" />
+                        Προβολή
+                      </Link>
+                    ) : insp.status === 'scheduled' ? (
+                      <Link
+                        to={`/inspections/${insp.id}/report`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1a3aa3] text-white text-sm rounded-md hover:bg-[#152e82] transition-colors font-medium"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        Σύνταξη Έκθεσης
+                      </Link>
+                    ) : (
+                      <span className="text-[#8a8580] text-sm">—</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Create Inspection Dialog */}
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Νέος Έλεγχος</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Τύπος Ελέγχου *</Label>
+              <Select
+                value={newInspection.type}
+                onValueChange={(v) => setNewInspection(prev => ({ ...prev, type: v }))}
+              >
+                <SelectTrigger className="min-h-[44px] border-[#e8e2d8]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(INSPECTION_TYPES).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Επιτροπή Ελέγχου *</Label>
+              <Select
+                value={newInspection.committee_id}
+                onValueChange={(v) => setNewInspection(prev => ({ ...prev, committee_id: v }))}
+              >
+                <SelectTrigger className="min-h-[44px] border-[#e8e2d8]">
+                  <SelectValue placeholder="Επιλέξτε επιτροπή..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {committees.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.decision_number}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Ημερομηνία Ελέγχου *</Label>
+              <Input
+                type="date"
+                value={newInspection.scheduled_date}
+                onChange={(e) => setNewInspection(prev => ({ ...prev, scheduled_date: e.target.value }))}
+                className="min-h-[44px] border-[#e8e2d8]"
+              />
+            </div>
+            <div>
+              <Label>Σημειώσεις</Label>
+              <Textarea
+                value={newInspection.notes}
+                onChange={(e) => setNewInspection(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Προαιρετικές σημειώσεις..."
+                className="min-h-[44px] border-[#e8e2d8]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreate(false)} className="border-[#e8e2d8]">
+              Ακύρωση
+            </Button>
+            <Button
+              onClick={handleCreateInspection}
+              disabled={creating}
+              className="bg-[#1a3aa3] hover:bg-[#152e82] text-white"
+            >
+              {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Δημιουργία & Σύνταξη Έκθεσης
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-// ---- Tab: Εκθέσεις ----
+// ---- Tab: Αναφορές Κ.Σ. (Κοινωνικού Συμβούλου) ----
 function ReportsTab({ structureId }) {
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
@@ -388,7 +541,7 @@ function ReportsTab({ structureId }) {
     setLoading(true);
     structuresApi.advisorReports(structureId)
       .then(({ data }) => setReports(data))
-      .catch(() => toast.error('Σφάλμα φόρτωσης εκθέσεων'))
+      .catch(() => toast.error('Σφάλμα φόρτωσης αναφορών'))
       .finally(() => setLoading(false));
   }, [structureId]);
 
@@ -452,12 +605,12 @@ function ReportsTab({ structureId }) {
           className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[44px]"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Νέα Αναφορά
+          Νέα Αναφορά Κ.Σ.
         </Button>
       </div>
 
       {reports.length === 0 ? (
-        <EmptyState message="Δεν υπάρχουν εκθέσεις κοινωνικού συμβούλου." />
+        <EmptyState message="Δεν υπάρχουν αναφορές Κοινωνικού Συμβούλου." />
       ) : (
       <div className="rounded-xl border border-[#e8e2d8] overflow-hidden">
       <Table>
@@ -798,7 +951,7 @@ export default function StructureDetailPage() {
           </TabsTrigger>
           <TabsTrigger value="reports" className="data-[state=active]:bg-white">
             <FileText className="w-4 h-4 mr-1.5" />
-            Εκθέσεις
+            Αναφορές Κ.Σ.
           </TabsTrigger>
           <TabsTrigger value="sanctions" className="data-[state=active]:bg-white">
             <Scale className="w-4 h-4 mr-1.5" />
