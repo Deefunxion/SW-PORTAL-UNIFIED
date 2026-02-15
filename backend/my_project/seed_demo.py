@@ -700,29 +700,124 @@ def seed_demo_data():
     for ar in extra_advisor_reports:
         db.session.add(ar)
 
-    # ─── SANCTION RULES ──────────────────────────────────────
+    # ─── SANCTION RULES (Ν.5041/2023, Άρθρο 100) ───────────
     from .sanctions.models import SanctionRule
 
     rules_data = [
-        ('NO_LICENSE', 'Λειτουργία χωρίς άδεια', 10000, 2.0, 3.0, True, 2, 'Ν.4756/2020, Άρθρο 42, §1'),
-        ('OVER_CAPACITY', 'Υπέρβαση δυναμικότητας', 5000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 42, §2'),
-        ('STAFF_RATIO', 'Ελλιπής στελέχωση', 3000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 38, §4'),
-        ('FIRE_SAFETY', 'Παραβίαση πυρασφάλειας', 8000, 2.0, 3.0, True, 2, 'Ν.4756/2020, Άρθρο 42, §3'),
-        ('HYGIENE', 'Παραβίαση υγιεινής', 4000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 39, §2'),
-        ('MISSING_DOCS', 'Έλλειψη τεκμηρίωσης', 2000, 1.5, 2.0, False, 0, 'Ν.4756/2020, Άρθρο 40, §1'),
-        ('NO_INCIDENT_REPORT', 'Μη αναφορά συμβάντος', 5000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 41, §2'),
-        ('UNAUTHORIZED_MODS', 'Μη εξουσιοδοτημένες τροποποιήσεις', 6000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 36, §5'),
-        ('ACCESSIBILITY', 'Παραβίαση προσβασιμότητας', 4000, 2.0, 2.5, False, 0, 'Ν.4756/2020, Άρθρο 37, §3'),
-        ('NON_COMPLIANCE', 'Μη συμμόρφωση σε υποδείξεις', 3000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 43, §1'),
+        # General rules (all structure types)
+        {'violation_code': 'NO_LICENSE', 'violation_name': 'Λειτουργία χωρίς άδεια',
+         'base_fine': 60000, 'min_fine': 60000, 'max_fine': 60000,
+         'category': 'admin', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §1',
+         'can_trigger_suspension': True, 'suspension_threshold': 1,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'TERMS_VIOLATION', 'violation_name': 'Παράβαση όρων λειτουργίας',
+         'base_fine': 5000, 'min_fine': 500, 'max_fine': 100000,
+         'category': 'general', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 3,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'FIRE_SAFETY', 'violation_name': 'Παραβίαση πυρασφάλειας',
+         'base_fine': 8000, 'min_fine': 3000, 'max_fine': 50000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 2,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'HYGIENE', 'violation_name': 'Παραβίαση υγιεινής',
+         'base_fine': 4000, 'min_fine': 500, 'max_fine': 30000,
+         'category': 'hygiene', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'MISSING_DOCS', 'violation_name': 'Έλλειψη τεκμηρίωσης',
+         'base_fine': 2000, 'min_fine': 500, 'max_fine': 10000,
+         'category': 'admin', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 1.5, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'NON_COMPLIANCE', 'violation_name': 'Μη συμμόρφωση εντός 3 μηνών',
+         'base_fine': 5000, 'min_fine': 1000, 'max_fine': 50000,
+         'category': 'general', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §3',
+         'can_trigger_suspension': True, 'suspension_threshold': 2,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'ENDANGERMENT', 'violation_name': 'Σοβαρή παράβαση — κίνδυνος ωφελούμενων',
+         'base_fine': 50000, 'min_fine': 20000, 'max_fine': 100000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §4',
+         'can_trigger_suspension': True, 'suspension_threshold': 1,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        # MFH-specific rules
+        {'violation_code': 'MFH_OVER_CAPACITY', 'violation_name': 'Υπέρβαση δυναμικότητας ΜΦΗ',
+         'base_fine': 10000, 'min_fine': 5000, 'max_fine': 50000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 2,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['MFH'].id},
+        {'violation_code': 'MFH_STAFF_RATIO', 'violation_name': 'Ελλιπής στελέχωση ΜΦΗ',
+         'base_fine': 5000, 'min_fine': 2000, 'max_fine': 30000,
+         'category': 'staff', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['MFH'].id},
+        {'violation_code': 'MFH_SAFETY', 'violation_name': 'Παραβίαση ασφάλειας ηλικιωμένων',
+         'base_fine': 15000, 'min_fine': 5000, 'max_fine': 80000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 1,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['MFH'].id},
+        {'violation_code': 'MFH_HYGIENE', 'violation_name': 'Παράβαση υγιεινής ΜΦΗ',
+         'base_fine': 5000, 'min_fine': 1000, 'max_fine': 30000,
+         'category': 'hygiene', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['MFH'].id},
+        {'violation_code': 'MFH_FIRE_SAFETY', 'violation_name': 'Παραβίαση πυρασφάλειας ΜΦΗ',
+         'base_fine': 10000, 'min_fine': 5000, 'max_fine': 50000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 2,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['MFH'].id},
+        # KDAP-specific rules
+        {'violation_code': 'KDAP_CHILD_SAFETY', 'violation_name': 'Παράβαση ασφάλειας παιδιών',
+         'base_fine': 15000, 'min_fine': 5000, 'max_fine': 80000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 1,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['KDAP'].id},
+        {'violation_code': 'KDAP_STAFF_CERTS', 'violation_name': 'Ελλιπή πιστοποιητικά προσωπικού ΚΔΑΠ',
+         'base_fine': 3000, 'min_fine': 1000, 'max_fine': 20000,
+         'category': 'staff', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['KDAP'].id},
+        {'violation_code': 'KDAP_SPACE_REQS', 'violation_name': 'Ακαταλληλότητα χώρων ΚΔΑΠ',
+         'base_fine': 5000, 'min_fine': 2000, 'max_fine': 30000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 2,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['KDAP'].id},
+        # KIHI-specific rules (KDHF-KAA type)
+        {'violation_code': 'KIHI_ACCESSIBILITY', 'violation_name': 'Παράβαση προσβασιμότητας ΚΗΦΗ',
+         'base_fine': 5000, 'min_fine': 2000, 'max_fine': 30000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['KDHF-KAA'].id},
+        {'violation_code': 'KIHI_PROGRAM', 'violation_name': 'Μη τήρηση προγράμματος ΚΗΦΗ',
+         'base_fine': 3000, 'min_fine': 1000, 'max_fine': 15000,
+         'category': 'general', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['KDHF-KAA'].id},
+        # COVID-era rules (inactive)
+        {'violation_code': 'COVID_MEASURES', 'violation_name': 'Μη τήρηση υγειονομικών μέτρων',
+         'base_fine': 3000, 'min_fine': 3000, 'max_fine': 10000,
+         'category': 'hygiene', 'legal_reference': 'ΥΑ Δ1α/ΓΠ.οικ. 5432/2023',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'is_active': False},
     ]
-    for code, name, base, esc2, esc3, can_suspend, threshold, legal in rules_data:
-        if not SanctionRule.query.filter_by(violation_code=code).first():
-            db.session.add(SanctionRule(
-                violation_code=code, violation_name=name, base_fine=base,
-                escalation_2nd=esc2, escalation_3rd_plus=esc3,
-                can_trigger_suspension=can_suspend, suspension_threshold=threshold,
-                legal_reference=legal,
-            ))
+    for rule_dict in rules_data:
+        existing = SanctionRule.query.filter_by(violation_code=rule_dict['violation_code']).first()
+        if existing:
+            for key, val in rule_dict.items():
+                setattr(existing, key, val)
+        else:
+            db.session.add(SanctionRule(**rule_dict))
 
     # ─── CHECKLIST TEMPLATES ─────────────────────────────────
     from .inspections.models import ChecklistTemplate
