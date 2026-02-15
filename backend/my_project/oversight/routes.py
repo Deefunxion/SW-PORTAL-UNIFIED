@@ -209,6 +209,26 @@ def oversight_dashboard():
     submitted_reports = SocialAdvisorReport.query.filter_by(status='submitted').count()
     total_sanctions = Sanction.query.count()
 
+    # Sanction decision workflow stats
+    from ..sanctions.models import SanctionDecision
+    decision_stats = {
+        'draft': SanctionDecision.query.filter_by(status='draft').count(),
+        'submitted': SanctionDecision.query.filter_by(status='submitted').count(),
+        'approved': SanctionDecision.query.filter_by(status='approved').count(),
+        'notified': SanctionDecision.query.filter_by(status='notified').count(),
+        'paid': SanctionDecision.query.filter_by(status='paid').count(),
+        'overdue': SanctionDecision.query.filter(
+            SanctionDecision.status == 'notified',
+            SanctionDecision.payment_deadline < date.today()
+        ).count(),
+        'total_amount_pending': db.session.query(
+            func.coalesce(func.sum(SanctionDecision.final_amount), 0)
+        ).filter(SanctionDecision.status.in_(['approved', 'notified'])).scalar(),
+        'total_amount_paid': db.session.query(
+            func.coalesce(func.sum(SanctionDecision.paid_amount), 0)
+        ).filter(SanctionDecision.status == 'paid').scalar(),
+    }
+
     # Structures by type
     structures_by_type = []
     type_counts = (
@@ -268,6 +288,7 @@ def oversight_dashboard():
             'submitted_reports': submitted_reports,
             'total_sanctions': total_sanctions,
         },
+        'decision_stats': decision_stats,
         'structures_by_type': structures_by_type,
         'inspections_by_month': inspections_by_month,
         'sanctions_by_status': sanctions_by_status,
@@ -334,6 +355,72 @@ def oversight_alerts():
             'message': f'Εκκρεμεί έγκριση έκθεσης κοιν. συμβούλου ({report.drafted_date.isoformat() if report.drafted_date else "?"})',
             'structure_id': report.structure_id,
             'report_id': report.id,
+        })
+
+    # Overdue sanction payments (notified + past payment deadline)
+    from ..sanctions.models import SanctionDecision
+    overdue_decisions = SanctionDecision.query.filter(
+        SanctionDecision.status == 'notified',
+        SanctionDecision.payment_deadline < date.today()
+    ).all()
+    for dec in overdue_decisions:
+        sanction = dec.sanction
+        structure = Structure.query.get(sanction.structure_id) if sanction else None
+        alerts.append({
+            'type': 'payment_overdue',
+            'severity': 'critical',
+            'message': f'Εκπρόθεσμη πληρωμή προστίμου {dec.final_amount:,.0f}€ — {structure.name if structure else "?"} (λήξη: {dec.payment_deadline.isoformat()})',
+            'structure_id': sanction.structure_id if sanction else None,
+            'decision_id': dec.id,
+        })
+
+    # Approaching payment deadlines (within 7 days)
+    payment_soon = date.today() + timedelta(days=7)
+    approaching_payment = SanctionDecision.query.filter(
+        SanctionDecision.status == 'notified',
+        SanctionDecision.payment_deadline >= date.today(),
+        SanctionDecision.payment_deadline <= payment_soon,
+    ).all()
+    for dec in approaching_payment:
+        sanction = dec.sanction
+        structure = Structure.query.get(sanction.structure_id) if sanction else None
+        alerts.append({
+            'type': 'payment_approaching',
+            'severity': 'warning',
+            'message': f'Πληρωμή προστίμου {dec.final_amount:,.0f}€ λήγει {dec.payment_deadline.isoformat()} — {structure.name if structure else "?"}',
+            'structure_id': sanction.structure_id if sanction else None,
+            'decision_id': dec.id,
+        })
+
+    # Approaching appeal deadlines (within 3 days)
+    appeal_soon = date.today() + timedelta(days=3)
+    approaching_appeal = SanctionDecision.query.filter(
+        SanctionDecision.status == 'notified',
+        SanctionDecision.appeal_deadline >= date.today(),
+        SanctionDecision.appeal_deadline <= appeal_soon,
+    ).all()
+    for dec in approaching_appeal:
+        sanction = dec.sanction
+        structure = Structure.query.get(sanction.structure_id) if sanction else None
+        alerts.append({
+            'type': 'appeal_deadline_approaching',
+            'severity': 'warning',
+            'message': f'Λήξη προθεσμίας ένστασης {dec.appeal_deadline.isoformat()} — {structure.name if structure else "?"}',
+            'structure_id': sanction.structure_id if sanction else None,
+            'decision_id': dec.id,
+        })
+
+    # Returned decisions requiring revision
+    returned = SanctionDecision.query.filter_by(status='returned').all()
+    for dec in returned:
+        sanction = dec.sanction
+        structure = Structure.query.get(sanction.structure_id) if sanction else None
+        alerts.append({
+            'type': 'decision_returned',
+            'severity': 'info',
+            'message': f'Απόφαση κύρωσης επιστράφηκε για διόρθωση — {structure.name if structure else "?"}',
+            'structure_id': sanction.structure_id if sanction else None,
+            'decision_id': dec.id,
         })
 
     return jsonify(alerts), 200
