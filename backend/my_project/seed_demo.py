@@ -433,6 +433,101 @@ def seed_demo_data():
     for s in sanctions:
         db.session.add(s)
 
+    # ─── SANCTION RULES ──────────────────────────────────────
+    from .sanctions.models import SanctionRule
+
+    rules_data = [
+        ('NO_LICENSE', 'Λειτουργία χωρίς άδεια', 10000, 2.0, 3.0, True, 2, 'Ν.4756/2020, Άρθρο 42, §1'),
+        ('OVER_CAPACITY', 'Υπέρβαση δυναμικότητας', 5000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 42, §2'),
+        ('STAFF_RATIO', 'Ελλιπής στελέχωση', 3000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 38, §4'),
+        ('FIRE_SAFETY', 'Παραβίαση πυρασφάλειας', 8000, 2.0, 3.0, True, 2, 'Ν.4756/2020, Άρθρο 42, §3'),
+        ('HYGIENE', 'Παραβίαση υγιεινής', 4000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 39, §2'),
+        ('MISSING_DOCS', 'Έλλειψη τεκμηρίωσης', 2000, 1.5, 2.0, False, 0, 'Ν.4756/2020, Άρθρο 40, §1'),
+        ('NO_INCIDENT_REPORT', 'Μη αναφορά συμβάντος', 5000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 41, §2'),
+        ('UNAUTHORIZED_MODS', 'Μη εξουσιοδοτημένες τροποποιήσεις', 6000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 36, §5'),
+        ('ACCESSIBILITY', 'Παραβίαση προσβασιμότητας', 4000, 2.0, 2.5, False, 0, 'Ν.4756/2020, Άρθρο 37, §3'),
+        ('NON_COMPLIANCE', 'Μη συμμόρφωση σε υποδείξεις', 3000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 43, §1'),
+    ]
+    for code, name, base, esc2, esc3, can_suspend, threshold, legal in rules_data:
+        if not SanctionRule.query.filter_by(violation_code=code).first():
+            db.session.add(SanctionRule(
+                violation_code=code, violation_name=name, base_fine=base,
+                escalation_2nd=esc2, escalation_3rd_plus=esc3,
+                can_trigger_suspension=can_suspend, suspension_threshold=threshold,
+                legal_reference=legal,
+            ))
+
+    # ─── CHECKLIST TEMPLATES ─────────────────────────────────
+    from .inspections.models import ChecklistTemplate
+
+    mfh_checklist_items = [
+        {'category': 'Κτιριολογικά & Ασφάλεια', 'items': [
+            {'id': 'B01', 'description': 'Πιστοποιητικό πυρασφάλειας σε ισχύ', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §36'},
+            {'id': 'B02', 'description': 'Προσβασιμότητα ΑμεΑ (ράμπες, ανελκυστήρας)', 'is_required': True, 'legal_ref': 'Ν.4067/2012'},
+            {'id': 'B03', 'description': 'Επαρκής φυσικός φωτισμός και αερισμός', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'B04', 'description': 'Σήμανση εξόδων κινδύνου', 'is_required': True, 'legal_ref': 'ΠΔ 71/88'},
+            {'id': 'B05', 'description': 'Καταλληλότητα χώρων υγιεινής', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+        ]},
+        {'category': 'Στελέχωση', 'items': [
+            {'id': 'S01', 'description': 'Τήρηση αναλογίας προσωπικού/ωφελουμένων', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+            {'id': 'S02', 'description': 'Πτυχία και άδειες ασκήσεως σε ισχύ', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+            {'id': 'S03', 'description': 'Παρουσία νοσηλευτή κατά τη διάρκεια λειτουργίας', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'S04', 'description': 'Πρόγραμμα εκπαίδευσης προσωπικού', 'is_required': False, 'legal_ref': ''},
+        ]},
+        {'category': 'Υγιεινή & Διατροφή', 'items': [
+            {'id': 'H01', 'description': 'Πιστοποιητικό υγείας τροφίμων (HACCP)', 'is_required': True, 'legal_ref': 'Κανονισμός (ΕΚ) 852/2004'},
+            {'id': 'H02', 'description': 'Καθαριότητα χώρων (κοινόχρηστοι, κουζίνα, W/C)', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'H03', 'description': 'Τήρηση διαιτολογίου εγκεκριμένου από διαιτολόγο', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §39'},
+            {'id': 'H04', 'description': 'Σωστή αποθήκευση φαρμάκων', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+        ]},
+        {'category': 'Τεκμηρίωση', 'items': [
+            {'id': 'D01', 'description': 'Ατομικοί φάκελοι ωφελουμένων ενημερωμένοι', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §40'},
+            {'id': 'D02', 'description': 'Βιβλίο συμβάντων ενημερωμένο', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §41'},
+            {'id': 'D03', 'description': 'Σύμβαση εργασίας κάθε εργαζόμενου', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+            {'id': 'D04', 'description': 'Ασφαλιστική ενημερότητα', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+        ]},
+    ]
+
+    kdap_checklist_items = [
+        {'category': 'Κτιριολογικά & Ασφάλεια', 'items': [
+            {'id': 'B01', 'description': 'Πιστοποιητικό πυρασφάλειας σε ισχύ', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §36'},
+            {'id': 'B02', 'description': 'Ασφάλεια εξωτερικών χώρων (αυλή, περίφραξη)', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'B03', 'description': 'Καταλληλότητα χώρων για ηλικιακή ομάδα', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'B04', 'description': 'Σήμανση εξόδων κινδύνου', 'is_required': True, 'legal_ref': 'ΠΔ 71/88'},
+        ]},
+        {'category': 'Στελέχωση', 'items': [
+            {'id': 'S01', 'description': 'Τήρηση αναλογίας παιδαγωγών/παιδιών (1:25)', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+            {'id': 'S02', 'description': 'Πτυχία παιδαγωγών σε ισχύ', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+            {'id': 'S03', 'description': 'Πιστοποίηση πρώτων βοηθειών', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+        ]},
+        {'category': 'Υγιεινή', 'items': [
+            {'id': 'H01', 'description': 'Καθαριότητα χώρων & WC', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'H02', 'description': 'Διαθεσιμότητα φαρμακείου πρώτων βοηθειών', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'H03', 'description': 'Ασφάλεια υλικών δημιουργικής απασχόλησης', 'is_required': True, 'legal_ref': 'ΕΚ Directive 2009/48/EC'},
+        ]},
+        {'category': 'Τεκμηρίωση', 'items': [
+            {'id': 'D01', 'description': 'Φάκελοι παιδιών με στοιχεία γονέων/κηδεμόνων', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §40'},
+            {'id': 'D02', 'description': 'Πρόγραμμα δραστηριοτήτων', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §40'},
+            {'id': 'D03', 'description': 'Βιβλίο συμβάντων', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §41'},
+            {'id': 'D04', 'description': 'Ασφαλιστική ενημερότητα', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+        ]},
+    ]
+
+    checklist_templates = [
+        ('Πρότυπο Ελέγχου ΜΦΗ', 'MFH', mfh_checklist_items),
+        ('Πρότυπο Ελέγχου ΚΔΑΠ', 'KDAP', kdap_checklist_items),
+    ]
+    for tpl_name, type_code, items in checklist_templates:
+        stype = StructureType.query.filter_by(code=type_code).first()
+        if stype and not ChecklistTemplate.query.filter_by(
+            structure_type_id=stype.id, is_active=True
+        ).first():
+            db.session.add(ChecklistTemplate(
+                structure_type_id=stype.id,
+                name=tpl_name,
+                items=items,
+            ))
+
     # ─── ADVISOR REPORTS ────────────────────────────────────
     advisor_reports = [
         SocialAdvisorReport(

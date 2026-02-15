@@ -115,7 +115,8 @@ def create_app():
         from .models import User, Category, Discussion, Post, FileItem, AuditLog, ChatSession, ChatMessage
         from .registry.models import Structure, StructureType, License, Sanction
         from .inspections.models import (InspectionCommittee, CommitteeMembership,
-            CommitteeStructureAssignment, Inspection, InspectionReport)
+            CommitteeStructureAssignment, Inspection, InspectionReport,
+            ChecklistTemplate)
         from .oversight.models import UserRole, SocialAdvisorReport
         from .sanctions.models import SanctionRule
 

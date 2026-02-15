@@ -6,7 +6,8 @@ from werkzeug.utils import secure_filename
 from . import inspections_bp
 from ..extensions import db
 from .models import (Inspection, InspectionReport, InspectionCommittee,
-                     CommitteeMembership, CommitteeStructureAssignment)
+                     CommitteeMembership, CommitteeStructureAssignment,
+                     ChecklistTemplate)
 from .permissions import is_committee_member
 
 
@@ -295,6 +296,26 @@ def remove_committee_member(committee_id, user_id):
     db.session.delete(membership)
     db.session.commit()
     return jsonify({'message': 'Member removed'}), 200
+
+
+# --- Checklist Templates ---
+
+@inspections_bp.route('/api/checklist-templates', methods=['GET'])
+@jwt_required()
+def list_checklist_templates():
+    templates = ChecklistTemplate.query.filter_by(is_active=True).all()
+    return jsonify([t.to_dict() for t in templates]), 200
+
+
+@inspections_bp.route('/api/checklist-templates/<int:type_id>', methods=['GET'])
+@jwt_required()
+def get_checklist_for_type(type_id):
+    template = ChecklistTemplate.query.filter_by(
+        structure_type_id=type_id, is_active=True
+    ).order_by(ChecklistTemplate.version.desc()).first()
+    if not template:
+        return jsonify({'error': 'No checklist template for this type'}), 404
+    return jsonify(template.to_dict()), 200
 
 
 @inspections_bp.route('/api/committees/<int:committee_id>/structures', methods=['POST'])
