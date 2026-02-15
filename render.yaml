@@ -16,6 +16,8 @@ services:
           property: connectionString
       - key: FLASK_ENV
         value: production
+      - key: SEED_DEMO
+        value: "true"
       - key: SECRET_KEY
         generateValue: true
       - key: JWT_SECRET_KEY

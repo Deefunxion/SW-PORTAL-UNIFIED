@@ -66,7 +66,12 @@ All protected endpoints use `@jwt_required()` decorator with `get_jwt_identity()
 
 ### Default Seed Data
 
-Database seeding creates 3 users: `admin/admin123`, `staff/staff123`, `guest/guest123`, plus 5 Greek-titled forum categories.
+Comprehensive demo seed (`backend/my_project/seed_demo.py`) runs in development or when `SEED_DEMO=true`. Creates:
+- 6 users: `admin/admin123` (director), `mpapadopoulou/staff123`, `gnikolaou/staff123`, `kkonstantinou/staff123`, `athanasiou/staff123` (staff with roles), `guest/guest123`
+- 8 social care structures in various stages (active, suspended, pending, under review)
+- 7 licenses, 7 inspections (4 with reports), 3 sanctions, 3 advisor reports
+- 9 forum categories, 8 discussions with 25 posts
+- User roles, profiles, and notifications
 
 ## Development Commands
 
