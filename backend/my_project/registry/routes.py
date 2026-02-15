@@ -1,3 +1,4 @@
+import os
 from datetime import date
 from flask import jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -309,3 +310,56 @@ def structure_timeline(structure_id):
     # Sort newest first
     events.sort(key=lambda e: e['date'], reverse=True)
     return jsonify(events), 200
+
+
+# ── Legislation files per structure type ──────────────────────────────
+
+# Map structure type codes to content sub-folders under ΝΟΜΟΘΕΣΙΑ_ΚΟΙΝΩΝΙΚΗΣ_ΜΕΡΙΜΝΑΣ
+_LEGISLATION_FOLDERS = {
+    'MFH': 'ΜΦΗ',
+    'KDAP': 'ΚΔΑΠ - ΚΔΑΠ ΑμεΑ',
+    'SYD': 'ΣΥΔ',
+    'KDHF-KAA': 'ΚΑΑ - ΚΔΗΦ',
+    'CAMP': 'ΠΑΙΔΙΚΕΣ ΕΞΟΧΕΣ',
+    'MFPAD': 'ΒΣΦΟΠ',
+    'KIFI': 'ΚΗΦΗ',
+}
+
+_ALLOWED_EXTENSIONS = {'.pdf', '.doc', '.docx', '.txt', '.md'}
+
+
+@registry_bp.route('/api/legislation/<type_code>', methods=['GET'])
+@jwt_required()
+def list_legislation(type_code):
+    """List legislation files for a given structure type code."""
+    folder_name = _LEGISLATION_FOLDERS.get(type_code)
+    if not folder_name:
+        return jsonify({'files': [], 'folder': None}), 200
+
+    base = current_app.config['UPLOAD_FOLDER']
+    if not os.path.isabs(base):
+        base = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), base)
+
+    legislation_dir = os.path.join(base, 'ΝΟΜΟΘΕΣΙΑ_ΚΟΙΝΩΝΙΚΗΣ_ΜΕΡΙΜΝΑΣ', folder_name)
+    if not os.path.isdir(legislation_dir):
+        return jsonify({'files': [], 'folder': folder_name}), 200
+
+    files = []
+    for fname in sorted(os.listdir(legislation_dir)):
+        ext = os.path.splitext(fname)[1].lower()
+        if ext not in _ALLOWED_EXTENSIONS:
+            continue
+        fpath = os.path.join(legislation_dir, fname)
+        if not os.path.isfile(fpath):
+            continue
+        size_bytes = os.path.getsize(fpath)
+        # Content path relative to UPLOAD_FOLDER for /content/<path> serving
+        rel_path = f'ΝΟΜΟΘΕΣΙΑ_ΚΟΙΝΩΝΙΚΗΣ_ΜΕΡΙΜΝΑΣ/{folder_name}/{fname}'
+        files.append({
+            'name': fname,
+            'path': rel_path,
+            'size': size_bytes,
+            'extension': ext,
+        })
+
+    return jsonify({'files': files, 'folder': folder_name}), 200

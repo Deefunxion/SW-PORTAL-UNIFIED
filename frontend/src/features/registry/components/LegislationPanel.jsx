@@ -1,42 +1,36 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
-import { Badge } from '@/components/ui/badge.jsx';
-import { ScrollText, ExternalLink, Loader2, Search } from 'lucide-react';
+import { ScrollText, Download, FileText, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
-import { LEGISLATION_TAGS } from '../lib/constants';
+
+function formatSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function LegislationPanel({ structureTypeCode }) {
-  const [results, setResults] = useState([]);
+  const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-
-  const tagConfig = LEGISLATION_TAGS[structureTypeCode];
+  const [fetched, setFetched] = useState(false);
 
   useEffect(() => {
-    if (!tagConfig) return;
+    if (!structureTypeCode) return;
 
-    const searchLegislation = async () => {
-      setLoading(true);
-      try {
-        // Search knowledge base with the first (most relevant) query
-        const { data } = await api.post('/api/knowledge/search', {
-          query: tagConfig.queries[0],
-          limit: 5,
-        });
-        setResults(data.results || []);
-      } catch {
-        // Knowledge base may not be available — fail silently
-        setResults([]);
-      } finally {
+    setLoading(true);
+    api
+      .get(`/api/legislation/${structureTypeCode}`)
+      .then(({ data }) => setFiles(data.files || []))
+      .catch(() => setFiles([]))
+      .finally(() => {
         setLoading(false);
-        setSearched(true);
-      }
-    };
+        setFetched(true);
+      });
+  }, [structureTypeCode]);
 
-    searchLegislation();
-  }, [structureTypeCode, tagConfig]);
-
-  if (!tagConfig) return null;
+  if (!structureTypeCode) return null;
 
   return (
     <Card className="border-[#e8e2d8]">
@@ -47,63 +41,36 @@ export default function LegislationPanel({ structureTypeCode }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {tagConfig.queries.map((q, i) => (
-            <Badge
-              key={i}
-              variant="outline"
-              className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
-            >
-              <Search className="w-3 h-3 mr-1" />
-              {q}
-            </Badge>
-          ))}
-        </div>
-
-        {/* Results */}
         {loading ? (
           <div className="flex items-center justify-center py-6">
             <Loader2 className="w-5 h-5 animate-spin text-[#1a3aa3]" />
-            <span className="ml-2 text-sm text-[#8a8580]">Αναζήτηση νομοθεσίας...</span>
+            <span className="ml-2 text-sm text-[#8a8580]">Φόρτωση αρχείων...</span>
           </div>
-        ) : results.length > 0 ? (
-          <div className="space-y-2">
-            {results.map((r, i) => (
-              <div
+        ) : files.length > 0 ? (
+          <div className="space-y-1.5">
+            {files.map((f, i) => (
+              <a
                 key={i}
-                className="p-3 rounded-lg bg-[#faf8f4] border border-[#e8e2d8] hover:border-[#1a3aa3] transition-colors"
+                href={`${API_BASE}/content/${encodeURI(f.path)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-2.5 rounded-lg bg-[#faf8f4] border border-[#e8e2d8] hover:border-[#1a3aa3] hover:bg-blue-50/40 transition-colors group"
               >
-                <div className="flex items-start gap-2">
-                  <FileIcon className="w-4 h-4 text-[#1a3aa3] mt-0.5 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-[#1a3aa3] truncate">
-                      {r.source_path?.split('/').pop() || 'Έγγραφο'}
-                    </p>
-                    <p className="text-sm text-[#2a2520] mt-1 line-clamp-3">
-                      {r.content?.slice(0, 200)}
-                      {r.content?.length > 200 ? '...' : ''}
-                    </p>
-                    {r.similarity != null && (
-                      <span className="text-xs text-[#8a8580] mt-1 inline-block">
-                        Συνάφεια: {Math.round(r.similarity * 100)}%
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+                <FileText className="w-4 h-4 text-red-500 shrink-0" />
+                <span className="flex-1 min-w-0 text-sm text-[#2a2520] truncate group-hover:text-[#1a3aa3]">
+                  {f.name}
+                </span>
+                <span className="text-xs text-[#8a8580] shrink-0">{formatSize(f.size)}</span>
+                <Download className="w-3.5 h-3.5 text-[#8a8580] group-hover:text-[#1a3aa3] shrink-0" />
+              </a>
             ))}
           </div>
-        ) : searched ? (
+        ) : fetched ? (
           <p className="text-sm text-[#8a8580] py-4 text-center">
-            Δεν βρέθηκαν σχετικά νομοθετικά κείμενα στη βάση γνώσεων.
+            Δεν βρέθηκαν αρχεία νομοθεσίας για αυτόν τον τύπο δομής.
           </p>
         ) : null}
       </CardContent>
     </Card>
   );
-}
-
-function FileIcon(props) {
-  return <ExternalLink {...props} />;
 }
