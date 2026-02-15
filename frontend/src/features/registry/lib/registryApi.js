@@ -39,9 +39,24 @@ export const committeesApi = {
 
 export const sanctionsApi = {
   list: () => api.get('/api/sanctions'),
-  rules: () => api.get('/api/sanction-rules'),
+  rules: (structureTypeId) => api.get('/api/sanction-rules', {
+    params: structureTypeId ? { structure_type_id: structureTypeId } : {},
+  }),
   createRule: (data) => api.post('/api/sanction-rules', data),
   calculate: (data) => api.post('/api/sanctions/calculate', data),
+};
+
+export const decisionsApi = {
+  list: (params) => api.get('/api/sanction-decisions', { params }),
+  get: (id) => api.get(`/api/sanction-decisions/${id}`),
+  create: (data) => api.post('/api/sanction-decisions', data),
+  update: (id, data) => api.patch(`/api/sanction-decisions/${id}`, data),
+  submit: (id) => api.post(`/api/sanction-decisions/${id}/submit`),
+  approve: (id, data) => api.post(`/api/sanction-decisions/${id}/approve`, data),
+  notify: (id, data) => api.post(`/api/sanction-decisions/${id}/notify`, data),
+  payment: (id, data) => api.post(`/api/sanction-decisions/${id}/payment`, data),
+  export: (id) => api.get(`/api/sanction-decisions/${id}/export`),
+  pdf: (id) => api.get(`/api/sanction-decisions/${id}/pdf`, { responseType: 'blob' }),
 };
 
 export const interopApi = {

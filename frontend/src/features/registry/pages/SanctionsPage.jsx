@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { Input } from '@/components/ui/input.jsx';
+import { Slider } from '@/components/ui/slider.jsx';
 import {
   Select,
   SelectContent,
@@ -18,10 +20,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table.jsx';
-import { Calculator, Scale, AlertTriangle, TrendingUp, Gavel, FileText, Loader2, ArrowLeft } from 'lucide-react';
+import {
+  Calculator, Scale, AlertTriangle, TrendingUp, Gavel, FileText,
+  Loader2, ArrowLeft, Shield, Droplets, Users, Info, Landmark, Building2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { sanctionsApi, structuresApi } from '../lib/registryApi';
-import { SANCTION_STATUS } from '../lib/constants';
+import { SANCTION_STATUS, VIOLATION_CATEGORIES } from '../lib/constants';
+
+const CATEGORY_ICONS = {
+  safety: Shield,
+  hygiene: Droplets,
+  admin: FileText,
+  staff: Users,
+  general: AlertTriangle,
+};
 
 export default function SanctionsPage() {
   const [searchParams] = useSearchParams();
@@ -35,23 +48,35 @@ export default function SanctionsPage() {
   // Calculator state
   const [selectedRule, setSelectedRule] = useState('');
   const [selectedStructure, setSelectedStructure] = useState(preselectedStructure || '');
+  const [customAmount, setCustomAmount] = useState(null);
   const [calculation, setCalculation] = useState(null);
   const [calculating, setCalculating] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  // Load initial data
+  // Get selected structure's type_id for filtering rules
+  const selectedStructureObj = useMemo(
+    () => structures.find(s => String(s.id) === selectedStructure),
+    [structures, selectedStructure]
+  );
+
+  // Load structures once
   useEffect(() => {
-    sanctionsApi.rules().then(r => setRules(r.data)).catch(() => {});
     structuresApi.list({ per_page: 100 }).then(r => {
       setStructures(r.data.structures || r.data);
     }).catch(() => {});
-    // Load all sanctions initially
-    sanctionsApi.list()
-      .then(r => setRecentSanctions(r.data))
-      .catch(() => {});
   }, []);
 
-  // Load sanctions for selected structure (or all if none selected)
+  // Load rules filtered by selected structure's type
+  useEffect(() => {
+    const typeId = selectedStructureObj?.type_id || selectedStructureObj?.type?.id;
+    sanctionsApi.rules(typeId).then(r => setRules(r.data)).catch(() => {});
+    // Reset selection when structure changes
+    setSelectedRule('');
+    setCustomAmount(null);
+    setCalculation(null);
+  }, [selectedStructureObj]);
+
+  // Load sanctions for selected structure (or all)
   useEffect(() => {
     if (selectedStructure) {
       structuresApi.sanctions(selectedStructure)
@@ -64,6 +89,26 @@ export default function SanctionsPage() {
     }
   }, [selectedStructure]);
 
+  // Group rules by category
+  const groupedRules = useMemo(() => {
+    const groups = {};
+    rules.forEach(r => {
+      const cat = r.category || 'general';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(r);
+    });
+    return groups;
+  }, [rules]);
+
+  // Currently selected rule object
+  const currentRule = useMemo(
+    () => rules.find(r => r.violation_code === selectedRule),
+    [rules, selectedRule]
+  );
+
+  const hasRange = currentRule && currentRule.min_fine != null && currentRule.max_fine != null
+    && currentRule.min_fine !== currentRule.max_fine;
+
   const handleCalculate = useCallback(async () => {
     if (!selectedRule || !selectedStructure) {
       toast.error('Επιλέξτε παράβαση και δομή');
@@ -71,10 +116,14 @@ export default function SanctionsPage() {
     }
     setCalculating(true);
     try {
-      const resp = await sanctionsApi.calculate({
+      const payload = {
         violation_code: selectedRule,
         structure_id: parseInt(selectedStructure),
-      });
+      };
+      if (customAmount != null && hasRange) {
+        payload.custom_amount = customAmount;
+      }
+      const resp = await sanctionsApi.calculate(payload);
       setCalculation(resp.data);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Σφάλμα υπολογισμού');
@@ -82,7 +131,7 @@ export default function SanctionsPage() {
     } finally {
       setCalculating(false);
     }
-  }, [selectedRule, selectedStructure]);
+  }, [selectedRule, selectedStructure, customAmount, hasRange]);
 
   const handleCreateSanction = useCallback(async () => {
     if (!calculation || !selectedStructure) return;
@@ -91,12 +140,13 @@ export default function SanctionsPage() {
       await structuresApi.createSanction(selectedStructure, {
         type: 'fine',
         amount: calculation.final_amount,
+        violation_code: calculation.violation_code,
+        calculated_amount: calculation.final_amount,
         notes: `violation_code:${calculation.violation_code} | ${calculation.violation_name} | ${calculation.legal_basis || ''}`,
         status: 'imposed',
       });
       toast.success('Η κύρωση καταχωρήθηκε');
       setCalculation(null);
-      // Refresh sanctions list
       const resp = await structuresApi.sanctions(selectedStructure);
       setRecentSanctions(resp.data);
     } catch (err) {
@@ -107,6 +157,7 @@ export default function SanctionsPage() {
   }, [calculation, selectedStructure]);
 
   const formatCurrency = (amount) => {
+    if (amount == null) return '—';
     return new Intl.NumberFormat('el-GR', { style: 'currency', currency: 'EUR' }).format(amount);
   };
 
@@ -121,6 +172,7 @@ export default function SanctionsPage() {
         <ArrowLeft className="w-4 h-4" />
         Μητρώο Δομών
       </Link>
+
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
@@ -131,7 +183,7 @@ export default function SanctionsPage() {
             <h1 className="text-2xl font-bold text-[#2a2520]" style={{ fontFamily: 'Literata, serif' }}>
               Κυρώσεις & Πρόστιμα
             </h1>
-            <p className="text-sm text-[#6b6560]">Υπολογισμός προστίμων με βάση τον Ν.4756/2020</p>
+            <p className="text-sm text-[#6b6560]">Υπολογισμός προστίμων — Ν.5041/2023, Άρθρο 100</p>
           </div>
         </div>
       </div>
@@ -157,29 +209,92 @@ export default function SanctionsPage() {
                   <SelectContent>
                     {structures.map(s => (
                       <SelectItem key={s.id} value={String(s.id)}>
-                        {s.name} ({s.code})
+                        <span className="flex items-center gap-2">
+                          <Building2 className="w-3.5 h-3.5 text-[#8a8580]" />
+                          {s.name}
+                          <span className="text-[#8a8580] text-xs">({s.code})</span>
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {selectedStructureObj?.type && (
+                  <p className="text-xs text-[#8a8580] mt-1">
+                    Τύπος: {selectedStructureObj.type.name}
+                  </p>
+                )}
               </div>
 
-              {/* Violation type selector */}
+              {/* Violation type selector — grouped by category */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2520] mb-1">Τύπος Παράβασης</label>
-                <Select value={selectedRule} onValueChange={setSelectedRule}>
+                <Select value={selectedRule} onValueChange={(val) => {
+                  setSelectedRule(val);
+                  setCustomAmount(null);
+                  setCalculation(null);
+                }}>
                   <SelectTrigger className="border-[#e8e2d8]">
                     <SelectValue placeholder="Επιλέξτε παράβαση..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {rules.map(r => (
-                      <SelectItem key={r.violation_code} value={r.violation_code}>
-                        {r.violation_name} ({formatCurrency(r.base_fine)})
-                      </SelectItem>
-                    ))}
+                    {Object.entries(groupedRules).map(([cat, catRules]) => {
+                      const catInfo = VIOLATION_CATEGORIES[cat] || { label: cat };
+                      const CatIcon = CATEGORY_ICONS[cat] || AlertTriangle;
+                      return catRules.map((r, i) => (
+                        <SelectItem key={r.violation_code} value={r.violation_code}>
+                          <span className="flex items-center gap-2">
+                            {i === 0 && <CatIcon className="w-3.5 h-3.5 text-[#8a8580]" />}
+                            {i > 0 && <span className="w-3.5" />}
+                            <span className="truncate">{r.violation_name}</span>
+                            <span className="text-[#8a8580] text-xs shrink-0">
+                              {r.min_fine != null && r.min_fine !== r.max_fine
+                                ? `${formatCurrency(r.min_fine)} — ${formatCurrency(r.max_fine)}`
+                                : formatCurrency(r.base_fine)}
+                            </span>
+                          </span>
+                        </SelectItem>
+                      ));
+                    })}
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Amount range slider (when rule has min ≠ max) */}
+              {hasRange && (
+                <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100 space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#2a2520] font-medium">Ποσό Προστίμου</span>
+                    <span className="text-xs text-[#8a8580]">
+                      {formatCurrency(currentRule.min_fine)} — {formatCurrency(currentRule.max_fine)}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[customAmount ?? currentRule.base_fine]}
+                    onValueChange={([val]) => setCustomAmount(val)}
+                    min={currentRule.min_fine}
+                    max={currentRule.max_fine}
+                    step={Math.max(100, Math.round((currentRule.max_fine - currentRule.min_fine) / 100))}
+                    className="w-full"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={customAmount ?? currentRule.base_fine}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val)) setCustomAmount(val);
+                      }}
+                      min={currentRule.min_fine}
+                      max={currentRule.max_fine}
+                      className="border-blue-200 text-right font-semibold"
+                    />
+                    <span className="text-sm text-[#8a8580]">€</span>
+                  </div>
+                  <p className="text-xs text-[#8a8580]">
+                    Βασικό: {formatCurrency(currentRule.base_fine)} · Νομική βάση: {currentRule.legal_reference}
+                  </p>
+                </div>
+              )}
 
               <Button
                 onClick={handleCalculate}
@@ -204,6 +319,11 @@ export default function SanctionsPage() {
                   <p className="text-4xl font-bold text-[#1a3aa3]" style={{ fontFamily: 'Literata, serif' }}>
                     {formatCurrency(calculation.final_amount)}
                   </p>
+                  {calculation.effective_min !== calculation.effective_max && (
+                    <p className="text-xs text-[#8a8580] mt-1">
+                      Εύρος: {formatCurrency(calculation.effective_min)} — {formatCurrency(calculation.effective_max)}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
@@ -225,8 +345,44 @@ export default function SanctionsPage() {
                     </p>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-[#e8e2d8]">
-                    <p className="text-[#8a8580] text-xs">Παράβαση</p>
-                    <p className="font-semibold text-[#2a2520] text-xs">{calculation.violation_name}</p>
+                    <p className="text-[#8a8580] text-xs">Κατηγορία</p>
+                    <p className="font-semibold text-[#2a2520] text-xs">
+                      {VIOLATION_CATEGORIES[calculation.category]?.label || calculation.category}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Revenue split */}
+                {calculation.revenue_split && (
+                  <div className="bg-white rounded-lg p-3 border border-[#e8e2d8]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Landmark className="w-4 h-4 text-[#1a3aa3]" />
+                      <p className="text-xs font-medium text-[#2a2520]">Κατανομή Εσόδων</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-blue-50 rounded p-2">
+                        <p className="text-[#8a8580]">Κρατικός Π/Υ ({calculation.revenue_split.state_pct}%)</p>
+                        <p className="font-semibold">{formatCurrency(calculation.revenue_split.state_amount)}</p>
+                        <p className="text-[10px] text-[#8a8580]">ΑΛΕ {calculation.revenue_split.state_ale}</p>
+                      </div>
+                      <div className="bg-green-50 rounded p-2">
+                        <p className="text-[#8a8580]">Περιφέρεια ({calculation.revenue_split.region_pct}%)</p>
+                        <p className="font-semibold">{formatCurrency(calculation.revenue_split.region_amount)}</p>
+                        <p className="text-[10px] text-[#8a8580]">ΚΑΕ {calculation.revenue_split.region_kae}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Deadlines info */}
+                <div className="bg-white rounded-lg p-3 border border-[#e8e2d8] flex gap-4 text-xs">
+                  <div>
+                    <p className="text-[#8a8580]">Προθεσμία πληρωμής</p>
+                    <p className="font-semibold">{calculation.payment_deadline_days} ημέρες</p>
+                  </div>
+                  <div>
+                    <p className="text-[#8a8580]">Προθεσμία ένστασης</p>
+                    <p className="font-semibold">{calculation.appeal_deadline_days} ημέρες</p>
                   </div>
                 </div>
 
@@ -266,25 +422,55 @@ export default function SanctionsPage() {
             </Card>
           )}
 
-          {/* Rules reference table */}
+          {/* Rules reference — grouped by category */}
           <Card className="border-[#e8e2d8]">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base text-[#2a2520]">Κανόνες Προστίμων</CardTitle>
+              <CardTitle className="text-base text-[#2a2520] flex items-center gap-2">
+                Κανόνες Προστίμων
+                {selectedStructureObj?.type && (
+                  <Badge variant="outline" className="text-xs ml-1">
+                    {selectedStructureObj.type.name}
+                  </Badge>
+                )}
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {rules.map(r => (
-                  <div key={r.violation_code} className="flex items-center justify-between text-sm py-1.5 border-b border-[#e8e2d8] last:border-0">
-                    <span className="text-[#2a2520]">{r.violation_name}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-[#1a3aa3]">{formatCurrency(r.base_fine)}</span>
-                      {r.can_trigger_suspension && (
-                        <AlertTriangle className="w-3.5 h-3.5 text-orange-500" title="Μπορεί να οδηγήσει σε αναστολή" />
-                      )}
+            <CardContent className="space-y-4">
+              {Object.entries(groupedRules).map(([cat, catRules]) => {
+                const catInfo = VIOLATION_CATEGORIES[cat] || { label: cat };
+                const CatIcon = CATEGORY_ICONS[cat] || AlertTriangle;
+                return (
+                  <div key={cat}>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <CatIcon className="w-3.5 h-3.5 text-[#1a3aa3]" />
+                      <span className="text-xs font-semibold text-[#1a3aa3] uppercase tracking-wide">
+                        {catInfo.label}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      {catRules.map(r => (
+                        <div key={r.violation_code} className="flex items-center justify-between text-sm py-1.5 border-b border-[#e8e2d8]/50 last:border-0">
+                          <span className="text-[#2a2520] truncate mr-2">{r.violation_name}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="font-semibold text-[#1a3aa3] text-xs">
+                              {r.min_fine != null && r.min_fine !== r.max_fine
+                                ? `${formatCurrency(r.min_fine)} — ${formatCurrency(r.max_fine)}`
+                                : formatCurrency(r.base_fine)}
+                            </span>
+                            {r.can_trigger_suspension && (
+                              <AlertTriangle className="w-3.5 h-3.5 text-orange-500" title="Μπορεί να οδηγήσει σε αναστολή" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
+              {rules.length === 0 && (
+                <p className="text-center text-sm text-[#8a8580] py-4">
+                  {selectedStructure ? 'Επιλέξτε δομή για εμφάνιση κανόνων' : 'Φόρτωση κανόνων...'}
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -298,7 +484,7 @@ export default function SanctionsPage() {
                 Πρόσφατες Κυρώσεις
                 <Badge variant="outline" className="ml-2 text-xs">
                   {selectedStructure
-                    ? structures.find(s => String(s.id) === selectedStructure)?.name || ''
+                    ? selectedStructureObj?.name || ''
                     : 'Όλες οι Δομές'}
                 </Badge>
               </CardTitle>
@@ -307,7 +493,7 @@ export default function SanctionsPage() {
               {recentSanctions.length === 0 ? (
                 <div className="text-center py-12 text-[#8a8580]">
                   <Scale className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>Δεν υπάρχουν κυρώσεις για αυτή τη δομή</p>
+                  <p>Δεν υπάρχουν κυρώσεις{selectedStructure ? ' για αυτή τη δομή' : ''}</p>
                 </div>
               ) : (
                 <Table>

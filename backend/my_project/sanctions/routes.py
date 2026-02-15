@@ -9,7 +9,19 @@ from .calculator import calculate_fine
 @sanctions_bp.route('/api/sanction-rules', methods=['GET'])
 @jwt_required()
 def list_sanction_rules():
-    rules = SanctionRule.query.filter_by(is_active=True).all()
+    q = SanctionRule.query.filter_by(is_active=True)
+    structure_type_id = request.args.get('structure_type_id', type=int)
+    if structure_type_id:
+        q = q.filter(
+            db.or_(
+                SanctionRule.structure_type_id == structure_type_id,
+                SanctionRule.structure_type_id.is_(None),
+            )
+        )
+    category = request.args.get('category')
+    if category:
+        q = q.filter_by(category=category)
+    rules = q.order_by(SanctionRule.category, SanctionRule.violation_name).all()
     return jsonify([r.to_dict() for r in rules]), 200
 
 
@@ -28,12 +40,21 @@ def create_sanction_rule():
         violation_name=data['violation_name'],
         description=data.get('description'),
         base_fine=data['base_fine'],
+        min_fine=data.get('min_fine'),
+        max_fine=data.get('max_fine'),
+        category=data.get('category', 'general'),
         escalation_2nd=data.get('escalation_2nd', 2.0),
         escalation_3rd_plus=data.get('escalation_3rd_plus', 3.0),
         can_trigger_suspension=data.get('can_trigger_suspension', False),
         suspension_threshold=data.get('suspension_threshold', 3),
         legal_reference=data.get('legal_reference'),
         structure_type_id=data.get('structure_type_id'),
+        payment_deadline_days=data.get('payment_deadline_days', 60),
+        appeal_deadline_days=data.get('appeal_deadline_days', 15),
+        revenue_split_state_pct=data.get('revenue_split_state_pct', 50),
+        revenue_split_state_ale=data.get('revenue_split_state_ale', '1560989001'),
+        revenue_split_region_pct=data.get('revenue_split_region_pct', 50),
+        revenue_split_region_kae=data.get('revenue_split_region_kae', '64008'),
     )
     db.session.add(rule)
     db.session.commit()
@@ -47,12 +68,23 @@ def calculate_fine_endpoint():
     data = request.get_json()
     violation_code = data.get('violation_code')
     structure_id = data.get('structure_id')
+    custom_amount = data.get('custom_amount')
 
     if not violation_code or not structure_id:
         return jsonify({'error': 'violation_code and structure_id required'}), 400
 
+    # Convert custom_amount to float if provided
+    if custom_amount is not None:
+        try:
+            custom_amount = float(custom_amount)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'custom_amount must be a number'}), 400
+
     try:
-        result = calculate_fine(violation_code, structure_id)
+        result = calculate_fine(violation_code, structure_id, custom_amount)
         return jsonify(result), 200
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        err_msg = str(e)
+        if 'No active rule' in err_msg:
+            return jsonify({'error': err_msg}), 404
+        return jsonify({'error': err_msg}), 400

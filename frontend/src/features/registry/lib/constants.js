@@ -59,6 +59,27 @@ export const SANCTION_STATUS = {
   cancelled: { label: 'Ακυρωθείσα', color: 'gray' },
 };
 
+export const VIOLATION_CATEGORIES = {
+  safety: { label: 'Ασφάλεια', icon: 'Shield' },
+  hygiene: { label: 'Υγιεινή', icon: 'Droplets' },
+  admin: { label: 'Διοικητικά', icon: 'FileText' },
+  staff: { label: 'Προσωπικό', icon: 'Users' },
+  general: { label: 'Γενικά', icon: 'AlertTriangle' },
+};
+
+export const SANCTION_DECISION_STATUSES = {
+  draft: { label: 'Προσχέδιο', className: 'bg-gray-50 text-gray-700 border-gray-200' },
+  submitted: { label: 'Υποβληθείσα', className: 'bg-blue-50 text-blue-700 border-blue-200' },
+  approved: { label: 'Εγκεκριμένη', className: 'bg-green-50 text-green-700 border-green-200' },
+  returned: { label: 'Επιστράφηκε', className: 'bg-orange-50 text-orange-700 border-orange-200' },
+  exported: { label: 'Εξαγόμενη', className: 'bg-purple-50 text-purple-700 border-purple-200' },
+  notified: { label: 'Κοινοποιηθείσα', className: 'bg-blue-50 text-blue-700 border-blue-200' },
+  paid: { label: 'Εξοφληθείσα', className: 'bg-green-50 text-green-700 border-green-200' },
+  appealed: { label: 'Σε ένσταση', className: 'bg-orange-50 text-orange-700 border-orange-200' },
+  overdue: { label: 'Εκπρόθεσμη', className: 'bg-red-50 text-red-700 border-red-200' },
+  cancelled: { label: 'Ακυρωθείσα', className: 'bg-gray-50 text-gray-500 border-gray-200' },
+};
+
 export const USER_ROLES = {
   social_advisor: 'Κοινωνικός Σύμβουλος',
   committee_member: 'Μέλος Επιτροπής Ελέγχου',
