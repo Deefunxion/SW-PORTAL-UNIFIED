@@ -451,18 +451,19 @@ def get_file_structure():
         file_types = {}
         
         def count_files(items):
+            """Recursively count files in a list of file-info dicts or folder dicts."""
             nonlocal total_files, total_size, file_types
             for item in items:
-                if 'name' in item:  # It's a file
+                if 'files' in item:  # It's a folder/category — recurse
+                    count_files(item['files'])
+                    if 'subfolders' in item:
+                        count_files(item['subfolders'])
+                else:  # It's a file
                     total_files += 1
                     total_size += item.get('size', 0)
                     file_type = item.get('type', 'unknown')
                     file_types[file_type] = file_types.get(file_type, 0) + 1
-                elif 'files' in item:  # It's a folder with files
-                    count_files(item['files'])
-                    if 'subfolders' in item:
-                        count_files(item['subfolders'])
-        
+
         count_files(structure)
         
         return jsonify({
