@@ -152,6 +152,31 @@ def create_app():
                 db.session.rollback()
                 print(f"[seed] Warning: {e}")
 
+        # Auto-ingest knowledge base if empty (for Render / fresh deploys)
+        try:
+            from .models import DocumentIndex, FileChunk
+            if DocumentIndex.query.count() == 0:
+                knowledge_dir = os.path.abspath(app.config['KNOWLEDGE_FOLDER'])
+                if os.path.exists(knowledge_dir):
+                    from .ai.knowledge import process_file
+                    generate_vectors = bool(app.client)  # Only if OpenAI key present
+                    docs_found = 0
+                    for root, dirs, files in os.walk(knowledge_dir):
+                        for fname in files:
+                            if os.path.splitext(fname)[1].lower() in {'.txt', '.md'}:
+                                fpath = os.path.join(root, fname)
+                                try:
+                                    process_file(fpath, generate_vectors=generate_vectors)
+                                    docs_found += 1
+                                except Exception:
+                                    pass
+                    print(f"[knowledge] Ingested {docs_found} documents"
+                          f" ({'with' if generate_vectors else 'without'} embeddings)")
+                else:
+                    print(f"[knowledge] Directory not found: {knowledge_dir}")
+        except Exception as e:
+            print(f"[knowledge] Warning: {e}")
+
     # Security headers on every response
     @app.after_request
     def set_security_headers(response):

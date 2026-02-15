@@ -43,6 +43,9 @@ COPY backend/ ./backend/
 # Copy document files for Apothecary
 COPY content/ ./content/
 
+# Copy knowledge base documents for AI Assistant
+COPY knowledge/ ./knowledge/
+
 # Copy built frontend from Stage 1
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
