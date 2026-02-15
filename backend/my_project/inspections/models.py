@@ -98,6 +98,30 @@ class Inspection(db.Model):
         }
 
 
+class ChecklistTemplate(db.Model):
+    __tablename__ = 'checklist_templates'
+    id = db.Column(db.Integer, primary_key=True)
+    structure_type_id = db.Column(db.Integer, db.ForeignKey('structure_types.id'), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    version = db.Column(db.Integer, default=1)
+    items = db.Column(db.JSON, nullable=False)  # list of check item category objects
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    structure_type = db.relationship('StructureType', backref='checklist_templates')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'structure_type_id': self.structure_type_id,
+            'name': self.name,
+            'version': self.version,
+            'items': self.items,
+            'is_active': self.is_active,
+            'structure_type': self.structure_type.to_dict() if self.structure_type else None,
+        }
+
+
 class InspectionReport(db.Model):
     __tablename__ = 'inspection_reports'
     id = db.Column(db.Integer, primary_key=True)

@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
-import { ClipboardCheck, CheckCircle, AlertTriangle, XCircle, Minus } from 'lucide-react';
+import { ClipboardCheck, CheckCircle, AlertTriangle, XCircle, Minus, Loader2 } from 'lucide-react';
 import { INSPECTION_CRITERIA } from '../lib/constants';
+import { checklistApi } from '../lib/registryApi';
 
 const RATINGS = [
   { value: 'pass', label: 'Επαρκές', icon: CheckCircle, color: 'text-green-600 bg-green-50 border-green-200 hover:bg-green-100' },
@@ -12,8 +13,55 @@ const RATINGS = [
   { value: null, label: 'Δ/Ε', icon: Minus, color: 'text-gray-400 bg-gray-50 border-gray-200 hover:bg-gray-100' },
 ];
 
-export default function InspectionChecklist({ structureTypeCode, value, onChange, readOnly = false }) {
-  const config = INSPECTION_CRITERIA[structureTypeCode] || INSPECTION_CRITERIA.DEFAULT;
+/**
+ * Convert API checklist template items to the flat criteria format used by the component.
+ * API format: [{ category, items: [{ id, description, is_required, legal_ref }] }]
+ * Component format: { label, categories: [...], criteria: [{ id, label, category, legal_ref }] }
+ */
+function convertApiTemplate(template) {
+  const categories = template.items.map(g => g.category);
+  const criteria = [];
+  template.items.forEach(group => {
+    group.items.forEach(item => {
+      criteria.push({
+        id: item.id,
+        label: item.description,
+        category: group.category,
+        legal_ref: item.legal_ref,
+        is_required: item.is_required,
+      });
+    });
+  });
+  return {
+    label: template.name,
+    categories,
+    criteria,
+    fromApi: true,
+  };
+}
+
+export default function InspectionChecklist({ structureTypeCode, structureTypeId, value, onChange, readOnly = false }) {
+  const [apiConfig, setApiConfig] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Try to fetch checklist template from API
+  useEffect(() => {
+    if (!structureTypeId) return;
+    setLoading(true);
+    checklistApi.forType(structureTypeId)
+      .then(resp => {
+        setApiConfig(convertApiTemplate(resp.data));
+      })
+      .catch(() => {
+        // Fall back to hardcoded criteria
+        setApiConfig(null);
+      })
+      .finally(() => setLoading(false));
+  }, [structureTypeId]);
+
+  // Use API config if available, otherwise fall back to hardcoded constants
+  const config = apiConfig || INSPECTION_CRITERIA[structureTypeCode] || INSPECTION_CRITERIA.DEFAULT;
+
   const [checklist, setChecklist] = useState(() => {
     if (value) return value;
     const initial = {};
@@ -22,6 +70,17 @@ export default function InspectionChecklist({ structureTypeCode, value, onChange
     });
     return initial;
   });
+
+  // Reset checklist when config changes (e.g., API data loads)
+  useEffect(() => {
+    if (!value) {
+      const initial = {};
+      config.criteria.forEach((c) => {
+        initial[c.id] = checklist[c.id] || { rating: null, note: '' };
+      });
+      setChecklist(initial);
+    }
+  }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateCriterion = (criterionId, field, val) => {
     const updated = {
@@ -54,6 +113,17 @@ export default function InspectionChecklist({ structureTypeCode, value, onChange
     return counts;
   }, [checklist, config]);
 
+  if (loading) {
+    return (
+      <Card className="border-[#e8e2d8]">
+        <CardContent className="py-12 text-center">
+          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#1a3aa3]" />
+          <p className="text-sm text-[#8a8580]">Φόρτωση προτύπου ελέγχου...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-[#e8e2d8]">
       <CardHeader>
@@ -61,6 +131,11 @@ export default function InspectionChecklist({ structureTypeCode, value, onChange
           <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
             <ClipboardCheck className="w-5 h-5 text-[#1a3aa3]" />
             Κριτήρια Ελέγχου — {config.label}
+            {config.fromApi && (
+              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 ml-2">
+                API
+              </Badge>
+            )}
           </CardTitle>
           <div className="flex gap-2">
             {stats.pass > 0 && (
@@ -93,7 +168,14 @@ export default function InspectionChecklist({ structureTypeCode, value, onChange
                 return (
                   <div key={c.id} className="rounded-lg border border-[#e8e2d8] p-3">
                     <div className="flex items-center justify-between gap-4 mb-1">
-                      <span className="text-sm font-medium text-[#2a2520]">{c.label}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-medium text-[#2a2520]">{c.label}</span>
+                        {c.is_required && (
+                          <Badge variant="outline" className="text-[10px] bg-red-50 text-red-600 border-red-200 shrink-0">
+                            Υποχρ.
+                          </Badge>
+                        )}
+                      </div>
                       {!readOnly && (
                         <div className="flex gap-1 shrink-0">
                           {RATINGS.map((r) => {
@@ -126,6 +208,9 @@ export default function InspectionChecklist({ structureTypeCode, value, onChange
                         </Badge>
                       )}
                     </div>
+                    {c.legal_ref && (
+                      <p className="text-[10px] text-[#8a8580] mb-1">{c.legal_ref}</p>
+                    )}
                     {!readOnly && (
                       <Textarea
                         value={entry.note}

@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { committeesApi } from '../lib/registryApi';
 import CommitteeManager from '../components/CommitteeManager';
@@ -36,6 +38,10 @@ export default function CommitteesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <Link to="/registry" className="inline-flex items-center gap-1 text-sm text-[#1a3aa3] hover:underline mb-4">
+        <ArrowLeft className="w-4 h-4" />
+        Μητρώο Δομών
+      </Link>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#2a2520]" style={{ fontFamily: "'Literata', serif" }}>
           Επιτροπές Ελέγχου

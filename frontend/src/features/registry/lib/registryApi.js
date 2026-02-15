@@ -37,6 +37,23 @@ export const committeesApi = {
   assignStructure: (id, data) => api.post(`/api/committees/${id}/structures`, data),
 };
 
+export const sanctionsApi = {
+  list: () => api.get('/api/sanctions'),
+  rules: () => api.get('/api/sanction-rules'),
+  createRule: (data) => api.post('/api/sanction-rules', data),
+  calculate: (data) => api.post('/api/sanctions/calculate', data),
+};
+
+export const interopApi = {
+  aadeLookup: (afm) => api.post('/api/interop/aade/lookup', { afm }),
+  log: () => api.get('/api/interop/log'),
+};
+
+export const checklistApi = {
+  templates: () => api.get('/api/checklist-templates'),
+  forType: (typeId) => api.get(`/api/checklist-templates/${typeId}`),
+};
+
 export const oversightApi = {
   dashboard: () => api.get('/api/oversight/dashboard'),
   alerts: () => api.get('/api/oversight/alerts'),

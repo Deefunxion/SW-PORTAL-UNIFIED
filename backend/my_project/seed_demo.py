@@ -20,7 +20,7 @@ def seed_demo_data():
     from .oversight.models import UserRole, SocialAdvisorReport
 
     # Check if full demo data is already present (structures are the key indicator)
-    if Structure.query.count() >= 8:
+    if Structure.query.count() >= 15:
         print("[seed] Full demo data already exists — skipping.")
         return
 
@@ -217,6 +217,99 @@ def seed_demo_data():
         db.session.add(s)
     db.session.flush()
 
+    # ─── ADDITIONAL STRUCTURES (9-15) ────────────────────────
+    extra_structures = [
+        Structure(
+            code='MFH-MAR-009', type_id=stypes['MFH'].id,
+            name='Γηροκομείο «Άγιος Παντελεήμων»',
+            street='Λεωφ. Μαραθώνος 45', city='Νέα Μάκρη', postal_code='19005',
+            representative_name='Χαράλαμπος Κυριακίδης', representative_afm='258147369',
+            representative_phone='22940-95432', representative_email='info@ag-panteleimon.gr',
+            capacity=90, status='active', ownership='ngo',
+            license_number='ΑΔ-2024/1850', license_date=today - timedelta(days=300),
+            license_expiry=today + timedelta(days=430),
+            advisor_id=users['mpapadopoulou'].id,
+            peripheral_unit='Ανατολική Αττική',
+            notes='Λειτουργεί κανονικά. Νέα πτέρυγα υπό κατασκευή.',
+        ),
+        Structure(
+            code='KDAP-PEI-010', type_id=stypes['KDAP'].id,
+            name='ΚΔΑΠ «Ουράνιο Τόξο»',
+            street='Ηρώων Πολυτεχνείου 12', city='Πειραιάς', postal_code='18535',
+            representative_name='Αγγελική Μαυρίδου', representative_afm='369258147',
+            representative_phone='210-4125678', representative_email='info@kdap-ouranio.gr',
+            capacity=50, status='active', ownership='municipal',
+            license_number='ΑΔ-2024/0932', license_date=today - timedelta(days=240),
+            license_expiry=today + timedelta(days=490),
+            advisor_id=users['mpapadopoulou'].id,
+            peripheral_unit='Πειραιάς',
+            notes='Πρόγραμμα ένταξης παιδιών προσφύγων.',
+        ),
+        Structure(
+            code='SYD-GLY-011', type_id=stypes['SYD'].id,
+            name='Στέγη «Φως στη Ζωή»',
+            street='Λαοδικείας 19', city='Γλυφάδα', postal_code='16675',
+            representative_name='Ιωάννης Παπαντωνίου', representative_afm='741852963',
+            representative_phone='210-9612345', representative_email='info@fos-sti-zoi.gr',
+            capacity=12, status='under_review', ownership='ngo',
+            advisor_id=users['gnikolaou'].id,
+            peripheral_unit='Νότιος Τομέας Αθηνών',
+            notes='Υπό αξιολόγηση μετά από αλλαγή διοίκησης.',
+        ),
+        Structure(
+            code='KDHF-AMR-012', type_id=stypes['KDHF-KAA'].id,
+            name='Κέντρο Αποκατάστασης «Ασκληπιός»',
+            street='28ης Οκτωβρίου 78', city='Μαρούσι', postal_code='15124',
+            representative_name='Δέσποινα Αλεξίου', representative_afm='852963741',
+            representative_phone='210-6123456', representative_email='info@asklepios-rehab.gr',
+            capacity=30, status='active', ownership='private',
+            license_number='ΑΔ-2023/2890', license_date=today - timedelta(days=550),
+            license_expiry=today + timedelta(days=180),
+            advisor_id=users['gnikolaou'].id,
+            peripheral_unit='Βόρειος Τομέας Αθηνών',
+            notes='Εξειδίκευση σε ΑμεΑ. Άδεια λήγει σε 6 μήνες.',
+        ),
+        Structure(
+            code='MFH-KER-013', type_id=stypes['MFH'].id,
+            name='Μονάδα Φροντίδας «Κηφισιά»',
+            street='Κολοκοτρώνη 5', city='Κηφισιά', postal_code='14562',
+            representative_name='Βασίλειος Πετρόπουλος', representative_afm='159357486',
+            representative_phone='210-8085432', representative_email='info@mfh-kifisia.gr',
+            capacity=55, status='active', ownership='private',
+            license_number='ΑΔ-2025/0212', license_date=today - timedelta(days=60),
+            license_expiry=today + timedelta(days=670),
+            advisor_id=users['mpapadopoulou'].id,
+            peripheral_unit='Βόρειος Τομέας Αθηνών',
+            notes='Νεόκτιστες εγκαταστάσεις. Πρώτη αδειοδότηση.',
+        ),
+        Structure(
+            code='MFPAD-PER-014', type_id=stypes['MFPAD'].id,
+            name='Κέντρο Παιδικής Προστασίας «Αστέρι»',
+            street='Ιπποκράτους 32', city='Περιστέρι', postal_code='12134',
+            representative_name='Ελευθερία Κωστοπούλου', representative_afm='951753864',
+            representative_phone='210-5789012', representative_email='info@asteri-care.gr',
+            capacity=40, status='suspended', ownership='ngo',
+            license_number='ΑΔ-2023/1567', license_date=today - timedelta(days=700),
+            license_expiry=today - timedelta(days=65),
+            peripheral_unit='Δυτικός Τομέας Αθηνών',
+            notes='Αναστολή λόγω ελλιπούς στελέχωσης. Υποβλήθηκε σχέδιο συμμόρφωσης.',
+        ),
+        Structure(
+            code='CAMP-LAV-015', type_id=stypes['CAMP'].id,
+            name='Κατασκήνωση «Λαύριο»',
+            street='Παράλια Λαυρίου', city='Λαύριο', postal_code='19500',
+            representative_name='Γεώργιος Τσιμπίδης', representative_afm='357159486',
+            representative_phone='22920-26543', representative_email='info@camp-lavrio.gr',
+            capacity=150, status='pending_license', ownership='public',
+            peripheral_unit='Ανατολική Αττική',
+            notes='Νέα κατασκήνωση δήμου Λαυρίου. Εκκρεμεί αρχικός έλεγχος.',
+        ),
+    ]
+    for s in extra_structures:
+        db.session.add(s)
+    structures.extend(extra_structures)
+    db.session.flush()
+
     # Lookup helpers
     s_agia_eleni = structures[0]
     s_evangelismos = structures[1]
@@ -226,6 +319,13 @@ def seed_demo_data():
     s_neazoi = structures[5]
     s_theotokos = structures[6]
     s_camp = structures[7]
+    s_panteleimon = structures[8]
+    s_ouranio = structures[9]
+    s_fos = structures[10]
+    s_asklepios = structures[11]
+    s_kifisia = structures[12]
+    s_asteri = structures[13]
+    s_lavrio = structures[14]
 
     # ─── LICENSES ───────────────────────────────────────────
     licenses = [
@@ -302,6 +402,18 @@ def seed_demo_data():
                                       assigned_date=today - timedelta(days=80)),
         CommitteeStructureAssignment(committee_id=committee2.id, structure_id=s_neazoi.id,
                                       assigned_date=today - timedelta(days=80)),
+        CommitteeStructureAssignment(committee_id=committee1.id, structure_id=s_panteleimon.id,
+                                      assigned_date=today - timedelta(days=70)),
+        CommitteeStructureAssignment(committee_id=committee1.id, structure_id=s_ouranio.id,
+                                      assigned_date=today - timedelta(days=70)),
+        CommitteeStructureAssignment(committee_id=committee2.id, structure_id=s_fos.id,
+                                      assigned_date=today - timedelta(days=50)),
+        CommitteeStructureAssignment(committee_id=committee2.id, structure_id=s_asklepios.id,
+                                      assigned_date=today - timedelta(days=50)),
+        CommitteeStructureAssignment(committee_id=committee2.id, structure_id=s_asteri.id,
+                                      assigned_date=today - timedelta(days=50)),
+        CommitteeStructureAssignment(committee_id=committee1.id, structure_id=s_lavrio.id,
+                                      assigned_date=today - timedelta(days=30)),
     ]
     for a in assignments:
         db.session.add(a)
@@ -432,6 +544,256 @@ def seed_demo_data():
     ]
     for s in sanctions:
         db.session.add(s)
+
+    # ─── ADDITIONAL LICENSES (for new structures) ────────────
+    extra_licenses = [
+        License(structure_id=s_panteleimon.id, type='operating',
+                protocol_number='ΦΕΚ/Β/2024/1850', issued_date=today - timedelta(days=300),
+                expiry_date=today + timedelta(days=430), status='active'),
+        License(structure_id=s_ouranio.id, type='operating',
+                protocol_number='ΦΕΚ/Β/2024/0932', issued_date=today - timedelta(days=240),
+                expiry_date=today + timedelta(days=490), status='active'),
+        License(structure_id=s_asklepios.id, type='operating',
+                protocol_number='ΦΕΚ/Β/2023/2890', issued_date=today - timedelta(days=550),
+                expiry_date=today + timedelta(days=180), status='active',
+                notes='Λήγει σε 6 μήνες — απαιτείται ανανέωση'),
+        License(structure_id=s_kifisia.id, type='operating',
+                protocol_number='ΦΕΚ/Β/2025/0212', issued_date=today - timedelta(days=60),
+                expiry_date=today + timedelta(days=670), status='active'),
+        License(structure_id=s_asteri.id, type='operating',
+                protocol_number='ΦΕΚ/Β/2023/1567', issued_date=today - timedelta(days=700),
+                expiry_date=today - timedelta(days=65), status='expired',
+                notes='Λήξη χωρίς ανανέωση — δομή σε αναστολή'),
+    ]
+    for lic in extra_licenses:
+        db.session.add(lic)
+
+    # ─── ADDITIONAL INSPECTIONS ────────────────────────────
+    insp8 = Inspection(
+        structure_id=s_panteleimon.id, committee_id=committee1.id,
+        type='regular', scheduled_date=today - timedelta(days=20),
+        status='completed', conclusion='compliant',
+        notes='Τακτικός έλεγχος — πλήρης συμμόρφωση. Εντυπωσιακές εγκαταστάσεις.'
+    )
+    insp9 = Inspection(
+        structure_id=s_ouranio.id, committee_id=committee1.id,
+        type='regular', scheduled_date=today - timedelta(days=10),
+        status='completed', conclusion='partially_compliant',
+        notes='Μικρές ελλείψεις στον εξωτερικό χώρο. Δόθηκε 15ήμερο.'
+    )
+    insp10 = Inspection(
+        structure_id=s_asteri.id, committee_id=committee2.id,
+        type='extraordinary', scheduled_date=today - timedelta(days=35),
+        status='completed', conclusion='non_compliant',
+        notes='Έκτακτος έλεγχος μετά από καταγγελία. Ελλιπής στελέχωση.'
+    )
+    insp11 = Inspection(
+        structure_id=s_asklepios.id, committee_id=committee2.id,
+        type='regular', scheduled_date=today + timedelta(days=28),
+        status='scheduled',
+        notes='Τακτικός ετήσιος έλεγχος.'
+    )
+    insp12 = Inspection(
+        structure_id=s_lavrio.id, committee_id=committee1.id,
+        type='pre_licensing', scheduled_date=today + timedelta(days=35),
+        status='scheduled',
+        notes='Πρώτος έλεγχος νέας κατασκηνωτικής δομής.'
+    )
+    insp13 = Inspection(
+        structure_id=s_fos.id, committee_id=committee2.id,
+        type='extraordinary', scheduled_date=today + timedelta(days=10),
+        status='scheduled',
+        notes='Έκτακτος έλεγχος μετά αλλαγή διοίκησης.'
+    )
+    db.session.add_all([insp8, insp9, insp10, insp11, insp12, insp13])
+    db.session.flush()
+
+    # Reports for new inspections
+    extra_reports = [
+        InspectionReport(
+            inspection_id=insp8.id,
+            protocol_number='ΕΚΘ-2026/0201',
+            drafted_date=today - timedelta(days=18),
+            findings='Η δομή λειτουργεί υποδειγματικά. Νέα πτέρυγα 20 κλινών υπό κατασκευή. '
+                     'Πλήρες και εκπαιδευμένο προσωπικό.',
+            recommendations='Συνέχιση τήρησης υψηλών προτύπων.',
+            status='approved',
+            submitted_by=users['athanasiou'].id,
+            submitted_at=datetime.utcnow() - timedelta(days=16),
+        ),
+        InspectionReport(
+            inspection_id=insp9.id,
+            protocol_number='ΕΚΘ-2026/0215',
+            drafted_date=today - timedelta(days=8),
+            findings='Η δομή λειτουργεί ικανοποιητικά. Ελλείψεις:\n'
+                     '1. Περίφραξη αυλής χρειάζεται επισκευή σε 2 σημεία\n'
+                     '2. Ελαφρά υστέρηση ανανέωσης πιστοποιητικού πρώτων βοηθειών.',
+            recommendations='15ήμερο συμμόρφωσης. Επανέλεγχος σε 30 ημέρες.',
+            status='submitted',
+            submitted_by=users['mpapadopoulou'].id,
+            submitted_at=datetime.utcnow() - timedelta(days=6),
+        ),
+        InspectionReport(
+            inspection_id=insp10.id,
+            protocol_number='ΕΚΘ-2026/0178',
+            drafted_date=today - timedelta(days=30),
+            findings='Ο έκτακτος έλεγχος κατόπιν καταγγελίας επιβεβαίωσε:\n'
+                     '1. Αναλογία προσωπικού 1:12 αντί 1:6 (εξαρτώμενα παιδιά)\n'
+                     '2. Απουσία νυκτερινού φύλακα\n'
+                     '3. Μη ενημερωμένα ατομικά πλάνα φροντίδας',
+            recommendations='Αναστολή λειτουργίας μέχρι πλήρη συμμόρφωση.',
+            status='approved',
+            submitted_by=users['gnikolaou'].id,
+            submitted_at=datetime.utcnow() - timedelta(days=28),
+        ),
+    ]
+    for r in extra_reports:
+        db.session.add(r)
+
+    # Additional sanctions for new structures
+    extra_sanctions = [
+        Sanction(
+            structure_id=s_asteri.id, inspection_id=insp10.id,
+            type='suspension', imposed_date=today - timedelta(days=28),
+            status='active', protocol_number='ΚΥΡΩ-2026/0051',
+            notes='Αναστολή λειτουργίας λόγω ελλιπούς στελέχωσης.'
+        ),
+        Sanction(
+            structure_id=s_asteri.id, inspection_id=insp10.id,
+            type='fine', amount=6000.00, imposed_date=today - timedelta(days=28),
+            status='appealed', protocol_number='ΚΥΡΩ-2026/0052',
+            notes='Πρόστιμο 6.000€ — υποβλήθηκε ένσταση.'
+        ),
+        Sanction(
+            structure_id=s_ouranio.id,
+            type='warning', imposed_date=today - timedelta(days=8),
+            status='imposed', protocol_number='ΚΥΡΩ-2026/0060',
+            notes='Σύσταση για αποκατάσταση ελλείψεων εξωτερικού χώρου εντός 15 ημερών.'
+        ),
+    ]
+    for s in extra_sanctions:
+        db.session.add(s)
+
+    # Additional advisor reports for new structures
+    extra_advisor_reports = [
+        SocialAdvisorReport(
+            structure_id=s_panteleimon.id, author_id=users['mpapadopoulou'].id,
+            drafted_date=today - timedelta(days=15),
+            type='regular',
+            assessment='Η δομή λειτουργεί άριστα. Νέα πτέρυγα θα αυξήσει τη δυναμικότητα κατά 20 κλίνες. '
+                       'Το προσωπικό είναι σταθερό και εκπαιδευμένο.',
+            recommendations='Πρόσθετη πρόσληψη νοσηλευτικού προσωπικού ενόψει επέκτασης.',
+            status='approved',
+            approved_by=users['admin'].id,
+            approved_at=datetime.utcnow() - timedelta(days=12),
+        ),
+        SocialAdvisorReport(
+            structure_id=s_asklepios.id, author_id=users['gnikolaou'].id,
+            drafted_date=today - timedelta(days=7),
+            type='regular',
+            assessment='Εξειδικευμένη δομή αποκατάστασης. Αξιόλογο πρόγραμμα φυσιοθεραπείας. '
+                       'Η άδεια λήγει σε 6 μήνες — πρέπει να ξεκινήσει η ανανέωση.',
+            recommendations='Άμεση υποβολή αίτησης ανανέωσης άδειας. Ενημέρωση ΕΟΠΥΥ.',
+            status='submitted',
+        ),
+    ]
+    for ar in extra_advisor_reports:
+        db.session.add(ar)
+
+    # ─── SANCTION RULES ──────────────────────────────────────
+    from .sanctions.models import SanctionRule
+
+    rules_data = [
+        ('NO_LICENSE', 'Λειτουργία χωρίς άδεια', 10000, 2.0, 3.0, True, 2, 'Ν.4756/2020, Άρθρο 42, §1'),
+        ('OVER_CAPACITY', 'Υπέρβαση δυναμικότητας', 5000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 42, §2'),
+        ('STAFF_RATIO', 'Ελλιπής στελέχωση', 3000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 38, §4'),
+        ('FIRE_SAFETY', 'Παραβίαση πυρασφάλειας', 8000, 2.0, 3.0, True, 2, 'Ν.4756/2020, Άρθρο 42, §3'),
+        ('HYGIENE', 'Παραβίαση υγιεινής', 4000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 39, §2'),
+        ('MISSING_DOCS', 'Έλλειψη τεκμηρίωσης', 2000, 1.5, 2.0, False, 0, 'Ν.4756/2020, Άρθρο 40, §1'),
+        ('NO_INCIDENT_REPORT', 'Μη αναφορά συμβάντος', 5000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 41, §2'),
+        ('UNAUTHORIZED_MODS', 'Μη εξουσιοδοτημένες τροποποιήσεις', 6000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 36, §5'),
+        ('ACCESSIBILITY', 'Παραβίαση προσβασιμότητας', 4000, 2.0, 2.5, False, 0, 'Ν.4756/2020, Άρθρο 37, §3'),
+        ('NON_COMPLIANCE', 'Μη συμμόρφωση σε υποδείξεις', 3000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 43, §1'),
+    ]
+    for code, name, base, esc2, esc3, can_suspend, threshold, legal in rules_data:
+        if not SanctionRule.query.filter_by(violation_code=code).first():
+            db.session.add(SanctionRule(
+                violation_code=code, violation_name=name, base_fine=base,
+                escalation_2nd=esc2, escalation_3rd_plus=esc3,
+                can_trigger_suspension=can_suspend, suspension_threshold=threshold,
+                legal_reference=legal,
+            ))
+
+    # ─── CHECKLIST TEMPLATES ─────────────────────────────────
+    from .inspections.models import ChecklistTemplate
+
+    mfh_checklist_items = [
+        {'category': 'Κτιριολογικά & Ασφάλεια', 'items': [
+            {'id': 'B01', 'description': 'Πιστοποιητικό πυρασφάλειας σε ισχύ', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §36'},
+            {'id': 'B02', 'description': 'Προσβασιμότητα ΑμεΑ (ράμπες, ανελκυστήρας)', 'is_required': True, 'legal_ref': 'Ν.4067/2012'},
+            {'id': 'B03', 'description': 'Επαρκής φυσικός φωτισμός και αερισμός', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'B04', 'description': 'Σήμανση εξόδων κινδύνου', 'is_required': True, 'legal_ref': 'ΠΔ 71/88'},
+            {'id': 'B05', 'description': 'Καταλληλότητα χώρων υγιεινής', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+        ]},
+        {'category': 'Στελέχωση', 'items': [
+            {'id': 'S01', 'description': 'Τήρηση αναλογίας προσωπικού/ωφελουμένων', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+            {'id': 'S02', 'description': 'Πτυχία και άδειες ασκήσεως σε ισχύ', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+            {'id': 'S03', 'description': 'Παρουσία νοσηλευτή κατά τη διάρκεια λειτουργίας', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'S04', 'description': 'Πρόγραμμα εκπαίδευσης προσωπικού', 'is_required': False, 'legal_ref': ''},
+        ]},
+        {'category': 'Υγιεινή & Διατροφή', 'items': [
+            {'id': 'H01', 'description': 'Πιστοποιητικό υγείας τροφίμων (HACCP)', 'is_required': True, 'legal_ref': 'Κανονισμός (ΕΚ) 852/2004'},
+            {'id': 'H02', 'description': 'Καθαριότητα χώρων (κοινόχρηστοι, κουζίνα, W/C)', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'H03', 'description': 'Τήρηση διαιτολογίου εγκεκριμένου από διαιτολόγο', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §39'},
+            {'id': 'H04', 'description': 'Σωστή αποθήκευση φαρμάκων', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+        ]},
+        {'category': 'Τεκμηρίωση', 'items': [
+            {'id': 'D01', 'description': 'Ατομικοί φάκελοι ωφελουμένων ενημερωμένοι', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §40'},
+            {'id': 'D02', 'description': 'Βιβλίο συμβάντων ενημερωμένο', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §41'},
+            {'id': 'D03', 'description': 'Σύμβαση εργασίας κάθε εργαζόμενου', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+            {'id': 'D04', 'description': 'Ασφαλιστική ενημερότητα', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+        ]},
+    ]
+
+    kdap_checklist_items = [
+        {'category': 'Κτιριολογικά & Ασφάλεια', 'items': [
+            {'id': 'B01', 'description': 'Πιστοποιητικό πυρασφάλειας σε ισχύ', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §36'},
+            {'id': 'B02', 'description': 'Ασφάλεια εξωτερικών χώρων (αυλή, περίφραξη)', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'B03', 'description': 'Καταλληλότητα χώρων για ηλικιακή ομάδα', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'B04', 'description': 'Σήμανση εξόδων κινδύνου', 'is_required': True, 'legal_ref': 'ΠΔ 71/88'},
+        ]},
+        {'category': 'Στελέχωση', 'items': [
+            {'id': 'S01', 'description': 'Τήρηση αναλογίας παιδαγωγών/παιδιών (1:25)', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+            {'id': 'S02', 'description': 'Πτυχία παιδαγωγών σε ισχύ', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+            {'id': 'S03', 'description': 'Πιστοποίηση πρώτων βοηθειών', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+        ]},
+        {'category': 'Υγιεινή', 'items': [
+            {'id': 'H01', 'description': 'Καθαριότητα χώρων & WC', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'H02', 'description': 'Διαθεσιμότητα φαρμακείου πρώτων βοηθειών', 'is_required': True, 'legal_ref': 'ΥΑ Γ2α/οικ.2973'},
+            {'id': 'H03', 'description': 'Ασφάλεια υλικών δημιουργικής απασχόλησης', 'is_required': True, 'legal_ref': 'ΕΚ Directive 2009/48/EC'},
+        ]},
+        {'category': 'Τεκμηρίωση', 'items': [
+            {'id': 'D01', 'description': 'Φάκελοι παιδιών με στοιχεία γονέων/κηδεμόνων', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §40'},
+            {'id': 'D02', 'description': 'Πρόγραμμα δραστηριοτήτων', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §40'},
+            {'id': 'D03', 'description': 'Βιβλίο συμβάντων', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §41'},
+            {'id': 'D04', 'description': 'Ασφαλιστική ενημερότητα', 'is_required': True, 'legal_ref': 'Ν.4756/2020, §38'},
+        ]},
+    ]
+
+    checklist_templates = [
+        ('Πρότυπο Ελέγχου ΜΦΗ', 'MFH', mfh_checklist_items),
+        ('Πρότυπο Ελέγχου ΚΔΑΠ', 'KDAP', kdap_checklist_items),
+    ]
+    for tpl_name, type_code, items in checklist_templates:
+        stype = StructureType.query.filter_by(code=type_code).first()
+        if stype and not ChecklistTemplate.query.filter_by(
+            structure_type_id=stype.id, is_active=True
+        ).first():
+            db.session.add(ChecklistTemplate(
+                structure_type_id=stype.id,
+                name=tpl_name,
+                items=items,
+            ))
 
     # ─── ADVISOR REPORTS ────────────────────────────────────
     advisor_reports = [
