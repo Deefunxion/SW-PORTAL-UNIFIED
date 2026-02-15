@@ -1,5 +1,5 @@
 from datetime import datetime, date, timedelta
-from flask import jsonify, request
+from flask import jsonify, request, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from . import sanctions_bp
 from ..extensions import db
@@ -406,3 +406,31 @@ def export_decision(decision_id):
         },
     }
     return jsonify(export_data), 200
+
+
+@sanctions_bp.route('/api/sanction-decisions/<int:decision_id>/pdf', methods=['GET'])
+@jwt_required()
+def generate_pdf(decision_id):
+    """Generate and return PDF for a sanction decision."""
+    from .pdf_generator import generate_decision_pdf
+
+    decision = db.session.get(SanctionDecision, decision_id)
+    if not decision:
+        return jsonify({'error': 'Decision not found'}), 404
+
+    rule = SanctionRule.query.filter_by(
+        violation_code=decision.violation_code, is_active=True
+    ).first()
+
+    try:
+        pdf_bytes = generate_decision_pdf(decision, rule)
+    except Exception as e:
+        return jsonify({'error': f'PDF generation failed: {str(e)}'}), 500
+
+    from io import BytesIO
+    return send_file(
+        BytesIO(pdf_bytes),
+        mimetype='application/pdf',
+        as_attachment=False,
+        download_name=f'decision-{decision_id}.pdf',
+    )

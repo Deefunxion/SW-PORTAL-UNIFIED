@@ -23,7 +23,7 @@ import {
 import {
   Calculator, Scale, AlertTriangle, TrendingUp, Gavel, FileText,
   Loader2, ArrowLeft, Shield, Droplets, Users, Info, Landmark, Building2,
-  ClipboardList, Download, ExternalLink,
+  ClipboardList, Download, ExternalLink, FileDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { sanctionsApi, structuresApi, decisionsApi } from '../lib/registryApi';
@@ -673,6 +673,23 @@ export default function SanctionsPage() {
                                     <ExternalLink className="w-3.5 h-3.5" />
                                   </Button>
                                 </Link>
+                                {d.status !== 'draft' && (
+                                  <Button
+                                    variant="ghost" size="sm"
+                                    title="Λήψη PDF"
+                                    onClick={async () => {
+                                      try {
+                                        const resp = await decisionsApi.pdf(d.id);
+                                        const url = URL.createObjectURL(resp.data);
+                                        window.open(url, '_blank');
+                                      } catch {
+                                        toast.error('Σφάλμα PDF');
+                                      }
+                                    }}
+                                  >
+                                    <FileDown className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
                                 {['approved', 'notified', 'paid'].includes(d.status) && (
                                   <Button
                                     variant="ghost" size="sm"

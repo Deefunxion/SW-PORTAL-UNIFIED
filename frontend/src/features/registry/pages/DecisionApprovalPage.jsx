@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dialog.jsx';
 import {
   Gavel, ArrowLeft, CheckCircle, XCircle, Eye, Loader2,
-  ClipboardList, Send, Clock, Landmark, Bell, CreditCard,
+  ClipboardList, Send, Clock, Landmark, Bell, CreditCard, FileDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { decisionsApi } from '../lib/registryApi';
@@ -356,6 +356,26 @@ export default function DecisionApprovalPage() {
                       <span className="font-medium">{formatDate(detailData.appeal_deadline)}</span>
                     </div>
                   </div>
+                )}
+
+                {/* PDF download (available for any non-draft decision) */}
+                {detailData.status !== 'draft' && (
+                  <Button
+                    variant="outline"
+                    className="w-full border-[#1a3aa3] text-[#1a3aa3]"
+                    onClick={async () => {
+                      try {
+                        const resp = await decisionsApi.pdf(detailData.id);
+                        const url = URL.createObjectURL(resp.data);
+                        window.open(url, '_blank');
+                      } catch {
+                        toast.error('Σφάλμα δημιουργίας PDF');
+                      }
+                    }}
+                  >
+                    <FileDown className="w-4 h-4 mr-2" />
+                    Λήψη PDF
+                  </Button>
                 )}
 
                 {/* Actions based on status */}

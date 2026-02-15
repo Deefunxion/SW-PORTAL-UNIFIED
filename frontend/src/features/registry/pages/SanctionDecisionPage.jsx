@@ -16,7 +16,7 @@ import {
 import {
   Gavel, ArrowLeft, ArrowRight, Calculator, FileText, User, Eye,
   Loader2, CheckCircle, Shield, Droplets, Users, AlertTriangle,
-  Building2, Scale, Landmark, Send, Save,
+  Building2, Scale, Landmark, Send, Save, FileDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { sanctionsApi, structuresApi, decisionsApi } from '../lib/registryApi';
@@ -227,6 +227,20 @@ export default function SanctionDecisionPage() {
       setSaving(false);
     }
   }, [existingDecision, justification, inspectionFinding, obligor, navigate, handleSaveDraft]);
+
+  const handlePreviewPdf = useCallback(async () => {
+    if (!existingDecision) {
+      toast.error('Αποθηκεύστε πρώτα την απόφαση');
+      return;
+    }
+    try {
+      const resp = await decisionsApi.pdf(existingDecision.id);
+      const url = URL.createObjectURL(resp.data);
+      window.open(url, '_blank');
+    } catch {
+      toast.error('Σφάλμα δημιουργίας PDF');
+    }
+  }, [existingDecision]);
 
   const formatCurrency = (amount) => {
     if (amount == null) return '—';
@@ -649,6 +663,18 @@ export default function SanctionDecisionPage() {
             <div className="bg-amber-50 rounded-lg p-3 border border-amber-200 text-sm text-amber-800">
               <p className="font-medium">Νομική βάση: {calculation?.legal_basis || 'Ν.5041/2023 αρ.100'}</p>
             </div>
+
+            {/* PDF preview button */}
+            {existingDecision && (
+              <Button
+                variant="outline"
+                onClick={handlePreviewPdf}
+                className="w-full border-[#1a3aa3] text-[#1a3aa3]"
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                Προεπισκόπηση PDF
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
