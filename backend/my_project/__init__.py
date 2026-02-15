@@ -109,6 +109,9 @@ def create_app():
     from .sanctions import sanctions_bp
     app.register_blueprint(sanctions_bp)
 
+    from .interop import interop_bp
+    app.register_blueprint(interop_bp)
+
     # Create database tables and seed data
     with app.app_context():
         # Import models to ensure they are registered
@@ -119,6 +122,7 @@ def create_app():
             ChecklistTemplate)
         from .oversight.models import UserRole, SocialAdvisorReport
         from .sanctions.models import SanctionRule
+        from .interop.models import InteropLog
 
         # Enable pgvector extension (required for Vector columns)
         try:
