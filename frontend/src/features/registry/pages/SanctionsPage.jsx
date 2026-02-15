@@ -23,10 +23,11 @@ import {
 import {
   Calculator, Scale, AlertTriangle, TrendingUp, Gavel, FileText,
   Loader2, ArrowLeft, Shield, Droplets, Users, Info, Landmark, Building2,
+  ClipboardList, Download, ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { sanctionsApi, structuresApi } from '../lib/registryApi';
-import { SANCTION_STATUS, VIOLATION_CATEGORIES } from '../lib/constants';
+import { sanctionsApi, structuresApi, decisionsApi } from '../lib/registryApi';
+import { SANCTION_STATUS, VIOLATION_CATEGORIES, SANCTION_DECISION_STATUSES } from '../lib/constants';
 
 const CATEGORY_ICONS = {
   safety: Shield,
@@ -44,6 +45,10 @@ export default function SanctionsPage() {
   const [rules, setRules] = useState([]);
   const [structures, setStructures] = useState([]);
   const [recentSanctions, setRecentSanctions] = useState([]);
+  const [decisions, setDecisions] = useState([]);
+
+  // Right column tab
+  const [rightTab, setRightTab] = useState('sanctions');
 
   // Calculator state
   const [selectedRule, setSelectedRule] = useState('');
@@ -88,6 +93,30 @@ export default function SanctionsPage() {
         .catch(() => setRecentSanctions([]));
     }
   }, [selectedStructure]);
+
+  // Load decisions
+  useEffect(() => {
+    const params = selectedStructure ? { structure_id: parseInt(selectedStructure) } : {};
+    decisionsApi.list(params)
+      .then(r => setDecisions(r.data))
+      .catch(() => setDecisions([]));
+  }, [selectedStructure]);
+
+  const handleExportDecision = useCallback(async (decisionId) => {
+    try {
+      const resp = await decisionsApi.export(decisionId);
+      const blob = new Blob([JSON.stringify(resp.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `decision-${decisionId}-ops-export.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Εξαγωγή OPS ολοκληρώθηκε');
+    } catch {
+      toast.error('Σφάλμα εξαγωγής');
+    }
+  }, []);
 
   // Group rules by category
   const groupedRules = useMemo(() => {
@@ -185,6 +214,12 @@ export default function SanctionsPage() {
             </h1>
             <p className="text-sm text-[#6b6560]">Υπολογισμός προστίμων — Ν.5041/2023, Άρθρο 100</p>
           </div>
+          <Link to="/sanctions/decisions/new">
+            <Button className="bg-[#1a3aa3] hover:bg-[#152e82] text-white">
+              <Gavel className="w-4 h-4 mr-2" />
+              Νέα Απόφαση
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -475,74 +510,189 @@ export default function SanctionsPage() {
           </Card>
         </div>
 
-        {/* Right Column: Recent Sanctions */}
-        <div className="lg:col-span-3">
-          <Card className="border-[#e8e2d8]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
-                <Scale className="w-5 h-5 text-[#1a3aa3]" />
-                Πρόσφατες Κυρώσεις
-                <Badge variant="outline" className="ml-2 text-xs">
-                  {selectedStructure
-                    ? selectedStructureObj?.name || ''
-                    : 'Όλες οι Δομές'}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {recentSanctions.length === 0 ? (
-                <div className="text-center py-12 text-[#8a8580]">
-                  <Scale className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>Δεν υπάρχουν κυρώσεις{selectedStructure ? ' για αυτή τη δομή' : ''}</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {!selectedStructure && <TableHead>Δομή</TableHead>}
-                      <TableHead>Τύπος</TableHead>
-                      <TableHead>Ποσό</TableHead>
-                      <TableHead>Ημερομηνία</TableHead>
-                      <TableHead>Κατάσταση</TableHead>
-                      <TableHead>Σημειώσεις</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentSanctions.map(s => {
-                      const statusInfo = SANCTION_STATUS[s.status] || { label: s.status, color: 'gray' };
-                      return (
-                        <TableRow key={s.id}>
-                          {!selectedStructure && (
-                            <TableCell className="text-sm font-medium">
-                              {s.structure_name || structures.find(st => st.id === s.structure_id)?.name || '—'}
+        {/* Right Column: Sanctions / Decisions tabs */}
+        <div className="lg:col-span-3 space-y-4">
+          {/* Tab switcher */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setRightTab('sanctions')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                ${rightTab === 'sanctions' ? 'bg-[#1a3aa3] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            >
+              <Scale className="w-4 h-4" />
+              Κυρώσεις ({recentSanctions.length})
+            </button>
+            <button
+              onClick={() => setRightTab('decisions')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                ${rightTab === 'decisions' ? 'bg-[#1a3aa3] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            >
+              <ClipboardList className="w-4 h-4" />
+              Αποφάσεις ({decisions.length})
+            </button>
+            <Link to="/sanctions/decisions" className="ml-auto">
+              <Button variant="outline" size="sm" className="border-[#e8e2d8] text-[#1a3aa3]">
+                <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                Όλες
+              </Button>
+            </Link>
+          </div>
+
+          {/* Sanctions tab */}
+          {rightTab === 'sanctions' && (
+            <Card className="border-[#e8e2d8]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
+                  <Scale className="w-5 h-5 text-[#1a3aa3]" />
+                  Πρόσφατες Κυρώσεις
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    {selectedStructure
+                      ? selectedStructureObj?.name || ''
+                      : 'Όλες οι Δομές'}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recentSanctions.length === 0 ? (
+                  <div className="text-center py-12 text-[#8a8580]">
+                    <Scale className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p>Δεν υπάρχουν κυρώσεις{selectedStructure ? ' για αυτή τη δομή' : ''}</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {!selectedStructure && <TableHead>Δομή</TableHead>}
+                        <TableHead>Τύπος</TableHead>
+                        <TableHead>Ποσό</TableHead>
+                        <TableHead>Ημερομηνία</TableHead>
+                        <TableHead>Κατάσταση</TableHead>
+                        <TableHead>Σημειώσεις</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentSanctions.map(s => {
+                        const statusInfo = SANCTION_STATUS[s.status] || { label: s.status, color: 'gray' };
+                        return (
+                          <TableRow key={s.id}>
+                            {!selectedStructure && (
+                              <TableCell className="text-sm font-medium">
+                                {s.structure_name || structures.find(st => st.id === s.structure_id)?.name || '—'}
+                              </TableCell>
+                            )}
+                            <TableCell className="font-medium capitalize">{s.type}</TableCell>
+                            <TableCell>
+                              {s.amount ? formatCurrency(s.amount) : '—'}
                             </TableCell>
-                          )}
-                          <TableCell className="font-medium capitalize">{s.type}</TableCell>
-                          <TableCell>
-                            {s.amount ? formatCurrency(s.amount) : '—'}
-                          </TableCell>
-                          <TableCell className="text-sm">{formatDate(s.imposed_date)}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={
-                              statusInfo.color === 'red' ? 'bg-red-50 text-red-700 border-red-200' :
-                              statusInfo.color === 'green' ? 'bg-green-50 text-green-700 border-green-200' :
-                              statusInfo.color === 'orange' ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                              'bg-gray-50 text-gray-700 border-gray-200'
-                            }>
-                              {statusInfo.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-xs text-[#6b6560] max-w-[200px] truncate">
-                            {s.notes || '—'}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                            <TableCell className="text-sm">{formatDate(s.imposed_date)}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={
+                                statusInfo.color === 'red' ? 'bg-red-50 text-red-700 border-red-200' :
+                                statusInfo.color === 'green' ? 'bg-green-50 text-green-700 border-green-200' :
+                                statusInfo.color === 'orange' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                'bg-gray-50 text-gray-700 border-gray-200'
+                              }>
+                                {statusInfo.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-[#6b6560] max-w-[200px] truncate">
+                              {s.notes || '—'}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Decisions tab */}
+          {rightTab === 'decisions' && (
+            <Card className="border-[#e8e2d8]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-[#1a3aa3]" />
+                  Αποφάσεις
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    {selectedStructure
+                      ? selectedStructureObj?.name || ''
+                      : 'Όλες οι Δομές'}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {decisions.length === 0 ? (
+                  <div className="text-center py-12 text-[#8a8580]">
+                    <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p>Δεν υπάρχουν αποφάσεις</p>
+                    <Link to="/sanctions/decisions/new">
+                      <Button size="sm" className="mt-3 bg-[#1a3aa3] hover:bg-[#152e82] text-white">
+                        <Gavel className="w-3.5 h-3.5 mr-1" />
+                        Δημιουργία
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        {!selectedStructure && <TableHead>Δομή</TableHead>}
+                        <TableHead>Ποσό</TableHead>
+                        <TableHead>Κατάσταση</TableHead>
+                        <TableHead>Ημ/νία</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {decisions.map(d => {
+                        const statusInfo = SANCTION_DECISION_STATUSES[d.status] || { label: d.status, className: '' };
+                        return (
+                          <TableRow key={d.id}>
+                            <TableCell className="font-mono text-xs">{d.id}</TableCell>
+                            {!selectedStructure && (
+                              <TableCell className="text-sm font-medium">{d.structure_name || '—'}</TableCell>
+                            )}
+                            <TableCell className="font-semibold text-[#1a3aa3]">
+                              {formatCurrency(d.final_amount)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={statusInfo.className}>
+                                {statusInfo.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-[#8a8580]">
+                              {formatDate(d.created_at)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Link to={`/sanctions/decisions/${d.id}`}>
+                                  <Button variant="ghost" size="sm" title="Προβολή">
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </Button>
+                                </Link>
+                                {['approved', 'notified', 'paid'].includes(d.status) && (
+                                  <Button
+                                    variant="ghost" size="sm"
+                                    title="Εξαγωγή OPS"
+                                    onClick={() => handleExportDecision(d.id)}
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
