@@ -45,33 +45,30 @@ def seed_demo_data():
     }
     db.session.flush()  # Get IDs for foreign keys
 
-    # Profiles
-    profiles = [
-        UserProfile(user_id=users['admin'].id, display_name='Αντώνης Καραγιάννης',
-                     bio='Διευθυντής Κοινωνικής Μέριμνας', location='Αθήνα'),
-        UserProfile(user_id=users['mpapadopoulou'].id, display_name='Μαρία Παπαδοπούλου',
-                     bio='Κοινωνική Σύμβουλος — ΜΦΗ & ΚΔΑΠ', location='Αθήνα'),
-        UserProfile(user_id=users['gnikolaou'].id, display_name='Γιώργος Νικολάου',
-                     bio='Κοινωνικός Λειτουργός — ΣΥΔ & ΚΔΗΦ', location='Πειραιάς'),
-        UserProfile(user_id=users['kkonstantinou'].id, display_name='Κατερίνα Κωνσταντίνου',
-                     bio='Διοικητική Υπάλληλος — Αδειοδότηση', location='Αθήνα'),
-        UserProfile(user_id=users['athanasiou'].id, display_name='Αλέξανδρος Αθανασίου',
-                     bio='Μέλος Επιτροπής Ελέγχου', location='Ελευσίνα'),
+    # Profiles (get-or-create — UserProfile has UNIQUE on user_id)
+    profiles_data = [
+        (users['admin'].id, 'Αντώνης Καραγιάννης', 'Διευθυντής Κοινωνικής Μέριμνας', 'Αθήνα'),
+        (users['mpapadopoulou'].id, 'Μαρία Παπαδοπούλου', 'Κοινωνική Σύμβουλος — ΜΦΗ & ΚΔΑΠ', 'Αθήνα'),
+        (users['gnikolaou'].id, 'Γιώργος Νικολάου', 'Κοινωνικός Λειτουργός — ΣΥΔ & ΚΔΗΦ', 'Πειραιάς'),
+        (users['kkonstantinou'].id, 'Κατερίνα Κωνσταντίνου', 'Διοικητική Υπάλληλος — Αδειοδότηση', 'Αθήνα'),
+        (users['athanasiou'].id, 'Αλέξανδρος Αθανασίου', 'Μέλος Επιτροπής Ελέγχου', 'Ελευσίνα'),
     ]
-    for p in profiles:
-        db.session.add(p)
+    for uid, display_name, bio, location in profiles_data:
+        if not UserProfile.query.filter_by(user_id=uid).first():
+            db.session.add(UserProfile(user_id=uid, display_name=display_name, bio=bio, location=location))
 
-    # ─── USER ROLES ─────────────────────────────────────────
-    roles = [
-        UserRole(user_id=users['admin'].id, role='director'),
-        UserRole(user_id=users['admin'].id, role='administrative'),
-        UserRole(user_id=users['mpapadopoulou'].id, role='social_advisor'),
-        UserRole(user_id=users['gnikolaou'].id, role='social_advisor'),
-        UserRole(user_id=users['kkonstantinou'].id, role='administrative'),
-        UserRole(user_id=users['athanasiou'].id, role='committee_member'),
+    # ─── USER ROLES (get-or-create — has UniqueConstraint) ──
+    roles_data = [
+        (users['admin'].id, 'director'),
+        (users['admin'].id, 'administrative'),
+        (users['mpapadopoulou'].id, 'social_advisor'),
+        (users['gnikolaou'].id, 'social_advisor'),
+        (users['kkonstantinou'].id, 'administrative'),
+        (users['athanasiou'].id, 'committee_member'),
     ]
-    for r in roles:
-        db.session.add(r)
+    for uid, role in roles_data:
+        if not UserRole.query.filter_by(user_id=uid, role=role, structure_id=None).first():
+            db.session.add(UserRole(user_id=uid, role=role))
 
     # ─── CATEGORIES (get-or-create) ────────────────────────
     categories_data = [

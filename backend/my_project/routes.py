@@ -1342,6 +1342,7 @@ def health_check():
     }
 
     if request.args.get('detail') == 'true':
+        result['environment'] = current_app.config.get('ENV', 'unknown')
         # Database check
         try:
             db.session.execute(db.text('SELECT 1'))
