@@ -121,7 +121,7 @@ def create_app():
             CommitteeStructureAssignment, Inspection, InspectionReport,
             ChecklistTemplate)
         from .oversight.models import UserRole, SocialAdvisorReport
-        from .sanctions.models import SanctionRule
+        from .sanctions.models import SanctionRule, SanctionDecision
         from .interop.models import InteropLog
 
         # Enable pgvector extension (required for Vector columns)
@@ -138,7 +138,23 @@ def create_app():
         _migrate_columns = [
             ('users', 'peripheral_unit', 'VARCHAR(100)'),
             ('structures', 'peripheral_unit', 'VARCHAR(100)'),
+            ('structures', 'license_date', 'DATE'),
+            ('structures', 'license_expiry', 'DATE'),
             ('inspection_reports', 'checklist_data', 'TEXT'),
+            # Sanctions overhaul (Ν.5041/2023) — new columns on existing tables
+            ('sanctions', 'violation_code', 'VARCHAR(50)'),
+            ('sanctions', 'calculated_amount', 'FLOAT'),
+            ('sanctions', 'final_amount', 'FLOAT'),
+            ('sanctions', 'inspection_finding', 'TEXT'),
+            ('sanction_rules', 'min_fine', 'FLOAT'),
+            ('sanction_rules', 'max_fine', 'FLOAT'),
+            ('sanction_rules', 'category', "VARCHAR(50) DEFAULT 'general'"),
+            ('sanction_rules', 'payment_deadline_days', 'INTEGER DEFAULT 60'),
+            ('sanction_rules', 'appeal_deadline_days', 'INTEGER DEFAULT 15'),
+            ('sanction_rules', 'revenue_split_state_pct', 'INTEGER DEFAULT 50'),
+            ('sanction_rules', 'revenue_split_state_ale', "VARCHAR(20) DEFAULT '1560989001'"),
+            ('sanction_rules', 'revenue_split_region_pct', 'INTEGER DEFAULT 50'),
+            ('sanction_rules', 'revenue_split_region_kae', "VARCHAR(20) DEFAULT '64008'"),
         ]
         for table, column, col_type in _migrate_columns:
             try:
@@ -210,9 +226,9 @@ def create_app():
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     # Log startup information
-    print("ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ Backend Starting...")
-    print(f"Content directory: {app.config['UPLOAD_FOLDER']}")
-    print(f"Database: {app.config['SQLALCHEMY_DATABASE_URI']}")
-    print(f"AI Client: {'Configured' if app.client else 'Not configured'}")
+    app.logger.info("SW-PORTAL Backend Starting...")
+    app.logger.info("Content directory: %s", app.config['UPLOAD_FOLDER'])
+    app.logger.info("Database: %s", app.config['SQLALCHEMY_DATABASE_URI'])
+    app.logger.info("AI Client: %s", 'Configured' if app.client else 'Not configured')
 
     return app

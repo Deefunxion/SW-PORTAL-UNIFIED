@@ -48,6 +48,8 @@ import OversightDashboardPage from '@/features/registry/pages/OversightDashboard
 import ReportsPage from '@/features/registry/pages/ReportsPage';
 import AdvisorReportPage from '@/features/registry/pages/AdvisorReportPage';
 import SanctionsPage from '@/features/registry/pages/SanctionsPage';
+import SanctionDecisionPage from '@/features/registry/pages/SanctionDecisionPage';
+import DecisionApprovalPage from '@/features/registry/pages/DecisionApprovalPage';
 
 import './App.css';
 
@@ -461,6 +463,21 @@ function AppContent() {
           <Route path="/sanctions" element={
             <ProtectedRoute>
               <SanctionsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/sanctions/decisions/new" element={
+            <ProtectedRoute>
+              <SanctionDecisionPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/sanctions/decisions/:id" element={
+            <ProtectedRoute>
+              <SanctionDecisionPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/sanctions/decisions" element={
+            <ProtectedRoute>
+              <DecisionApprovalPage />
             </ProtectedRoute>
           } />
           <Route path="/committees" element={

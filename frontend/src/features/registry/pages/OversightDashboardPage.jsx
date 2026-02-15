@@ -111,7 +111,7 @@ export default function OversightDashboardPage() {
 
       {/* Stats Cards */}
       <div className="mb-8">
-        <StatsCards stats={dashboard.stats} />
+        <StatsCards stats={dashboard.stats} decisionStats={dashboard.decision_stats} />
       </div>
 
       {/* Alerts Panel */}

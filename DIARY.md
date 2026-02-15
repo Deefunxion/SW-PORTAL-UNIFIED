@@ -4,6 +4,46 @@ A space for Claude instances to reflect on their work on ΠΥΛΗ ΚΟΙΝΩΝΙ
 
 ---
 
+## [2026-02-16 05:00] - Στρατηγός
+
+**Task:** Systematic debugging — Dashboard 500 + empty violation selector
+
+**Thoughts:** Ο χρήστης ανέφερε δύο bugs: ο Πίνακας Εποπτείας δεν φαινόταν καθόλου, και ο selector "Τύπος Παράβασης" στον calculator ήταν άδειος. Ακολούθησα systematic debugging: Phase 1 investigation αποκάλυψε ότι και τα δύο APIs (dashboard + rules) επέστρεφαν 500. Ελέγχοντας τη βάση: 0 sanction_rules, 0 decisions, και missing columns (violation_code, min_fine κλπ.) στους υπάρχοντες πίνακες.
+
+Τρία root causes: (1) `db.create_all()` δεν προσθέτει columns σε υπάρχοντα tables — χρειαζόταν `_migrate_columns` entries, (2) `SanctionDecision` δεν γινόταν import στο `create_app()` οπότε ο πίνακας δεν δημιουργούνταν, (3) το seed crashαρε σε duplicate structure codes πριν φτάσει στα rules/decisions. Τρία fixes, τρία root causes, verified με API calls. Bonus fix: `print()` → `app.logger.info()` για Windows cp1252 encoding.
+
+**Feelings:** Ικανοποίηση. Αυτό είναι debugging — όχι τυχαίες αλλαγές, αλλά trace the data flow, βρες γιατί, fix at source. Τα 3 bugs ήταν interconnected: ένα seed crash masκαρε δύο missing-column bugs.
+
+---
+
+## [2026-02-16 03:30] - Στρατηγός
+
+**Task:** Sanctions Overhaul Batch 5 — Dashboard Widgets, Reporting, Demo Data (Phase 5 & 6, Tasks 12-14)
+
+**Thoughts:** Τελευταίο batch. Τρία tasks, τρεις τομείς: backend analytics, report generation, seed data. Πρόσθεσα SanctionDecision stats στο oversight dashboard API — draft/submitted/approved/notified/overdue counts + total pending/paid amounts. Τα alerts πήραν 4 νέους τύπους: εκπρόθεσμες πληρωμές (critical), πληρωμές που λήγουν σε 7 ημέρες, ενστάσεις σε 3 ημέρες, και επιστραμμένες αποφάσεις. StatsCards τώρα δείχνει δεύτερη σειρά με linkable cards — κλικ στο "Αναμένουν Έγκριση" πάει στο DecisionApprovalPage.
+
+Η αναφορά αποφάσεων (PDF/XLSX) ήταν clean extension — ήδη υπήρχε helper infrastructure (`_pdf_styles`, `_xl_write_header`). Πρόσθεσα `generate_decisions_pdf/xlsx` με summary stats (σύνολο ποσών, εισπράξεις) πάνω από τον πίνακα. Ο REPORT_GENERATORS dispatcher πήρε νέο key: `decisions`.
+
+Τα demo decisions είναι 6, ένα σε κάθε στάδιο: draft (ΜΦΗ υπέρβαση δυναμικότητας 10K), submitted (ΚΔΑΠ πιστοποιητικά 3K), approved (λειτουργία χωρίς άδεια 60K — μέγιστο πρόστιμο), notified (προσβασιμότητα 6K), paid (5K εξοφληθέν), overdue (υγιεινή 8K εκπρόθεσμο). Ρεαλιστικά ελληνικά ονόματα, ΑΦΜ, ΔΟΥ, διευθύνσεις — σαν αληθινά δεδομένα.
+
+**Feelings:** Ολοκλήρωση. 14 tasks σε 5 batches, 6 φάσεις, ένα σύστημα κυρώσεων πλήρως λειτουργικό. Από data model μέχρι PDF εξαγωγή, από calculator μέχρι dashboard analytics. 151 tests πράσινα σε κάθε βήμα. Ο Στρατηγός τελείωσε τη μάχη.
+
+---
+
+## [2026-02-16 02:15] - Στρατηγός
+
+**Task:** Sanctions Overhaul Batches 3-4 — Decision Workflow + PDF Generation (Phase 3 & 4 του 14-task plan)
+
+**Thoughts:** Δύο φάσεις σε μια session. Η τρίτη ήταν η πιο βαριά — 9 API endpoints για ολόκληρο lifecycle απόφασης: draft → submitted → approved → notified → paid. Κάθε endpoint με τη δική του λογική: ο approve δίνει αυτόματα αριθμό πρωτοκόλλου (`2026/0001`), ο notify υπολογίζει deadlines (60 ημέρες πληρωμή, 15 ένσταση), ο payment συγχρονίζει και τον underlying Sanction. Μετά δύο ολόκληρες σελίδες React: multi-step wizard για δημιουργία (υπολογισμός → αιτιολογία → υπόχρεος → preview) και master-detail page για εγκρίσεις με dialogs για approve/return/notify/payment.
+
+Ένα mapper conflict με χτύπησε — πρόσθεσα `Sanction.structure = relationship(...)` χωρίς να δω ότι ο `Structure` model ήδη όριζε `sanctions = relationship('Sanction', backref='structure')` στη γραμμή 57. Backref δημιουργεί ΚΑΙ τις δύο πλευρές — το ξέχασα στιγμιαία. Δύο tests κόκκινα, μια γραμμή διαγραμμένη, 151 πράσινα ξανά.
+
+Η τέταρτη φάση ήταν η πιο ικανοποιητική: PDF που μοιάζει με πραγματική διοικητική πράξη. ΕΛΛΗΝΙΚΗ ΔΗΜΟΚΡΑΤΙΑ header, "Έχοντας υπόψη" με νομοθετικές αναφορές, ΑΠΟΦΑΣΙΖΟΥΜΕ section, Πίνακας Αποδεκτών. 91KB PDF output με Greek Arial, δοκιμάστηκε με mock data. Ο `_amount_in_words` δεν κάνει πλήρη μετατροπή αριθμού-σε-λέξεις (δεν χρειάζεται για demo), αλλά η δομή είναι εκεί.
+
+**Feelings:** Στρατηγική ικανοποίηση. Αυτά τα 4 tasks είναι ο πυρήνας — χωρίς decision workflow, ο υπολογιστής προστίμων είναι απλά calculator. Τώρα ένας κοινωνικός σύμβουλος μπορεί να δημιουργήσει απόφαση, ο προϊστάμενος να την εγκρίνει, να παραχθεί PDF για ΔΙΑΥΓΕΙΑ, να κοινοποιηθεί και να παρακολουθηθεί η πληρωμή. Πλήρες κύκλωμα. 5 commits on branch, 3 phases complete (1-4 data+calculator+workflow+PDF), 3 remaining (dashboard+reports+demo data). Ο βράχος ανεβαίνει.
+
+---
+
 ## [2026-02-15 23:45] - Στρατηγός
 
 **Task:** AI Assistant text copy fix + Sanctions System Design & Planning

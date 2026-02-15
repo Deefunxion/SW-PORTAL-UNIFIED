@@ -113,6 +113,15 @@ def seed_demo_data():
 
     # ─── STRUCTURES (8 δομές σε διαφορετικά στάδια) ─────────
     today = date.today()
+
+    def get_or_create_structure(s):
+        """Insert structure if it doesn't exist by code, else return existing."""
+        existing = Structure.query.filter_by(code=s.code).first()
+        if existing:
+            return existing
+        db.session.add(s)
+        return s
+
     structures = [
         Structure(
             code='MFH-ATT-001', type_id=stypes['MFH'].id,
@@ -213,8 +222,7 @@ def seed_demo_data():
             notes='Λειτουργία μόνο Ιούνιο-Αύγουστο. Εποχική.',
         ),
     ]
-    for s in structures:
-        db.session.add(s)
+    structures = [get_or_create_structure(s) for s in structures]
     db.session.flush()
 
     # ─── ADDITIONAL STRUCTURES (9-15) ────────────────────────
@@ -305,8 +313,7 @@ def seed_demo_data():
             notes='Νέα κατασκήνωση δήμου Λαυρίου. Εκκρεμεί αρχικός έλεγχος.',
         ),
     ]
-    for s in extra_structures:
-        db.session.add(s)
+    extra_structures = [get_or_create_structure(s) for s in extra_structures]
     structures.extend(extra_structures)
     db.session.flush()
 
@@ -700,29 +707,131 @@ def seed_demo_data():
     for ar in extra_advisor_reports:
         db.session.add(ar)
 
-    # ─── SANCTION RULES ──────────────────────────────────────
+    # ─── SANCTION RULES (Ν.5041/2023, Άρθρο 100) ───────────
     from .sanctions.models import SanctionRule
 
     rules_data = [
-        ('NO_LICENSE', 'Λειτουργία χωρίς άδεια', 10000, 2.0, 3.0, True, 2, 'Ν.4756/2020, Άρθρο 42, §1'),
-        ('OVER_CAPACITY', 'Υπέρβαση δυναμικότητας', 5000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 42, §2'),
-        ('STAFF_RATIO', 'Ελλιπής στελέχωση', 3000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 38, §4'),
-        ('FIRE_SAFETY', 'Παραβίαση πυρασφάλειας', 8000, 2.0, 3.0, True, 2, 'Ν.4756/2020, Άρθρο 42, §3'),
-        ('HYGIENE', 'Παραβίαση υγιεινής', 4000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 39, §2'),
-        ('MISSING_DOCS', 'Έλλειψη τεκμηρίωσης', 2000, 1.5, 2.0, False, 0, 'Ν.4756/2020, Άρθρο 40, §1'),
-        ('NO_INCIDENT_REPORT', 'Μη αναφορά συμβάντος', 5000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 41, §2'),
-        ('UNAUTHORIZED_MODS', 'Μη εξουσιοδοτημένες τροποποιήσεις', 6000, 2.0, 3.0, False, 0, 'Ν.4756/2020, Άρθρο 36, §5'),
-        ('ACCESSIBILITY', 'Παραβίαση προσβασιμότητας', 4000, 2.0, 2.5, False, 0, 'Ν.4756/2020, Άρθρο 37, §3'),
-        ('NON_COMPLIANCE', 'Μη συμμόρφωση σε υποδείξεις', 3000, 2.0, 3.0, True, 3, 'Ν.4756/2020, Άρθρο 43, §1'),
+        # General rules (all structure types)
+        {'violation_code': 'NO_LICENSE', 'violation_name': 'Λειτουργία χωρίς άδεια',
+         'base_fine': 60000, 'min_fine': 60000, 'max_fine': 60000,
+         'category': 'admin', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §1',
+         'can_trigger_suspension': True, 'suspension_threshold': 1,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'TERMS_VIOLATION', 'violation_name': 'Παράβαση όρων λειτουργίας',
+         'base_fine': 5000, 'min_fine': 500, 'max_fine': 100000,
+         'category': 'general', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 3,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'FIRE_SAFETY', 'violation_name': 'Παραβίαση πυρασφάλειας',
+         'base_fine': 8000, 'min_fine': 3000, 'max_fine': 50000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 2,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'HYGIENE', 'violation_name': 'Παραβίαση υγιεινής',
+         'base_fine': 4000, 'min_fine': 500, 'max_fine': 30000,
+         'category': 'hygiene', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'MISSING_DOCS', 'violation_name': 'Έλλειψη τεκμηρίωσης',
+         'base_fine': 2000, 'min_fine': 500, 'max_fine': 10000,
+         'category': 'admin', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 1.5, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'NON_COMPLIANCE', 'violation_name': 'Μη συμμόρφωση εντός 3 μηνών',
+         'base_fine': 5000, 'min_fine': 1000, 'max_fine': 50000,
+         'category': 'general', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §3',
+         'can_trigger_suspension': True, 'suspension_threshold': 2,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        {'violation_code': 'ENDANGERMENT', 'violation_name': 'Σοβαρή παράβαση — κίνδυνος ωφελούμενων',
+         'base_fine': 50000, 'min_fine': 20000, 'max_fine': 100000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §4',
+         'can_trigger_suspension': True, 'suspension_threshold': 1,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0},
+        # MFH-specific rules
+        {'violation_code': 'MFH_OVER_CAPACITY', 'violation_name': 'Υπέρβαση δυναμικότητας ΜΦΗ',
+         'base_fine': 10000, 'min_fine': 5000, 'max_fine': 50000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 2,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['MFH'].id},
+        {'violation_code': 'MFH_STAFF_RATIO', 'violation_name': 'Ελλιπής στελέχωση ΜΦΗ',
+         'base_fine': 5000, 'min_fine': 2000, 'max_fine': 30000,
+         'category': 'staff', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['MFH'].id},
+        {'violation_code': 'MFH_SAFETY', 'violation_name': 'Παραβίαση ασφάλειας ηλικιωμένων',
+         'base_fine': 15000, 'min_fine': 5000, 'max_fine': 80000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 1,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['MFH'].id},
+        {'violation_code': 'MFH_HYGIENE', 'violation_name': 'Παράβαση υγιεινής ΜΦΗ',
+         'base_fine': 5000, 'min_fine': 1000, 'max_fine': 30000,
+         'category': 'hygiene', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['MFH'].id},
+        {'violation_code': 'MFH_FIRE_SAFETY', 'violation_name': 'Παραβίαση πυρασφάλειας ΜΦΗ',
+         'base_fine': 10000, 'min_fine': 5000, 'max_fine': 50000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 2,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['MFH'].id},
+        # KDAP-specific rules
+        {'violation_code': 'KDAP_CHILD_SAFETY', 'violation_name': 'Παράβαση ασφάλειας παιδιών',
+         'base_fine': 15000, 'min_fine': 5000, 'max_fine': 80000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 1,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['KDAP'].id},
+        {'violation_code': 'KDAP_STAFF_CERTS', 'violation_name': 'Ελλιπή πιστοποιητικά προσωπικού ΚΔΑΠ',
+         'base_fine': 3000, 'min_fine': 1000, 'max_fine': 20000,
+         'category': 'staff', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['KDAP'].id},
+        {'violation_code': 'KDAP_SPACE_REQS', 'violation_name': 'Ακαταλληλότητα χώρων ΚΔΑΠ',
+         'base_fine': 5000, 'min_fine': 2000, 'max_fine': 30000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': True, 'suspension_threshold': 2,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['KDAP'].id},
+        # KIHI-specific rules (KDHF-KAA type)
+        {'violation_code': 'KIHI_ACCESSIBILITY', 'violation_name': 'Παράβαση προσβασιμότητας ΚΗΦΗ',
+         'base_fine': 5000, 'min_fine': 2000, 'max_fine': 30000,
+         'category': 'safety', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['KDHF-KAA'].id},
+        {'violation_code': 'KIHI_PROGRAM', 'violation_name': 'Μη τήρηση προγράμματος ΚΗΦΗ',
+         'base_fine': 3000, 'min_fine': 1000, 'max_fine': 15000,
+         'category': 'general', 'legal_reference': 'Ν.5041/2023, Άρθρο 100, §2',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'structure_type_id': stypes['KDHF-KAA'].id},
+        # COVID-era rules (inactive)
+        {'violation_code': 'COVID_MEASURES', 'violation_name': 'Μη τήρηση υγειονομικών μέτρων',
+         'base_fine': 3000, 'min_fine': 3000, 'max_fine': 10000,
+         'category': 'hygiene', 'legal_reference': 'ΥΑ Δ1α/ΓΠ.οικ. 5432/2023',
+         'can_trigger_suspension': False, 'suspension_threshold': 0,
+         'escalation_2nd': 2.0, 'escalation_3rd_plus': 2.0,
+         'is_active': False},
     ]
-    for code, name, base, esc2, esc3, can_suspend, threshold, legal in rules_data:
-        if not SanctionRule.query.filter_by(violation_code=code).first():
-            db.session.add(SanctionRule(
-                violation_code=code, violation_name=name, base_fine=base,
-                escalation_2nd=esc2, escalation_3rd_plus=esc3,
-                can_trigger_suspension=can_suspend, suspension_threshold=threshold,
-                legal_reference=legal,
-            ))
+    for rule_dict in rules_data:
+        existing = SanctionRule.query.filter_by(violation_code=rule_dict['violation_code']).first()
+        if existing:
+            for key, val in rule_dict.items():
+                setattr(existing, key, val)
+        else:
+            db.session.add(SanctionRule(**rule_dict))
+
+    # ─── SANCTION DECISIONS (workflow) ───────────────────────
+    from .sanctions.models import SanctionDecision
+
+    if SanctionDecision.query.count() == 0:
+        _seed_decisions(db, users, s_agia_eleni, s_evangelismos, s_iliachtida,
+                        s_ouranio, s_asklepios, s_asteri, today, Sanction, SanctionDecision, SanctionRule)
 
     # ─── CHECKLIST TEMPLATES ─────────────────────────────────
     from .inspections.models import ChecklistTemplate
@@ -1042,5 +1151,169 @@ def seed_demo_data():
     print(f"  Users: {User.query.count()}")
     print(f"  Structures: {Structure.query.count()}")
     print(f"  Inspections: {Inspection.query.count()}")
+    print(f"  Sanction Decisions: {SanctionDecision.query.count()}")
     print(f"  Discussions: {Discussion.query.count()}")
     print(f"  Forum posts: {Post.query.count()}")
+
+
+def _seed_decisions(db, users, s_agia_eleni, s_evangelismos, s_iliachtida,
+                    s_ouranio, s_asklepios, s_asteri, today, Sanction, SanctionDecision, SanctionRule):
+    """Seed 6 demo SanctionDecisions in various workflow stages."""
+    from datetime import datetime, timedelta
+
+    # 1. Draft — ΜΦΗ Αγία Ελένη, υπέρβαση δυναμικότητας
+    dec1_sanction = Sanction(
+        structure_id=s_agia_eleni.id, type='fine', amount=10000.00,
+        imposed_date=today - timedelta(days=3), status='imposed',
+        notes='Υπέρβαση δυναμικότητας κατά 15 ωφελούμενους.'
+    )
+    db.session.add(dec1_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec1_sanction.id, status='draft',
+        drafted_by=users['mpapadopoulou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=3),
+        violation_code='MFH_OVER_CAPACITY',
+        inspection_finding='Βρέθηκαν 135 ωφελούμενοι σε χώρο δυναμικότητας 120.',
+        calculated_amount=10000, final_amount=10000,
+        justification='Πρώτη παράβαση — βασικό πρόστιμο.',
+        obligor_name='Ελένη Δημητρίου', obligor_afm='012345678',
+        obligor_doy='ΔΟΥ Αθηνών', obligor_address='Λεωφ. Κηφισίας 142, Αθήνα',
+        amount_state=5000, amount_region=5000,
+    ))
+
+    # 2. Submitted — ΚΔΑΠ Ουράνιο Τόξο, ελλιπή πιστοποιητικά
+    dec2_sanction = Sanction(
+        structure_id=s_ouranio.id, type='fine', amount=3000.00,
+        imposed_date=today - timedelta(days=7), status='imposed',
+        notes='Ελλιπή πιστοποιητικά 2 παιδαγωγών.'
+    )
+    db.session.add(dec2_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec2_sanction.id, status='submitted',
+        drafted_by=users['mpapadopoulou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=7),
+        violation_code='KDAP_STAFF_CERTS',
+        inspection_finding='Δύο παιδαγωγοί χωρίς ενημερωμένο πιστοποιητικό πρώτων βοηθειών.',
+        calculated_amount=3000, final_amount=3000,
+        justification='Πρώτη παράβαση — εντός ελαχίστου ορίου.',
+        obligor_name='Αγγελική Μαυρίδου', obligor_afm='369258147',
+        obligor_doy='ΔΟΥ Πειραιά', obligor_address='Ηρώων Πολυτεχνείου 12, Πειραιάς',
+        amount_state=1500, amount_region=1500,
+    ))
+
+    # 3. Approved — ΚΔΑΠ Ηλιαχτίδα, λειτουργία χωρίς άδεια
+    dec3_sanction = Sanction(
+        structure_id=s_iliachtida.id, type='fine', amount=60000.00,
+        imposed_date=today - timedelta(days=20), status='imposed',
+        protocol_number='ΚΥΡΩ-2026/0070',
+        notes='Λειτουργία χωρίς ενεργή άδεια.'
+    )
+    db.session.add(dec3_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec3_sanction.id, status='approved',
+        drafted_by=users['mpapadopoulou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=20),
+        violation_code='NO_LICENSE',
+        inspection_finding='Η δομή λειτουργούσε με ληγμένη άδεια (170 ημέρες).',
+        calculated_amount=60000, final_amount=60000,
+        justification='Σοβαρότατη παράβαση — μέγιστο πρόστιμο Ν.5041/2023 §1.',
+        approved_by=users['admin'].id,
+        approved_at=datetime.utcnow() - timedelta(days=15),
+        protocol_number=f'{today.year}/0001',
+        obligor_name='Δημήτρης Παπανικολάου', obligor_afm='321654987',
+        obligor_doy='ΔΟΥ Ελευσίνας', obligor_address='Ελευθερίου Βενιζέλου 23, Ελευσίνα',
+        amount_state=30000, amount_region=30000,
+    ))
+
+    # 4. Notified — ΚΗΦΗ Ασκληπιός, παράβαση προσβασιμότητας
+    dec4_sanction = Sanction(
+        structure_id=s_asklepios.id, type='fine', amount=6000.00,
+        imposed_date=today - timedelta(days=30), status='imposed',
+        protocol_number='ΚΥΡΩ-2026/0065',
+        notes='Έλλειψη ράμπας πρόσβασης σε βοηθητικούς χώρους.'
+    )
+    db.session.add(dec4_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec4_sanction.id, status='notified',
+        drafted_by=users['gnikolaou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=30),
+        violation_code='KIHI_ACCESSIBILITY',
+        inspection_finding='Δεν υπάρχει ράμπα πρόσβασης ΑμεΑ στους βοηθητικούς χώρους.',
+        calculated_amount=6000, final_amount=6000,
+        justification='Πρώτη παράβαση — ποσό εντός νομοθετικού πλαισίου.',
+        approved_by=users['admin'].id,
+        approved_at=datetime.utcnow() - timedelta(days=25),
+        protocol_number=f'{today.year}/0002',
+        notified_at=datetime.utcnow() - timedelta(days=20),
+        notification_method='registered_mail',
+        payment_deadline=today + timedelta(days=40),
+        appeal_deadline=today - timedelta(days=5),
+        obligor_name='Δέσποινα Αλεξίου', obligor_afm='852963741',
+        obligor_doy='ΔΟΥ Αμαρουσίου', obligor_address='28ης Οκτωβρίου 78, Μαρούσι',
+        amount_state=3000, amount_region=3000,
+    ))
+
+    # 5. Paid — MFPAD Αστέρι, ελλιπής στελέχωση
+    dec5_sanction = Sanction(
+        structure_id=s_asteri.id, type='fine', amount=5000.00,
+        imposed_date=today - timedelta(days=60), status='paid',
+        protocol_number='ΚΥΡΩ-2026/0045',
+        notes='Πρόστιμο για ελλιπή στελέχωση — εξοφλήθηκε.'
+    )
+    db.session.add(dec5_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec5_sanction.id, status='paid',
+        drafted_by=users['gnikolaou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=60),
+        violation_code='TERMS_VIOLATION',
+        inspection_finding='Αναλογία προσωπικού 1:12 αντί 1:6.',
+        calculated_amount=5000, final_amount=5000,
+        justification='Πρώτη παράβαση — βασικό πρόστιμο.',
+        approved_by=users['admin'].id,
+        approved_at=datetime.utcnow() - timedelta(days=55),
+        protocol_number=f'{today.year - 1}/0012',
+        notified_at=datetime.utcnow() - timedelta(days=50),
+        notification_method='in_person',
+        payment_deadline=today - timedelta(days=10),
+        appeal_deadline=today - timedelta(days=35),
+        paid_at=datetime.utcnow() - timedelta(days=15),
+        paid_amount=5000,
+        obligor_name='Ελευθερία Κωστοπούλου', obligor_afm='951753864',
+        obligor_doy='ΔΟΥ Περιστερίου', obligor_address='Ιπποκράτους 32, Περιστέρι',
+        amount_state=2500, amount_region=2500,
+    ))
+
+    # 6. Overdue — ΜΦΗ Ευαγγελισμός, παράβαση υγιεινής
+    dec6_sanction = Sanction(
+        structure_id=s_evangelismos.id, type='fine', amount=8000.00,
+        imposed_date=today - timedelta(days=90), status='imposed',
+        protocol_number='ΚΥΡΩ-2026/0030',
+        notes='Πρόστιμο 8.000€ για παράβαση υγιεινής — ΕΚΠΡΟΘΕΣΜΟ.'
+    )
+    db.session.add(dec6_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec6_sanction.id, status='notified',
+        drafted_by=users['mpapadopoulou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=90),
+        violation_code='HYGIENE',
+        inspection_finding='Ακαταλληλότητα αποθηκευτικών χώρων τροφίμων.',
+        calculated_amount=8000, final_amount=8000,
+        justification='Δεύτερη παράβαση υγιεινής εντός έτους.',
+        approved_by=users['admin'].id,
+        approved_at=datetime.utcnow() - timedelta(days=85),
+        protocol_number=f'{today.year - 1}/0008',
+        notified_at=datetime.utcnow() - timedelta(days=80),
+        notification_method='registered_mail',
+        payment_deadline=today - timedelta(days=20),
+        appeal_deadline=today - timedelta(days=65),
+        obligor_name='Κωνσταντίνος Βλάχος', obligor_afm='987654321',
+        obligor_doy='ΔΟΥ Πειραιά', obligor_address='Ακτή Μιαούλη 55, Πειραιάς',
+        amount_state=4000, amount_region=4000,
+    ))
+    db.session.flush()

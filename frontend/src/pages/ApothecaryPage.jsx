@@ -327,13 +327,18 @@ function ApothecaryPage() {
                               title={subfolder.category || subfolder.name || `Φάκελος ${idx + 1}`}>
                             {subfolder.category || subfolder.name || `Φάκελος ${idx + 1}`}
                           </h5>
-                          {(subfolder.files || []).length > 0 && (
-                            <div className="flex items-center">
-                              <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-sm font-bold shadow-sm">
-                                {(subfolder.files || []).length} αρχεία
-                              </span>
-                            </div>
-                          )}
+                          {(() => {
+                            const directFiles = (subfolder.files || []).length;
+                            const nestedFiles = (subfolder.subfolders || []).reduce((sum, ssf) => sum + (ssf.files || []).length, 0);
+                            const totalFiles = directFiles + nestedFiles;
+                            return totalFiles > 0 ? (
+                              <div className="flex items-center">
+                                <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-sm font-bold shadow-sm">
+                                  {totalFiles} αρχεία
+                                </span>
+                              </div>
+                            ) : null;
+                          })()}
                         </div>
                       </div>
                       <div className="flex items-center space-x-1 flex-shrink-0">
@@ -356,7 +361,7 @@ function ApothecaryPage() {
                       </div>
                     </div>
                     
-                    {/* Subfolder Files (3rd level) */}
+                    {/* Subfolder Files (3rd level) — direct files */}
                     {isExpanded && (subfolder.files || []).length > 0 && (
                       <div className="p-6 bg-white border-t-2 border-[#d0d8ee]">
                         <div className="space-y-3">
@@ -391,9 +396,58 @@ function ApothecaryPage() {
                         </div>
                       </div>
                     )}
-                    
-                    {/* Empty subfolder message */}
-                    {isExpanded && (!subfolder.files || subfolder.files.length === 0) && (
+
+                    {/* Sub-subfolders (3rd level) — files nested one level deeper */}
+                    {isExpanded && (subfolder.subfolders || []).length > 0 && (
+                      <div className="p-6 bg-white border-t-2 border-[#d0d8ee]">
+                        {(subfolder.subfolders || []).map((ssf, ssfIdx) => (
+                          <div key={ssfIdx} className="mb-4 last:mb-0">
+                            {(ssf.name || ssf.category) && (
+                              <div className="flex items-center gap-2 mb-3 px-2">
+                                <Folder className="w-4 h-4 text-[#1a3aa3]" />
+                                <span className="text-sm font-bold text-[#1a3aa3] break-words">{ssf.name || ssf.category}</span>
+                              </div>
+                            )}
+                            <div className="space-y-3">
+                              {(ssf.files || []).map((file, fileIdx) => (
+                                <div
+                                  key={fileIdx}
+                                  className="flex items-center justify-between p-5 bg-[#eef5ee] rounded-2xl hover:bg-[#dde8dd] transition-all duration-300 border-2 border-[#c8dec8] hover:border-[#a8cca8] hover:shadow-lg hover:pl-8"
+                                >
+                                  <div className="flex items-center min-w-0 flex-1 mr-3">
+                                    <div className="w-9 h-9 bg-[#1a3aa3] rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                      <FileIcon className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <h6 className="text-sm font-bold text-[#2a2520] mb-0.5 line-clamp-2 break-words" title={file.name}>
+                                        {file.name}
+                                      </h6>
+                                      {file.size && (
+                                        <p className="text-xs font-medium text-[#6b6560]">
+                                          {(file.size / 1024).toFixed(1)} KB
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    onClick={() => handleFileDownload(file, ssf.path)}
+                                    className="bg-gradient-to-r from-[#2d6b2d] to-[#245a24] hover:from-[#245a24] hover:to-[#1a481a] text-white font-semibold px-3 py-1.5 rounded-full text-xs shadow-md hover:shadow-lg transition-all duration-300 shrink-0"
+                                  >
+                                    Λήψη
+                                  </Button>
+                                </div>
+                              ))}
+                              {(!ssf.files || ssf.files.length === 0) && (
+                                <p className="text-sm text-[#8a8580] text-center py-3">Κενός υποφάκελος</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Empty subfolder message — only when truly empty (no files AND no subfolders) */}
+                    {isExpanded && (!subfolder.files || subfolder.files.length === 0) && (!subfolder.subfolders || subfolder.subfolders.length === 0) && (
                       <div className="p-6 bg-[#faf8f4] border-t-2 border-[#d0d8ee] text-center">
                         <p className="text-lg text-[#6b6560]">Ο φάκελος είναι άδειος</p>
                       </div>

@@ -113,6 +113,10 @@ class Sanction(db.Model):
     status = db.Column(db.String(50), default='imposed')
     protocol_number = db.Column(db.String(100))
     notes = db.Column(db.Text, nullable=True)
+    violation_code = db.Column(db.String(50), nullable=True)
+    calculated_amount = db.Column(db.Float, nullable=True)
+    final_amount = db.Column(db.Float, nullable=True)
+    inspection_finding = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -123,5 +127,9 @@ class Sanction(db.Model):
             'imposed_date': self.imposed_date.isoformat() if self.imposed_date else None,
             'status': self.status, 'protocol_number': self.protocol_number,
             'notes': self.notes,
+            'violation_code': self.violation_code,
+            'calculated_amount': self.calculated_amount,
+            'final_amount': self.final_amount,
+            'inspection_finding': self.inspection_finding,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }

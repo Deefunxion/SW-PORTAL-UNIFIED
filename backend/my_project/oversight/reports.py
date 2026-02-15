@@ -22,6 +22,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from ..extensions import db
 from ..registry.models import Structure, StructureType, License, Sanction
 from ..inspections.models import Inspection, InspectionReport
+from ..sanctions.models import SanctionDecision
 from .models import SocialAdvisorReport
 
 
@@ -294,6 +295,113 @@ def generate_sanctions_xlsx(date_from=None, date_to=None):
 
 
 # ---------------------------------------------------------------------------
+# Report: Sanction Decisions (workflow)
+# ---------------------------------------------------------------------------
+
+DECISION_STATUS_LABELS = {
+    'draft': 'Πρόχειρη',
+    'submitted': 'Υποβληθείσα',
+    'approved': 'Εγκεκριμένη',
+    'returned': 'Επιστράφηκε',
+    'notified': 'Κοινοποιήθηκε',
+    'paid': 'Πληρώθηκε',
+    'appealed': 'Ένσταση',
+    'overdue': 'Εκπρόθεσμη',
+    'cancelled': 'Ακυρώθηκε',
+}
+
+
+def _decisions_data(date_from=None, date_to=None):
+    query = SanctionDecision.query.order_by(SanctionDecision.created_at.desc())
+    if date_from:
+        query = query.filter(SanctionDecision.created_at >= date.fromisoformat(date_from))
+    if date_to:
+        query = query.filter(SanctionDecision.created_at <= date.fromisoformat(date_to))
+    decisions = query.all()
+
+    headers = ['Α/Α', 'Πρωτόκολλο', 'Δομή', 'Παράβαση', 'Ποσό (€)', 'Κατάσταση', 'Λήξη Πληρωμής']
+    rows = []
+    for d in decisions:
+        sanction = d.sanction
+        structure = Structure.query.get(sanction.structure_id) if sanction else None
+        rows.append([
+            d.id,
+            d.protocol_number or '—',
+            structure.name if structure else '—',
+            d.violation_code or '—',
+            f'{d.final_amount:,.2f}' if d.final_amount else '—',
+            DECISION_STATUS_LABELS.get(d.status, d.status),
+            _fmt_date(d.payment_deadline),
+        ])
+    return headers, rows, decisions
+
+
+def generate_decisions_pdf(date_from=None, date_to=None):
+    from sqlalchemy import func
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=15*mm, rightMargin=15*mm,
+                            topMargin=20*mm, bottomMargin=20*mm)
+    styles = _pdf_styles()
+    elements = []
+
+    elements.append(Paragraph('Αναφορά Αποφάσεων Κυρώσεων', styles['ReportTitle']))
+    subtitle = f'Ημερομηνία: {_fmt_date(date.today())}'
+    if date_from or date_to:
+        subtitle += f'  |  Περίοδος: {date_from or "—"} — {date_to or "—"}'
+    elements.append(Paragraph(subtitle, styles['ReportSubtitle']))
+
+    headers, rows, decisions = _decisions_data(date_from, date_to)
+
+    # Summary stats
+    total_amount = sum(d.final_amount or 0 for d in decisions)
+    paid_amount = sum(d.paid_amount or 0 for d in decisions if d.status == 'paid')
+    summary_text = (
+        f'Σύνολο αποφάσεων: {len(decisions)} | '
+        f'Συνολικό ποσό: {total_amount:,.2f}€ | '
+        f'Εισπράξεις: {paid_amount:,.2f}€'
+    )
+    elements.append(Paragraph(summary_text, styles['Normal']))
+    elements.append(Spacer(1, 10))
+
+    data = [headers] + rows
+    col_widths = [30, 65, 110, 70, 55, 65, 60]
+    t = Table(data, colWidths=col_widths, repeatRows=1)
+    t.setStyle(_pdf_table_style())
+    elements.append(t)
+
+    doc.build(elements)
+    return buf.getvalue()
+
+
+def generate_decisions_xlsx(date_from=None, date_to=None):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Αποφάσεις Κυρώσεων'
+
+    headers, rows, decisions = _decisions_data(date_from, date_to)
+    _xl_write_header(ws, headers)
+    for i, row in enumerate(rows, 2):
+        for j, val in enumerate(row, 1):
+            cell = ws.cell(row=i, column=j, value=val)
+            cell.border = XL_THIN_BORDER
+    _xl_auto_width(ws)
+
+    # Summary row
+    summary_row = len(rows) + 3
+    ws.cell(row=summary_row, column=1, value='Σύνολο:').font = Font(bold=True)
+    total_amount = sum(d.final_amount or 0 for d in decisions)
+    paid_amount = sum(d.paid_amount or 0 for d in decisions if d.status == 'paid')
+    ws.cell(row=summary_row, column=5, value=f'{total_amount:,.2f}').font = Font(bold=True)
+    ws.cell(row=summary_row + 1, column=1, value='Εισπράξεις:').font = Font(bold=True)
+    ws.cell(row=summary_row + 1, column=5, value=f'{paid_amount:,.2f}').font = Font(bold=True)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+# ---------------------------------------------------------------------------
 # Dispatcher
 # ---------------------------------------------------------------------------
 
@@ -309,5 +417,9 @@ REPORT_GENERATORS = {
     'sanctions': {
         'pdf': generate_sanctions_pdf,
         'xlsx': generate_sanctions_xlsx,
+    },
+    'decisions': {
+        'pdf': generate_decisions_pdf,
+        'xlsx': generate_decisions_xlsx,
     },
 }
