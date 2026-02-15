@@ -1,28 +1,28 @@
 /**
  * FontAwesome inline SVG icon component.
- * Loads SVGs from assets/fontawesome/svgs/solid/ via Vite ?raw imports.
- * @fa-solid alias defined in vite.config.js → ../assets/fontawesome/svgs/solid
+ * Icons copied into src/assets/fa-solid/ so they're inside the frontend tree
+ * and available in both local dev and Docker builds.
  */
 
 // ── Stats card icons ──
-import landmarkDome from '@fa-solid/landmark-dome.svg?raw';
-import buildingCircleCheck from '@fa-solid/building-circle-check.svg?raw';
-import magnifyingGlass from '@fa-solid/magnifying-glass.svg?raw';
-import listCheck from '@fa-solid/list-check.svg?raw';
-import fileCircleExclamation from '@fa-solid/file-circle-exclamation.svg?raw';
-import gavel from '@fa-solid/gavel.svg?raw';
-import stamp from '@fa-solid/stamp.svg?raw';
-import calendarXmark from '@fa-solid/calendar-xmark.svg?raw';
-import sackDollar from '@fa-solid/sack-dollar.svg?raw';
-import vault from '@fa-solid/vault.svg?raw';
+import landmarkDome from '@/assets/fa-solid/landmark-dome.svg?raw';
+import buildingCircleCheck from '@/assets/fa-solid/building-circle-check.svg?raw';
+import magnifyingGlass from '@/assets/fa-solid/magnifying-glass.svg?raw';
+import listCheck from '@/assets/fa-solid/list-check.svg?raw';
+import fileCircleExclamation from '@/assets/fa-solid/file-circle-exclamation.svg?raw';
+import gavel from '@/assets/fa-solid/gavel.svg?raw';
+import stamp from '@/assets/fa-solid/stamp.svg?raw';
+import calendarXmark from '@/assets/fa-solid/calendar-xmark.svg?raw';
+import sackDollar from '@/assets/fa-solid/sack-dollar.svg?raw';
+import vault from '@/assets/fa-solid/vault.svg?raw';
 
 // ── Dashboard header/section icons ──
-import building from '@fa-solid/building.svg?raw';
-import scaleBalanced from '@fa-solid/scale-balanced.svg?raw';
-import userGroup from '@fa-solid/user-group.svg?raw';
-import shieldHalved from '@fa-solid/shield-halved.svg?raw';
-import fileLines from '@fa-solid/file-lines.svg?raw';
-import triangleExclamation from '@fa-solid/triangle-exclamation.svg?raw';
+import building from '@/assets/fa-solid/building.svg?raw';
+import scaleBalanced from '@/assets/fa-solid/scale-balanced.svg?raw';
+import userGroup from '@/assets/fa-solid/user-group.svg?raw';
+import shieldHalved from '@/assets/fa-solid/shield-halved.svg?raw';
+import fileLines from '@/assets/fa-solid/file-lines.svg?raw';
+import triangleExclamation from '@/assets/fa-solid/triangle-exclamation.svg?raw';
 
 const ICONS = {
   // Stats cards (top row)

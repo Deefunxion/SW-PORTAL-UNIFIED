@@ -51,6 +51,7 @@ Thumbs.db
 
 # Local assets (Font Awesome SVGs, etc.)
 assets/
+!frontend/src/assets/
 
 # Backups
 backups/
