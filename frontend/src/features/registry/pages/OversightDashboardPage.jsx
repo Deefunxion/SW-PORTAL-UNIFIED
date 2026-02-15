@@ -6,11 +6,9 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import {
-  AlertTriangle, AlertCircle, Info, ExternalLink, FileText, Shield,
-  Scale, Building2, Users
-} from 'lucide-react';
+import { AlertCircle, Info, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import FaIcon from '@/components/FaIcon';
 import { oversightApi } from '../lib/registryApi';
 import {
   INSPECTION_TYPES, INSPECTION_STATUS, INSPECTION_CONCLUSIONS,
@@ -20,9 +18,9 @@ import StatsCards from '../components/StatsCards';
 import OversightCharts from '../components/OversightCharts';
 
 const SEVERITY_STYLES = {
-  critical: { icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
-  warning: { icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
-  info: { icon: Info, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
+  critical: { icon: 'triangle-exclamation', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
+  warning: { icon: 'triangle-exclamation', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
+  info: { icon: null, lucideIcon: Info, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
 };
 
 function formatDate(dateStr) {
@@ -90,19 +88,19 @@ export default function OversightDashboardPage() {
         <div className="flex gap-2 mt-3">
           <Link to="/registry">
             <Button variant="outline" size="sm" className="border-[#e8e2d8] min-h-[36px]">
-              <Building2 className="w-4 h-4 mr-1.5" />
+              <FaIcon name="building" className="w-4 h-4 mr-1.5" />
               Μητρώο
             </Button>
           </Link>
           <Link to="/sanctions">
             <Button variant="outline" size="sm" className="border-[#e8e2d8] min-h-[36px]">
-              <Scale className="w-4 h-4 mr-1.5" />
+              <FaIcon name="scale-balanced" className="w-4 h-4 mr-1.5" />
               Κυρώσεις
             </Button>
           </Link>
           <Link to="/committees">
             <Button variant="outline" size="sm" className="border-[#e8e2d8] min-h-[36px]">
-              <Users className="w-4 h-4 mr-1.5" />
+              <FaIcon name="user-group" className="w-4 h-4 mr-1.5" />
               Επιτροπές
             </Button>
           </Link>
@@ -119,7 +117,7 @@ export default function OversightDashboardPage() {
         <Card className="border-[#e8e2d8] mb-8">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              <FaIcon name="triangle-exclamation" className="w-5 h-5 text-orange-500" />
               Ειδοποιήσεις ({alerts.length})
             </CardTitle>
           </CardHeader>
@@ -127,13 +125,16 @@ export default function OversightDashboardPage() {
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {alerts.map((alert, i) => {
                 const style = SEVERITY_STYLES[alert.severity] || SEVERITY_STYLES.info;
-                const Icon = style.icon;
                 return (
                   <div
                     key={i}
                     className={`flex items-start gap-3 p-3 rounded-lg border ${style.bg} ${style.border}`}
                   >
-                    <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${style.color}`} />
+                    {style.icon ? (
+                      <FaIcon name={style.icon} className={`w-4 h-4 mt-0.5 shrink-0 ${style.color}`} />
+                    ) : (
+                      <AlertCircle className={`w-4 h-4 mt-0.5 shrink-0 ${style.color}`} />
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-[#2a2520]">{alert.message}</p>
                     </div>
@@ -168,7 +169,7 @@ export default function OversightDashboardPage() {
         <Card className="border-[#e8e2d8]">
           <CardHeader className="pb-3">
             <CardTitle className="text-base text-[#2a2520] flex items-center gap-2">
-              <Shield className="w-4 h-4 text-[#1a3aa3]" />
+              <FaIcon name="shield-halved" className="w-4 h-4 text-[#1a3aa3]" />
               Πρόσφατοι Έλεγχοι
             </CardTitle>
           </CardHeader>
@@ -182,6 +183,7 @@ export default function OversightDashboardPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-[#f5f2ec] hover:bg-[#f5f2ec]">
+                      <TableHead className="text-xs">Δομή</TableHead>
                       <TableHead className="text-xs">Τύπος</TableHead>
                       <TableHead className="text-xs">Ημ/νία</TableHead>
                       <TableHead className="text-xs">Κατάσταση</TableHead>
@@ -190,6 +192,18 @@ export default function OversightDashboardPage() {
                   <TableBody>
                     {dashboard.recent_inspections.map((insp) => (
                       <TableRow key={insp.id}>
+                        <TableCell className="text-sm">
+                          {insp.structure_id ? (
+                            <Link
+                              to={`/registry/${insp.structure_id}`}
+                              className="text-[#1a3aa3] hover:text-[#152e82] hover:underline transition-colors"
+                            >
+                              {insp.structure_name || '—'}
+                            </Link>
+                          ) : (
+                            <span>{insp.structure_name || '—'}</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-sm">
                           <Link
                             to={`/inspections/${insp.id}/report`}
@@ -217,20 +231,21 @@ export default function OversightDashboardPage() {
         <Card className="border-[#e8e2d8]">
           <CardHeader className="pb-3">
             <CardTitle className="text-base text-[#2a2520] flex items-center gap-2">
-              <FileText className="w-4 h-4 text-[#1a3aa3]" />
-              Πρόσφατες Εκθέσεις
+              <FaIcon name="file-lines" className="w-4 h-4 text-[#1a3aa3]" />
+              Πρόσφατες Αναφορές Κ.Σ.
             </CardTitle>
           </CardHeader>
           <CardContent>
             {dashboard.recent_reports.length === 0 ? (
               <p className="text-sm text-[#8a8580] text-center py-6">
-                Δεν υπάρχουν εκθέσεις.
+                Δεν υπάρχουν αναφορές.
               </p>
             ) : (
               <div className="rounded-lg border border-[#e8e2d8] overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-[#f5f2ec] hover:bg-[#f5f2ec]">
+                      <TableHead className="text-xs">Δομή</TableHead>
                       <TableHead className="text-xs">Τύπος</TableHead>
                       <TableHead className="text-xs">Ημ/νία</TableHead>
                       <TableHead className="text-xs">Κατάσταση</TableHead>
@@ -239,6 +254,18 @@ export default function OversightDashboardPage() {
                   <TableBody>
                     {dashboard.recent_reports.map((r) => (
                       <TableRow key={r.id}>
+                        <TableCell className="text-sm">
+                          {r.structure_id ? (
+                            <Link
+                              to={`/registry/${r.structure_id}`}
+                              className="text-[#1a3aa3] hover:text-[#152e82] hover:underline transition-colors"
+                            >
+                              {r.structure_name || '—'}
+                            </Link>
+                          ) : (
+                            <span>{r.structure_name || '—'}</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-sm">
                           {ADVISOR_REPORT_TYPES[r.type] || r.type}
                         </TableCell>
