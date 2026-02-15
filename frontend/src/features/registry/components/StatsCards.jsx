@@ -3,19 +3,19 @@ import { Card, CardContent } from '@/components/ui/card.jsx';
 import FaIcon from '@/components/FaIcon';
 
 const CARDS = [
-  { key: 'total_structures', label: 'Συνολικές Δομές', icon: 'building', color: 'text-[#1a3aa3]', bg: 'bg-blue-50' },
-  { key: 'active_structures', label: 'Ενεργές Δομές', icon: 'circle-check', color: 'text-green-600', bg: 'bg-green-50' },
-  { key: 'total_inspections', label: 'Έλεγχοι', icon: 'clipboard-list', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-  { key: 'completed_inspections', label: 'Ολοκληρωμένοι', icon: 'clipboard-check', color: 'text-teal-600', bg: 'bg-teal-50' },
-  { key: 'submitted_reports', label: 'Εκκρεμείς Εκθέσεις', icon: 'file-lines', color: 'text-orange-600', bg: 'bg-orange-50' },
-  { key: 'total_sanctions', label: 'Κυρώσεις', icon: 'scale-balanced', color: 'text-red-600', bg: 'bg-red-50' },
+  { key: 'total_structures', label: 'Συνολικές Δομές', icon: 'landmark-dome', color: 'text-[#1a3aa3]', bg: 'bg-blue-50' },
+  { key: 'active_structures', label: 'Ενεργές Δομές', icon: 'building-circle-check', color: 'text-green-600', bg: 'bg-green-50' },
+  { key: 'total_inspections', label: 'Έλεγχοι', icon: 'magnifying-glass', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  { key: 'completed_inspections', label: 'Ολοκληρωμένοι', icon: 'list-check', color: 'text-teal-600', bg: 'bg-teal-50' },
+  { key: 'submitted_reports', label: 'Εκκρεμείς Εκθέσεις', icon: 'file-circle-exclamation', color: 'text-orange-600', bg: 'bg-orange-50' },
+  { key: 'total_sanctions', label: 'Κυρώσεις', icon: 'gavel', color: 'text-red-600', bg: 'bg-red-50' },
 ];
 
 const DECISION_CARDS = [
-  { key: 'submitted', label: 'Αναμένουν Έγκριση', icon: 'clock', color: 'text-amber-600', bg: 'bg-amber-50', link: '/sanctions/decisions' },
-  { key: 'overdue', label: 'Εκπρόθεσμες', icon: 'ban', color: 'text-red-600', bg: 'bg-red-50', link: '/sanctions/decisions' },
-  { key: 'total_amount_pending', label: 'Εκκρεμή (€)', icon: 'euro-sign', color: 'text-orange-600', bg: 'bg-orange-50', format: 'currency' },
-  { key: 'total_amount_paid', label: 'Εισπράχθηκαν (€)', icon: 'euro-sign', color: 'text-green-600', bg: 'bg-green-50', format: 'currency' },
+  { key: 'submitted', label: 'Αναμένουν Έγκριση', icon: 'stamp', color: 'text-amber-600', bg: 'bg-amber-50', link: '/sanctions/decisions' },
+  { key: 'overdue', label: 'Εκπρόθεσμες', icon: 'calendar-xmark', color: 'text-red-600', bg: 'bg-red-50', link: '/sanctions/decisions' },
+  { key: 'total_amount_pending', label: 'Εκκρεμή (€)', icon: 'sack-dollar', color: 'text-orange-600', bg: 'bg-orange-50', format: 'currency' },
+  { key: 'total_amount_paid', label: 'Εισπράχθηκαν (€)', icon: 'vault', color: 'text-green-600', bg: 'bg-green-50', format: 'currency' },
 ];
 
 function formatValue(value, format) {
