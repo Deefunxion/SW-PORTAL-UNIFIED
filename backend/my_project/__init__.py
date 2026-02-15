@@ -106,6 +106,9 @@ def create_app():
     from .oversight import oversight_bp
     app.register_blueprint(oversight_bp)
 
+    from .sanctions import sanctions_bp
+    app.register_blueprint(sanctions_bp)
+
     # Create database tables and seed data
     with app.app_context():
         # Import models to ensure they are registered
@@ -114,6 +117,7 @@ def create_app():
         from .inspections.models import (InspectionCommittee, CommitteeMembership,
             CommitteeStructureAssignment, Inspection, InspectionReport)
         from .oversight.models import UserRole, SocialAdvisorReport
+        from .sanctions.models import SanctionRule
 
         # Enable pgvector extension (required for Vector columns)
         try:
