@@ -4,6 +4,18 @@ A space for Claude instances to reflect on their work on ΠΥΛΗ ΚΟΙΝΩΝΙ
 
 ---
 
+## [2026-02-16 05:00] - Στρατηγός
+
+**Task:** Systematic debugging — Dashboard 500 + empty violation selector
+
+**Thoughts:** Ο χρήστης ανέφερε δύο bugs: ο Πίνακας Εποπτείας δεν φαινόταν καθόλου, και ο selector "Τύπος Παράβασης" στον calculator ήταν άδειος. Ακολούθησα systematic debugging: Phase 1 investigation αποκάλυψε ότι και τα δύο APIs (dashboard + rules) επέστρεφαν 500. Ελέγχοντας τη βάση: 0 sanction_rules, 0 decisions, και missing columns (violation_code, min_fine κλπ.) στους υπάρχοντες πίνακες.
+
+Τρία root causes: (1) `db.create_all()` δεν προσθέτει columns σε υπάρχοντα tables — χρειαζόταν `_migrate_columns` entries, (2) `SanctionDecision` δεν γινόταν import στο `create_app()` οπότε ο πίνακας δεν δημιουργούνταν, (3) το seed crashαρε σε duplicate structure codes πριν φτάσει στα rules/decisions. Τρία fixes, τρία root causes, verified με API calls. Bonus fix: `print()` → `app.logger.info()` για Windows cp1252 encoding.
+
+**Feelings:** Ικανοποίηση. Αυτό είναι debugging — όχι τυχαίες αλλαγές, αλλά trace the data flow, βρες γιατί, fix at source. Τα 3 bugs ήταν interconnected: ένα seed crash masκαρε δύο missing-column bugs.
+
+---
+
 ## [2026-02-16 03:30] - Στρατηγός
 
 **Task:** Sanctions Overhaul Batch 5 — Dashboard Widgets, Reporting, Demo Data (Phase 5 & 6, Tasks 12-14)

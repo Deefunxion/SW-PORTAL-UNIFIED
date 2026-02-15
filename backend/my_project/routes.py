@@ -150,7 +150,7 @@ def scan_content_directory():
 # ============================================================================
 
 @main_bp.route('/api/auth/login', methods=['POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("30 per minute")
 def login():
     """User login endpoint"""
     data = request.get_json()

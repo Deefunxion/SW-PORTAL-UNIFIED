@@ -113,6 +113,15 @@ def seed_demo_data():
 
     # ─── STRUCTURES (8 δομές σε διαφορετικά στάδια) ─────────
     today = date.today()
+
+    def get_or_create_structure(s):
+        """Insert structure if it doesn't exist by code, else return existing."""
+        existing = Structure.query.filter_by(code=s.code).first()
+        if existing:
+            return existing
+        db.session.add(s)
+        return s
+
     structures = [
         Structure(
             code='MFH-ATT-001', type_id=stypes['MFH'].id,
@@ -213,8 +222,7 @@ def seed_demo_data():
             notes='Λειτουργία μόνο Ιούνιο-Αύγουστο. Εποχική.',
         ),
     ]
-    for s in structures:
-        db.session.add(s)
+    structures = [get_or_create_structure(s) for s in structures]
     db.session.flush()
 
     # ─── ADDITIONAL STRUCTURES (9-15) ────────────────────────
@@ -305,8 +313,7 @@ def seed_demo_data():
             notes='Νέα κατασκήνωση δήμου Λαυρίου. Εκκρεμεί αρχικός έλεγχος.',
         ),
     ]
-    for s in extra_structures:
-        db.session.add(s)
+    extra_structures = [get_or_create_structure(s) for s in extra_structures]
     structures.extend(extra_structures)
     db.session.flush()
 
@@ -822,165 +829,9 @@ def seed_demo_data():
     # ─── SANCTION DECISIONS (workflow) ───────────────────────
     from .sanctions.models import SanctionDecision
 
-    # 1. Draft — ΜΦΗ Αγία Ελένη, υπέρβαση δυναμικότητας
-    mfh_over_rule = SanctionRule.query.filter_by(violation_code='MFH_OVER_CAPACITY').first()
-    dec1_sanction = Sanction(
-        structure_id=s_agia_eleni.id, type='fine', amount=10000.00,
-        imposed_date=today - timedelta(days=3), status='imposed',
-        notes='Υπέρβαση δυναμικότητας κατά 15 ωφελούμενους.'
-    )
-    db.session.add(dec1_sanction)
-    db.session.flush()
-    db.session.add(SanctionDecision(
-        sanction_id=dec1_sanction.id, status='draft',
-        drafted_by=users['mpapadopoulou'].id,
-        drafted_at=datetime.utcnow() - timedelta(days=3),
-        violation_code='MFH_OVER_CAPACITY',
-        inspection_finding='Βρέθηκαν 135 ωφελούμενοι σε χώρο δυναμικότητας 120.',
-        calculated_amount=10000, final_amount=10000,
-        justification='Πρώτη παράβαση — βασικό πρόστιμο.',
-        obligor_name='Ελένη Δημητρίου', obligor_afm='012345678',
-        obligor_doy='ΔΟΥ Αθηνών', obligor_address='Λεωφ. Κηφισίας 142, Αθήνα',
-        amount_state=5000, amount_region=5000,
-    ))
-
-    # 2. Submitted — ΚΔΑΠ Ουράνιο Τόξο, ελλιπή πιστοποιητικά
-    kdap_certs_rule = SanctionRule.query.filter_by(violation_code='KDAP_STAFF_CERTS').first()
-    dec2_sanction = Sanction(
-        structure_id=s_ouranio.id, type='fine', amount=3000.00,
-        imposed_date=today - timedelta(days=7), status='imposed',
-        notes='Ελλιπή πιστοποιητικά 2 παιδαγωγών.'
-    )
-    db.session.add(dec2_sanction)
-    db.session.flush()
-    db.session.add(SanctionDecision(
-        sanction_id=dec2_sanction.id, status='submitted',
-        drafted_by=users['mpapadopoulou'].id,
-        drafted_at=datetime.utcnow() - timedelta(days=7),
-        violation_code='KDAP_STAFF_CERTS',
-        inspection_finding='Δύο παιδαγωγοί χωρίς ενημερωμένο πιστοποιητικό πρώτων βοηθειών.',
-        calculated_amount=3000, final_amount=3000,
-        justification='Πρώτη παράβαση — εντός ελαχίστου ορίου.',
-        obligor_name='Αγγελική Μαυρίδου', obligor_afm='369258147',
-        obligor_doy='ΔΟΥ Πειραιά', obligor_address='Ηρώων Πολυτεχνείου 12, Πειραιάς',
-        amount_state=1500, amount_region=1500,
-    ))
-
-    # 3. Approved — ΚΔΑΠ Ηλιαχτίδα (suspended), λειτουργία χωρίς άδεια
-    no_license_rule = SanctionRule.query.filter_by(violation_code='NO_LICENSE').first()
-    dec3_sanction = Sanction(
-        structure_id=s_iliachtida.id, type='fine', amount=60000.00,
-        imposed_date=today - timedelta(days=20), status='imposed',
-        protocol_number='ΚΥΡΩ-2026/0070',
-        notes='Λειτουργία χωρίς ενεργή άδεια.'
-    )
-    db.session.add(dec3_sanction)
-    db.session.flush()
-    db.session.add(SanctionDecision(
-        sanction_id=dec3_sanction.id, status='approved',
-        drafted_by=users['mpapadopoulou'].id,
-        drafted_at=datetime.utcnow() - timedelta(days=20),
-        violation_code='NO_LICENSE',
-        inspection_finding='Η δομή λειτουργούσε με ληγμένη άδεια (170 ημέρες).',
-        calculated_amount=60000, final_amount=60000,
-        justification='Σοβαρότατη παράβαση — μέγιστο πρόστιμο Ν.5041/2023 §1.',
-        approved_by=users['admin'].id,
-        approved_at=datetime.utcnow() - timedelta(days=15),
-        protocol_number=f'{today.year}/0001',
-        obligor_name='Δημήτρης Παπανικολάου', obligor_afm='321654987',
-        obligor_doy='ΔΟΥ Ελευσίνας', obligor_address='Ελευθερίου Βενιζέλου 23, Ελευσίνα',
-        amount_state=30000, amount_region=30000,
-    ))
-
-    # 4. Notified — ΚΗΦΗ Ασκληπιός, παράβαση προσβασιμότητας
-    kihi_rule = SanctionRule.query.filter_by(violation_code='KIHI_ACCESSIBILITY').first()
-    dec4_sanction = Sanction(
-        structure_id=s_asklepios.id, type='fine', amount=6000.00,
-        imposed_date=today - timedelta(days=30), status='imposed',
-        protocol_number='ΚΥΡΩ-2026/0065',
-        notes='Έλλειψη ράμπας πρόσβασης σε βοηθητικούς χώρους.'
-    )
-    db.session.add(dec4_sanction)
-    db.session.flush()
-    db.session.add(SanctionDecision(
-        sanction_id=dec4_sanction.id, status='notified',
-        drafted_by=users['gnikolaou'].id,
-        drafted_at=datetime.utcnow() - timedelta(days=30),
-        violation_code='KIHI_ACCESSIBILITY',
-        inspection_finding='Δεν υπάρχει ράμπα πρόσβασης ΑμεΑ στους βοηθητικούς χώρους.',
-        calculated_amount=6000, final_amount=6000,
-        justification='Πρώτη παράβαση — ποσό εντός νομοθετικού πλαισίου.',
-        approved_by=users['admin'].id,
-        approved_at=datetime.utcnow() - timedelta(days=25),
-        protocol_number=f'{today.year}/0002',
-        notified_at=datetime.utcnow() - timedelta(days=20),
-        notification_method='registered_mail',
-        payment_deadline=today + timedelta(days=40),
-        appeal_deadline=today - timedelta(days=5),
-        obligor_name='Δέσποινα Αλεξίου', obligor_afm='852963741',
-        obligor_doy='ΔΟΥ Αμαρουσίου', obligor_address='28ης Οκτωβρίου 78, Μαρούσι',
-        amount_state=3000, amount_region=3000,
-    ))
-
-    # 5. Paid — MFPAD Αστέρι, ελλιπής στελέχωση (from earlier inspection)
-    dec5_sanction = Sanction(
-        structure_id=s_asteri.id, type='fine', amount=5000.00,
-        imposed_date=today - timedelta(days=60), status='paid',
-        protocol_number='ΚΥΡΩ-2026/0045',
-        notes='Πρόστιμο για ελλιπή στελέχωση — εξοφλήθηκε.'
-    )
-    db.session.add(dec5_sanction)
-    db.session.flush()
-    db.session.add(SanctionDecision(
-        sanction_id=dec5_sanction.id, status='paid',
-        drafted_by=users['gnikolaou'].id,
-        drafted_at=datetime.utcnow() - timedelta(days=60),
-        violation_code='TERMS_VIOLATION',
-        inspection_finding='Αναλογία προσωπικού 1:12 αντί 1:6.',
-        calculated_amount=5000, final_amount=5000,
-        justification='Πρώτη παράβαση — βασικό πρόστιμο.',
-        approved_by=users['admin'].id,
-        approved_at=datetime.utcnow() - timedelta(days=55),
-        protocol_number=f'{today.year - 1}/0012',
-        notified_at=datetime.utcnow() - timedelta(days=50),
-        notification_method='in_person',
-        payment_deadline=today - timedelta(days=10),
-        appeal_deadline=today - timedelta(days=35),
-        paid_at=datetime.utcnow() - timedelta(days=15),
-        paid_amount=5000,
-        obligor_name='Ελευθερία Κωστοπούλου', obligor_afm='951753864',
-        obligor_doy='ΔΟΥ Περιστερίου', obligor_address='Ιπποκράτους 32, Περιστέρι',
-        amount_state=2500, amount_region=2500,
-    ))
-
-    # 6. Overdue — ΜΦΗ Ευαγγελισμός, παράβαση υγιεινής (past deadline, unpaid)
-    dec6_sanction = Sanction(
-        structure_id=s_evangelismos.id, type='fine', amount=8000.00,
-        imposed_date=today - timedelta(days=90), status='imposed',
-        protocol_number='ΚΥΡΩ-2026/0030',
-        notes='Πρόστιμο 8.000€ για παράβαση υγιεινής — ΕΚΠΡΟΘΕΣΜΟ.'
-    )
-    db.session.add(dec6_sanction)
-    db.session.flush()
-    db.session.add(SanctionDecision(
-        sanction_id=dec6_sanction.id, status='notified',
-        drafted_by=users['mpapadopoulou'].id,
-        drafted_at=datetime.utcnow() - timedelta(days=90),
-        violation_code='HYGIENE',
-        inspection_finding='Ακαταλληλότητα αποθηκευτικών χώρων τροφίμων.',
-        calculated_amount=8000, final_amount=8000,
-        justification='Δεύτερη παράβαση υγιεινής εντός έτους.',
-        approved_by=users['admin'].id,
-        approved_at=datetime.utcnow() - timedelta(days=85),
-        protocol_number=f'{today.year - 1}/0008',
-        notified_at=datetime.utcnow() - timedelta(days=80),
-        notification_method='registered_mail',
-        payment_deadline=today - timedelta(days=20),
-        appeal_deadline=today - timedelta(days=65),
-        obligor_name='Κωνσταντίνος Βλάχος', obligor_afm='987654321',
-        obligor_doy='ΔΟΥ Πειραιά', obligor_address='Ακτή Μιαούλη 55, Πειραιάς',
-        amount_state=4000, amount_region=4000,
-    ))
+    if SanctionDecision.query.count() == 0:
+        _seed_decisions(db, users, s_agia_eleni, s_evangelismos, s_iliachtida,
+                        s_ouranio, s_asklepios, s_asteri, today, Sanction, SanctionDecision, SanctionRule)
 
     # ─── CHECKLIST TEMPLATES ─────────────────────────────────
     from .inspections.models import ChecklistTemplate
@@ -1303,3 +1154,166 @@ def seed_demo_data():
     print(f"  Sanction Decisions: {SanctionDecision.query.count()}")
     print(f"  Discussions: {Discussion.query.count()}")
     print(f"  Forum posts: {Post.query.count()}")
+
+
+def _seed_decisions(db, users, s_agia_eleni, s_evangelismos, s_iliachtida,
+                    s_ouranio, s_asklepios, s_asteri, today, Sanction, SanctionDecision, SanctionRule):
+    """Seed 6 demo SanctionDecisions in various workflow stages."""
+    from datetime import datetime, timedelta
+
+    # 1. Draft — ΜΦΗ Αγία Ελένη, υπέρβαση δυναμικότητας
+    dec1_sanction = Sanction(
+        structure_id=s_agia_eleni.id, type='fine', amount=10000.00,
+        imposed_date=today - timedelta(days=3), status='imposed',
+        notes='Υπέρβαση δυναμικότητας κατά 15 ωφελούμενους.'
+    )
+    db.session.add(dec1_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec1_sanction.id, status='draft',
+        drafted_by=users['mpapadopoulou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=3),
+        violation_code='MFH_OVER_CAPACITY',
+        inspection_finding='Βρέθηκαν 135 ωφελούμενοι σε χώρο δυναμικότητας 120.',
+        calculated_amount=10000, final_amount=10000,
+        justification='Πρώτη παράβαση — βασικό πρόστιμο.',
+        obligor_name='Ελένη Δημητρίου', obligor_afm='012345678',
+        obligor_doy='ΔΟΥ Αθηνών', obligor_address='Λεωφ. Κηφισίας 142, Αθήνα',
+        amount_state=5000, amount_region=5000,
+    ))
+
+    # 2. Submitted — ΚΔΑΠ Ουράνιο Τόξο, ελλιπή πιστοποιητικά
+    dec2_sanction = Sanction(
+        structure_id=s_ouranio.id, type='fine', amount=3000.00,
+        imposed_date=today - timedelta(days=7), status='imposed',
+        notes='Ελλιπή πιστοποιητικά 2 παιδαγωγών.'
+    )
+    db.session.add(dec2_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec2_sanction.id, status='submitted',
+        drafted_by=users['mpapadopoulou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=7),
+        violation_code='KDAP_STAFF_CERTS',
+        inspection_finding='Δύο παιδαγωγοί χωρίς ενημερωμένο πιστοποιητικό πρώτων βοηθειών.',
+        calculated_amount=3000, final_amount=3000,
+        justification='Πρώτη παράβαση — εντός ελαχίστου ορίου.',
+        obligor_name='Αγγελική Μαυρίδου', obligor_afm='369258147',
+        obligor_doy='ΔΟΥ Πειραιά', obligor_address='Ηρώων Πολυτεχνείου 12, Πειραιάς',
+        amount_state=1500, amount_region=1500,
+    ))
+
+    # 3. Approved — ΚΔΑΠ Ηλιαχτίδα, λειτουργία χωρίς άδεια
+    dec3_sanction = Sanction(
+        structure_id=s_iliachtida.id, type='fine', amount=60000.00,
+        imposed_date=today - timedelta(days=20), status='imposed',
+        protocol_number='ΚΥΡΩ-2026/0070',
+        notes='Λειτουργία χωρίς ενεργή άδεια.'
+    )
+    db.session.add(dec3_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec3_sanction.id, status='approved',
+        drafted_by=users['mpapadopoulou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=20),
+        violation_code='NO_LICENSE',
+        inspection_finding='Η δομή λειτουργούσε με ληγμένη άδεια (170 ημέρες).',
+        calculated_amount=60000, final_amount=60000,
+        justification='Σοβαρότατη παράβαση — μέγιστο πρόστιμο Ν.5041/2023 §1.',
+        approved_by=users['admin'].id,
+        approved_at=datetime.utcnow() - timedelta(days=15),
+        protocol_number=f'{today.year}/0001',
+        obligor_name='Δημήτρης Παπανικολάου', obligor_afm='321654987',
+        obligor_doy='ΔΟΥ Ελευσίνας', obligor_address='Ελευθερίου Βενιζέλου 23, Ελευσίνα',
+        amount_state=30000, amount_region=30000,
+    ))
+
+    # 4. Notified — ΚΗΦΗ Ασκληπιός, παράβαση προσβασιμότητας
+    dec4_sanction = Sanction(
+        structure_id=s_asklepios.id, type='fine', amount=6000.00,
+        imposed_date=today - timedelta(days=30), status='imposed',
+        protocol_number='ΚΥΡΩ-2026/0065',
+        notes='Έλλειψη ράμπας πρόσβασης σε βοηθητικούς χώρους.'
+    )
+    db.session.add(dec4_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec4_sanction.id, status='notified',
+        drafted_by=users['gnikolaou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=30),
+        violation_code='KIHI_ACCESSIBILITY',
+        inspection_finding='Δεν υπάρχει ράμπα πρόσβασης ΑμεΑ στους βοηθητικούς χώρους.',
+        calculated_amount=6000, final_amount=6000,
+        justification='Πρώτη παράβαση — ποσό εντός νομοθετικού πλαισίου.',
+        approved_by=users['admin'].id,
+        approved_at=datetime.utcnow() - timedelta(days=25),
+        protocol_number=f'{today.year}/0002',
+        notified_at=datetime.utcnow() - timedelta(days=20),
+        notification_method='registered_mail',
+        payment_deadline=today + timedelta(days=40),
+        appeal_deadline=today - timedelta(days=5),
+        obligor_name='Δέσποινα Αλεξίου', obligor_afm='852963741',
+        obligor_doy='ΔΟΥ Αμαρουσίου', obligor_address='28ης Οκτωβρίου 78, Μαρούσι',
+        amount_state=3000, amount_region=3000,
+    ))
+
+    # 5. Paid — MFPAD Αστέρι, ελλιπής στελέχωση
+    dec5_sanction = Sanction(
+        structure_id=s_asteri.id, type='fine', amount=5000.00,
+        imposed_date=today - timedelta(days=60), status='paid',
+        protocol_number='ΚΥΡΩ-2026/0045',
+        notes='Πρόστιμο για ελλιπή στελέχωση — εξοφλήθηκε.'
+    )
+    db.session.add(dec5_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec5_sanction.id, status='paid',
+        drafted_by=users['gnikolaou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=60),
+        violation_code='TERMS_VIOLATION',
+        inspection_finding='Αναλογία προσωπικού 1:12 αντί 1:6.',
+        calculated_amount=5000, final_amount=5000,
+        justification='Πρώτη παράβαση — βασικό πρόστιμο.',
+        approved_by=users['admin'].id,
+        approved_at=datetime.utcnow() - timedelta(days=55),
+        protocol_number=f'{today.year - 1}/0012',
+        notified_at=datetime.utcnow() - timedelta(days=50),
+        notification_method='in_person',
+        payment_deadline=today - timedelta(days=10),
+        appeal_deadline=today - timedelta(days=35),
+        paid_at=datetime.utcnow() - timedelta(days=15),
+        paid_amount=5000,
+        obligor_name='Ελευθερία Κωστοπούλου', obligor_afm='951753864',
+        obligor_doy='ΔΟΥ Περιστερίου', obligor_address='Ιπποκράτους 32, Περιστέρι',
+        amount_state=2500, amount_region=2500,
+    ))
+
+    # 6. Overdue — ΜΦΗ Ευαγγελισμός, παράβαση υγιεινής
+    dec6_sanction = Sanction(
+        structure_id=s_evangelismos.id, type='fine', amount=8000.00,
+        imposed_date=today - timedelta(days=90), status='imposed',
+        protocol_number='ΚΥΡΩ-2026/0030',
+        notes='Πρόστιμο 8.000€ για παράβαση υγιεινής — ΕΚΠΡΟΘΕΣΜΟ.'
+    )
+    db.session.add(dec6_sanction)
+    db.session.flush()
+    db.session.add(SanctionDecision(
+        sanction_id=dec6_sanction.id, status='notified',
+        drafted_by=users['mpapadopoulou'].id,
+        drafted_at=datetime.utcnow() - timedelta(days=90),
+        violation_code='HYGIENE',
+        inspection_finding='Ακαταλληλότητα αποθηκευτικών χώρων τροφίμων.',
+        calculated_amount=8000, final_amount=8000,
+        justification='Δεύτερη παράβαση υγιεινής εντός έτους.',
+        approved_by=users['admin'].id,
+        approved_at=datetime.utcnow() - timedelta(days=85),
+        protocol_number=f'{today.year - 1}/0008',
+        notified_at=datetime.utcnow() - timedelta(days=80),
+        notification_method='registered_mail',
+        payment_deadline=today - timedelta(days=20),
+        appeal_deadline=today - timedelta(days=65),
+        obligor_name='Κωνσταντίνος Βλάχος', obligor_afm='987654321',
+        obligor_doy='ΔΟΥ Πειραιά', obligor_address='Ακτή Μιαούλη 55, Πειραιάς',
+        amount_state=4000, amount_region=4000,
+    ))
+    db.session.flush()
