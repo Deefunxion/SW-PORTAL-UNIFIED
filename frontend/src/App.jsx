@@ -110,10 +110,10 @@ function Navigation() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <img src={`${import.meta.env.BASE_URL}favicon.ico`} alt="ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ" className="w-8 h-8 rounded-lg" />
-            <span className="text-xl font-bold" style={{fontFamily: "'Literata', serif"}}>ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ</span>
-            <Badge variant="secondary" className="hidden sm:inline-flex">
+          <Link to="/" className="flex items-center space-x-2 min-w-0">
+            <img src={`${import.meta.env.BASE_URL}favicon.ico`} alt="ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ" className="w-8 h-8 rounded-lg flex-shrink-0" />
+            <span className="text-sm sm:text-lg md:text-xl font-bold truncate" style={{fontFamily: "'Literata', serif"}}>ΠΥΛΗ ΚΟΙΝ. ΜΕΡΙΜΝΑΣ</span>
+            <Badge variant="secondary" className="hidden lg:inline-flex flex-shrink-0">
               Περιφέρεια Αττικής
             </Badge>
           </Link>
@@ -252,7 +252,7 @@ function Navigation() {
         {isMobileMenuOpen && isAuthenticated && (
           <div className="md:hidden py-4 border-t border-[#1a3aa3]/30">
             <div className="flex flex-col space-y-2">
-              {navItems.map((item) => {
+              {allNavItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link

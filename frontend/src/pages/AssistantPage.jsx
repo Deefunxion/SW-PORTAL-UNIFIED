@@ -285,7 +285,7 @@ function AssistantPage() {
             {m.type === 'user' ? (
               /* ── User bubble ── */
               <div className="max-w-[88%] bg-[#1a3aa3] text-white px-[22px] py-3.5 rounded-tl-[22px] rounded-tr-[6px] rounded-br-[22px] rounded-bl-[22px]">
-                <p className="whitespace-pre-wrap text-[15px] font-medium leading-relaxed">{m.content}</p>
+                <p className="whitespace-pre-wrap text-[15px] font-medium leading-relaxed select-text">{m.content}</p>
                 <div className="flex items-center gap-1.5 mt-2 text-[11px] text-white/50">
                   <Clock className="w-3 h-3" /> {formatTime(m.timestamp)}
                 </div>
@@ -302,7 +302,7 @@ function AssistantPage() {
                 </div>
                 {/* Content */}
                 <div
-                  className={`whitespace-pre-wrap text-[17px] leading-[1.85] [&_strong]:font-bold [&_strong]:text-[#152e82] [&_ul]:my-3 [&_ul]:pl-6 [&_li]:mb-1.5 [&_li]:leading-[1.7] ${m.isError ? 'text-red-700' : 'text-[#2a2520]'}`}
+                  className={`whitespace-pre-wrap text-[17px] leading-[1.85] select-text [&_strong]:font-bold [&_strong]:text-[#152e82] [&_ul]:my-3 [&_ul]:pl-6 [&_li]:mb-1.5 [&_li]:leading-[1.7] ${m.isError ? 'text-red-700' : 'text-[#2a2520]'}`}
                   style={SERIF_FONT}
                   dangerouslySetInnerHTML={{ __html: simpleMarkdown(m.content) }}
                 />
