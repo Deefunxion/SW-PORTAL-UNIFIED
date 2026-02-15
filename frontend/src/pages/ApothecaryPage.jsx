@@ -323,7 +323,8 @@ function ApothecaryPage() {
                           <Folder className="w-5 h-5 text-white" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h5 className="text-base sm:text-lg font-bold text-[#1a3aa3] mb-1 break-words line-clamp-2">
+                          <h5 className="text-base sm:text-lg font-bold text-[#1a3aa3] mb-1 break-words line-clamp-2"
+                              title={subfolder.category || subfolder.name || `Φάκελος ${idx + 1}`}>
                             {subfolder.category || subfolder.name || `Φάκελος ${idx + 1}`}
                           </h5>
                           {(subfolder.files || []).length > 0 && (
@@ -369,7 +370,7 @@ function ApothecaryPage() {
                                   <FileIcon className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <h6 className="text-sm font-bold text-[#2a2520] mb-0.5 line-clamp-2 break-all">
+                                  <h6 className="text-sm font-bold text-[#2a2520] mb-0.5 line-clamp-2 break-words" title={file.name}>
                                     {file.name}
                                   </h6>
                                   {file.size && (
@@ -426,7 +427,7 @@ function ApothecaryPage() {
                       <FileIcon className="w-5 h-5 text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h6 className="text-sm font-bold text-[#2a2520] mb-0.5 line-clamp-2 break-all">
+                      <h6 className="text-sm font-bold text-[#2a2520] mb-0.5 line-clamp-2 break-words" title={file.name}>
                         {file.name}
                       </h6>
                       {file.size && (
@@ -503,7 +504,7 @@ function ApothecaryPage() {
                     <FontAwesomeIcon icon={category.icon} />
                   </span>
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-[#1a3aa3] mb-2 text-center group-hover:text-[#1a3aa3] transition-colors leading-tight" style={{fontFamily: "'Literata', serif"}}>
+                <h3 className="text-lg sm:text-xl font-bold text-[#1a3aa3] mb-2 text-center group-hover:text-[#1a3aa3] transition-colors leading-tight" style={{fontFamily: "'Literata', serif"}} title={category.title}>
                   {category.title}
                 </h3>
                 <p className="text-sm sm:text-base font-medium text-[#6b6560] text-center leading-relaxed mb-4">
