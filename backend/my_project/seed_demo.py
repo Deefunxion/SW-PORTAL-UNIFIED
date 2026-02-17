@@ -1149,6 +1149,9 @@ def seed_demo_data():
     # ─── DECISION TEMPLATES ──────────────────────────────────
     _seed_decision_templates(db, DecisionTemplate)
 
+    # ─── SAMPLE DECISION RECORDS ─────────────────────────────
+    _seed_decision_records(db, DecisionTemplate, DecisionRecord, users, today)
+
     # ─── COMMIT ALL ─────────────────────────────────────────
     db.session.commit()
     print("[seed] ✓ Demo data created successfully!")
@@ -1157,6 +1160,7 @@ def seed_demo_data():
     print(f"  Inspections: {Inspection.query.count()}")
     print(f"  Sanction Decisions: {SanctionDecision.query.count()}")
     print(f"  Decision Templates: {DecisionTemplate.query.count()}")
+    print(f"  Decision Records: {DecisionRecord.query.count()}")
     print(f"  Discussions: {Discussion.query.count()}")
     print(f"  Forum posts: {Post.query.count()}")
 
@@ -1701,3 +1705,125 @@ def _seed_decision_templates(db, DecisionTemplate):
 
     db.session.flush()
     print(f"[seed]   {DecisionTemplate.query.count()} decision templates seeded")
+
+
+def _seed_decision_records(db, DecisionTemplate, DecisionRecord, users, today):
+    """Seed 5 sample decision records from real camp data in various statuses."""
+    if DecisionRecord.query.count() > 0:
+        return
+
+    camp_tpl = DecisionTemplate.query.filter_by(type='camp_license').first()
+    if not camp_tpl:
+        return
+
+    from .documents.generator import resolve_placeholders
+    from datetime import datetime, timedelta
+
+    records_data = [
+        {
+            'data': {
+                'έτος': '2025',
+                'τίτλος_κατασκήνωσης': 'Sport Village Athitaki',
+                'επωνυμία_εταιρείας': 'M.Αθητάκης - Μ.Αλεξοπούλου Α.Ε',
+                'τοποθεσία': 'Κοινότητα Γραμματικού, Δήμος Μαραθώνος',
+                'ημερομηνία_έναρξης': '15/06/2025',
+                'ημερομηνία_λήξης': '15/09/2025',
+                'αριθμός_περιόδων': '6',
+                'δυναμικότητα': '1100',
+                'περιγραφή_ηλικιών_και_διαχωρισμού': '6-16 αγόρια κορίτσια — 12+ σε ξεχωριστούς κοιτώνες',
+                'εκτός_περιόδου': '01/10-31/05',
+                'αριθμός_αίτησης': '315788',
+                'ημερομηνία_αίτησης': '14/03/2025',
+                'ημερομηνία_πρακτικού': '14/05/2025',
+                'αριθμός_πυρασφάλειας': '589/Φ.701.2',
+                'λήξη_πυρασφάλειας': '12/02/2029',
+                'ονοματεπώνυμο_αντιπεριφερειάρχη': 'Βασιλική Καβαλλάρη',
+            },
+            'status': 'protocol_received',
+            'protocol_number': f'{today.year}/ΑΔ-0042',
+        },
+        {
+            'data': {
+                'έτος': '2025',
+                'τίτλος_κατασκήνωσης': 'Ξένοιαστο Μελίσσι',
+                'επωνυμία_εταιρείας': 'ΤΟ ΞΕΓΝΟΙΑΣΤΟ ΜΕΛΙΣΣΙ Ε.Π.Ε',
+                'τοποθεσία': 'Πούντα Ζέζα, Δήμος Λαυρεωτικής',
+                'ημερομηνία_έναρξης': '15/06/2025',
+                'ημερομηνία_λήξης': '31/08/2025',
+                'αριθμός_περιόδων': '5',
+                'δυναμικότητα': '1020',
+                'περιγραφή_ηλικιών_και_διαχωρισμού': '6-16 αγόρια κορίτσια — 12+ σε ξεχωριστούς κοιτώνες',
+                'ονοματεπώνυμο_αντιπεριφερειάρχη': 'Βασιλική Καβαλλάρη',
+            },
+            'status': 'sent_to_irida',
+        },
+        {
+            'data': {
+                'έτος': '2025',
+                'τίτλος_κατασκήνωσης': 'Αναγέννηση',
+                'επωνυμία_εταιρείας': 'Παιδικές Κατασκηνώσεις Κωνσταντινέα Α.Ε',
+                'τοποθεσία': 'Θέση Παπούλι, Δήμος Ωρωπού',
+                'ημερομηνία_έναρξης': '16/06/2025',
+                'ημερομηνία_λήξης': '28/08/2025',
+                'αριθμός_περιόδων': '5',
+                'δυναμικότητα': '924',
+                'περιγραφή_ηλικιών_και_διαχωρισμού': '6-16 αγόρια κορίτσια — 12+ σε ξεχωριστούς κοιτώνες',
+                'ονοματεπώνυμο_αντιπεριφερειάρχη': 'Βασιλική Καβαλλάρη',
+            },
+            'status': 'draft',
+        },
+        {
+            'data': {
+                'έτος': '2025',
+                'τίτλος_κατασκήνωσης': 'Αγία Μαρίνα',
+                'επωνυμία_εταιρείας': 'Πειραϊκός Σύνδεσμος Α.Ε.',
+                'τοποθεσία': 'Αγία Μαρίνα Κορωπίου',
+                'ημερομηνία_έναρξης': '20/06/2025',
+                'ημερομηνία_λήξης': '05/09/2025',
+                'αριθμός_περιόδων': '4',
+                'δυναμικότητα': '650',
+                'περιγραφή_ηλικιών_και_διαχωρισμού': '6-15 μικτό — 12+ σε ξεχωριστούς κοιτώνες',
+                'ονοματεπώνυμο_αντιπεριφερειάρχη': 'Βασιλική Καβαλλάρη',
+            },
+            'status': 'draft',
+        },
+        {
+            'data': {
+                'έτος': '2025',
+                'τίτλος_κατασκήνωσης': 'Ηλιοτρόπιο',
+                'επωνυμία_εταιρείας': 'ΗΛΙΟΤΡΟΠΙΟ CAMP Α.Ε.',
+                'τοποθεσία': 'Βαρνάβας, Δήμος Μαραθώνος',
+                'ημερομηνία_έναρξης': '18/06/2025',
+                'ημερομηνία_λήξης': '30/08/2025',
+                'αριθμός_περιόδων': '5',
+                'δυναμικότητα': '800',
+                'περιγραφή_ηλικιών_και_διαχωρισμού': '6-16 αγόρια κορίτσια',
+                'ονοματεπώνυμο_αντιπεριφερειάρχη': 'Βασιλική Καβαλλάρη',
+            },
+            'status': 'protocol_received',
+            'protocol_number': f'{today.year}/ΑΔ-0038',
+        },
+    ]
+
+    for i, rec_data in enumerate(records_data):
+        rendered = resolve_placeholders(
+            camp_tpl.body_template, None, rec_data['data'])
+
+        record = DecisionRecord(
+            template_id=camp_tpl.id,
+            data=rec_data['data'],
+            rendered_body=rendered,
+            status=rec_data['status'],
+            created_by=users['mpapadopoulou'].id,
+            created_at=datetime.utcnow() - timedelta(days=30 - i * 5),
+        )
+        if rec_data['status'] == 'protocol_received':
+            record.protocol_number = rec_data.get('protocol_number')
+            record.protocol_received_at = datetime.utcnow() - timedelta(days=20 - i * 3)
+        elif rec_data['status'] == 'sent_to_irida':
+            record.sent_to_irida_at = datetime.utcnow() - timedelta(days=10)
+
+        db.session.add(record)
+
+    db.session.flush()
+    print(f"[seed]   {DecisionRecord.query.count()} decision records seeded")
