@@ -100,11 +100,19 @@ function ForumPage() {
     category_id: ''
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [discussionsLoaded, setDiscussionsLoaded] = useState(false);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
   useEffect(() => {
     fetchDiscussions();
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (discussionsLoaded && categoriesLoaded) {
+      setIsLoading(false);
+    }
+  }, [discussionsLoaded, categoriesLoaded]);
 
   const fetchDiscussions = async () => {
     try {
@@ -113,6 +121,8 @@ function ForumPage() {
     } catch (error) {
       console.error('Error fetching discussions:', error);
       setDiscussions([]);
+    } finally {
+      setDiscussionsLoaded(true);
     }
   };
 
@@ -120,11 +130,11 @@ function ForumPage() {
     try {
       const { data } = await api.get('/api/categories');
       setCategories(data);
-      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching categories:', error);
       setCategories([]);
-      setIsLoading(false);
+    } finally {
+      setCategoriesLoaded(true);
     }
   };
 
