@@ -178,6 +178,26 @@ function DocumentComposePage() {
     }
   };
 
+  const handleDownloadDocx = async () => {
+    if (!decisionId) return;
+    try {
+      const response = await api.get(`/api/decisions/${decisionId}/docx`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `decision_${decisionId}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('DOCX δημιουργήθηκε');
+    } catch (error) {
+      toast.error('Σφάλμα δημιουργίας DOCX');
+    }
+  };
+
   const handleSendToIrida = async () => {
     if (!decisionId) return;
     try {
@@ -460,6 +480,14 @@ function DocumentComposePage() {
               Πίσω στα στοιχεία
             </Button>
             <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleDownloadDocx}
+                className="min-h-[44px] border-[#e8e2d8]"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Λήψη DOCX
+              </Button>
               <Button
                 variant="outline"
                 onClick={handleDownloadPdf}

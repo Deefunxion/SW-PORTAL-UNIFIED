@@ -99,6 +99,25 @@ function DocumentRegistryPage() {
     }
   };
 
+  const handleDownloadDocx = async (doc) => {
+    if (doc.source !== 'decision_record') return;
+    try {
+      const response = await api.get(`/api/decisions/${doc.id}/docx`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `decision_${doc.id}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading DOCX:', error);
+    }
+  };
+
   const formatDate = (iso) => {
     if (!iso) return '—';
     try {
@@ -249,6 +268,13 @@ function DocumentRegistryPage() {
                                   )}
                                 </Button>
                               </Link>
+                              <Button
+                                variant="ghost" size="sm" className="h-8 w-8 p-0"
+                                onClick={() => handleDownloadDocx(doc)}
+                                title="Λήψη DOCX"
+                              >
+                                <FileText className="w-4 h-4 text-[#6b6560]" />
+                              </Button>
                               <Button
                                 variant="ghost" size="sm" className="h-8 w-8 p-0"
                                 onClick={() => handleDownloadPdf(doc)}

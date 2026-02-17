@@ -115,6 +115,37 @@ class TestGenerateDecisionDocx:
         assert isinstance(result, bytes)
 
 
+class TestDocxEndpoint:
+    def test_docx_download(self, app, client, auth_headers):
+        """Test that /api/decisions/<id>/docx returns a DOCX file."""
+        from my_project.documents.models import DecisionTemplate, DecisionRecord
+        from my_project.extensions import db as _db
+
+        with app.app_context():
+            tpl = DecisionTemplate(
+                type='test_docx', title='Test Template',
+                body_template='<p>Test body {{name}}</p>',
+                schema={'fields': []},
+                legal_references=['Test Ref 1'],
+                recipients_template=[{'name': 'Test Recipient'}],
+            )
+            _db.session.add(tpl)
+            _db.session.flush()
+            rec = DecisionRecord(
+                template_id=tpl.id, data={'name': 'Demo'},
+                rendered_body='<p>Test body Demo</p>',
+                status='draft', created_by=1,
+            )
+            _db.session.add(rec)
+            _db.session.commit()
+            rec_id = rec.id
+
+        response = client.get(f'/api/decisions/{rec_id}/docx', headers=auth_headers)
+        assert response.status_code == 200
+        assert 'wordprocessingml' in response.content_type
+        assert len(response.data) > 0
+
+
 class TestGenerateDecisionPdf:
     """Verify existing PDF generation still works."""
     def test_returns_bytes(self, sample_html, sample_title, sample_recipients):

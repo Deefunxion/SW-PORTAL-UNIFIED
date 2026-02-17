@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from . import documents_bp
 from ..extensions import db
 from .models import DecisionTemplate, DecisionRecord, DocumentAuditLog
-from .generator import resolve_placeholders, generate_decision_pdf
+from .generator import resolve_placeholders, generate_decision_pdf, generate_decision_docx
 
 
 def _audit(user_id, action, entity_type, entity_id, details=None):
@@ -203,6 +203,38 @@ def generate_pdf(decision_id):
     )
 
 
+@documents_bp.route('/api/decisions/<int:decision_id>/docx',
+                     methods=['GET'])
+@jwt_required()
+def generate_docx(decision_id):
+    """Generate and return DOCX for a decision."""
+    user_id = int(get_jwt_identity())
+    record = DecisionRecord.query.get_or_404(decision_id)
+
+    recipients = (record.template.recipients_template
+                  if record.template else [])
+    title = record.template.title if record.template else 'Έγγραφο'
+    legal_refs = (record.template.legal_references
+                  if record.template else [])
+
+    docx_bytes = generate_decision_docx(
+        record.rendered_body, title, recipients, legal_refs,
+        protocol_number=record.protocol_number)
+
+    _audit(user_id, 'generate_docx', 'decision_record', record.id)
+    db.session.commit()
+
+    return Response(
+        docx_bytes,
+        mimetype='application/vnd.openxmlformats-officedocument'
+                 '.wordprocessingml.document',
+        headers={
+            'Content-Disposition':
+                f'attachment; filename="decision_{record.id}.docx"'
+        },
+    )
+
+
 @documents_bp.route(
     '/api/decisions/<int:decision_id>/set-protocol', methods=['PATCH'])
 @jwt_required()
@@ -244,18 +276,21 @@ def send_to_irida(decision_id):
         return jsonify({'error': 'Η σύνδεση ΙΡΙΔΑ δεν έχει '
                         'ρυθμιστεί'}), 503
 
-    # Generate PDF
+    # Generate DOCX for ΙΡΙΔΑ (ΙΡΙΔΑ converts to PDF internally)
     recipients = (record.template.recipients_template
                   if record.template else [])
     title = record.template.title if record.template else 'Έγγραφο'
-    pdf_bytes = generate_decision_pdf(
-        record.rendered_body, title, recipients)
+    legal_refs = (record.template.legal_references
+                  if record.template else [])
+    docx_bytes = generate_decision_docx(
+        record.rendered_body, title, recipients, legal_refs,
+        protocol_number=record.protocol_number)
 
     try:
         result = send_document(
             subject=title,
-            pdf_bytes=pdf_bytes,
-            filename=f'decision_{record.id}.pdf',
+            pdf_bytes=docx_bytes,
+            filename=f'decision_{record.id}.docx',
         )
         record.status = 'sent_to_irida'
         record.sent_to_irida_at = datetime.utcnow()
