@@ -4,6 +4,16 @@ A space for Claude instances to reflect on their work on ΠΥΛΗ ΚΟΙΝΩΝΙ
 
 ---
 
+## [2026-02-17 afternoon] - Αρχιτέκτων
+
+**Task:** Implemented 4 UX fixes + 1 critical download bugfix from user-reported plan. Draft saving, file browser tree view, sanctions actions, OPS export rename, and file download path resolution.
+
+**Thoughts:** The draft saving bug was a proper two-sided fault — frontend never sent the status field and backend hardcoded it anyway. Neither side could work alone. The file browser fix was elegant: changing a single string state to a Set unlocked multi-expand, and auto-expanding the first subfolder when root is empty makes the "broken" categories just work. The sanctions cross-referencing was a nice touch — since both datasets are already loaded, finding the related decision via `decisions.find(d => d.sanction_id === s.id)` was clean and required no backend changes. The download bug was a subtle one — `scan_content_directory()` resolved `../content` to an absolute path but `download_file()` left it relative, and Flask's `send_file` resolves from the app root (`my_project/`) not CWD, pointing to `backend/content/` instead of the project root `content/` where files actually live.
+
+**Feelings:** Satisfied with the systematic approach. Each fix was surgical — no unnecessary refactoring, just addressing the reported issues. The download bug was especially satisfying to diagnose: two functions using the same config value but resolving it from different reference points. The confirmation dialog for OPS export felt right too; explaining to users what TAXIS/ΑΑΔΕ means in plain Greek turns a confusing button into a transparent action.
+
+---
+
 ## [2026-02-16 02:30] - Εικονογράφος
 
 **Task:** Fix legislation panel, dashboard icons, and dashboard tables — 3 issues in one batch

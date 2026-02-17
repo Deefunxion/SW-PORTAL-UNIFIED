@@ -127,6 +127,9 @@ def submit_report(inspection_id):
     recommendations = request.form.get('recommendations', '')
     protocol_number = request.form.get('protocol_number', '')
     conclusion = request.form.get('conclusion')
+    report_status = request.form.get('status', 'submitted')
+    if report_status not in ('draft', 'submitted'):
+        report_status = 'submitted'
     checklist_json = request.form.get('checklist_data')
     checklist_data = None
     if checklist_json:
@@ -147,6 +150,27 @@ def submit_report(inspection_id):
             file.save(full_path)
             file_path = f'inspections/{inspection_id}_{filename}'
 
+    # Check for existing draft — update instead of creating new
+    existing_report = InspectionReport.query.filter_by(inspection_id=inspection_id).first()
+    if existing_report:
+        if existing_report.status != 'draft':
+            return jsonify({'error': 'Η έκθεση έχει ήδη υποβληθεί'}), 409
+        existing_report.findings = findings
+        existing_report.recommendations = recommendations
+        existing_report.protocol_number = protocol_number
+        existing_report.checklist_data = checklist_data
+        if file_path:
+            existing_report.file_path = file_path
+        existing_report.status = report_status
+        if report_status == 'submitted':
+            existing_report.submitted_at = datetime.utcnow()
+            existing_report.submitted_by = user_id
+            if conclusion:
+                inspection.conclusion = conclusion
+                inspection.status = 'completed'
+        db.session.commit()
+        return jsonify(existing_report.to_dict()), 200
+
     report = InspectionReport(
         inspection_id=inspection_id,
         protocol_number=protocol_number,
@@ -155,18 +179,19 @@ def submit_report(inspection_id):
         recommendations=recommendations,
         checklist_data=checklist_data,
         file_path=file_path,
-        status='submitted',
+        status=report_status,
         submitted_by=user_id,
-        submitted_at=datetime.utcnow(),
+        submitted_at=datetime.utcnow() if report_status == 'submitted' else None,
     )
-    if conclusion:
+    if conclusion and report_status == 'submitted':
         inspection.conclusion = conclusion
         inspection.status = 'completed'
 
     db.session.add(report)
 
-    from ..oversight.notifications import notify_report_submitted
-    notify_report_submitted(report, report_kind='inspection')
+    if report_status == 'submitted':
+        from ..oversight.notifications import notify_report_submitted
+        notify_report_submitted(report, report_kind='inspection')
 
     db.session.commit()
     return jsonify(report.to_dict()), 201

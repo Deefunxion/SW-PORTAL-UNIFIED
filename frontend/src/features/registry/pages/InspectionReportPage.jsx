@@ -33,8 +33,8 @@ export default function InspectionReportPage() {
 
   if (!inspection) return null;
 
-  // If report already exists, show it read-only
-  if (inspection.report) {
+  // If report already exists and is not a draft, show it read-only
+  if (inspection.report && inspection.report.status !== 'draft') {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Link
@@ -113,6 +113,7 @@ export default function InspectionReportPage() {
 
       <InspectionForm
         inspection={inspection}
+        existingReport={inspection.report?.status === 'draft' ? inspection.report : null}
         onSuccess={() => navigate(`/registry/${inspection.structure_id}`)}
       />
     </div>

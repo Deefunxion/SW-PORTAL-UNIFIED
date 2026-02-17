@@ -26,6 +26,16 @@ import {
   ClipboardList, Download, ExternalLink, FileDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog.jsx';
 import { sanctionsApi, structuresApi, decisionsApi } from '../lib/registryApi';
 import { SANCTION_STATUS, VIOLATION_CATEGORIES, SANCTION_DECISION_STATUSES } from '../lib/constants';
 
@@ -57,6 +67,7 @@ export default function SanctionsPage() {
   const [calculation, setCalculation] = useState(null);
   const [calculating, setCalculating] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [opsExportDialog, setOpsExportDialog] = useState({ open: false, decisionId: null });
 
   // Get selected structure's type_id for filtering rules
   const selectedStructureObj = useMemo(
@@ -112,7 +123,7 @@ export default function SanctionsPage() {
       a.download = `decision-${decisionId}-ops-export.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Εξαγωγή OPS ολοκληρώθηκε');
+      toast.success('Η εξαγωγή βεβαίωσης εσόδου ολοκληρώθηκε');
     } catch {
       toast.error('Σφάλμα εξαγωγής');
     }
@@ -568,13 +579,15 @@ export default function SanctionsPage() {
                         <TableHead>Ημερομηνία</TableHead>
                         <TableHead>Κατάσταση</TableHead>
                         <TableHead>Σημειώσεις</TableHead>
+                        <TableHead className="w-[80px]">Ενέργειες</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {recentSanctions.map(s => {
                         const statusInfo = SANCTION_STATUS[s.status] || { label: s.status, color: 'gray' };
+                        const relatedDecision = decisions.find(d => d.sanction_id === s.id);
                         return (
-                          <TableRow key={s.id}>
+                          <TableRow key={s.id} className={relatedDecision ? 'cursor-pointer hover:bg-[#f5f2ec] transition-colors' : ''}>
                             {!selectedStructure && (
                               <TableCell className="text-sm font-medium">
                                 {s.structure_name || structures.find(st => st.id === s.structure_id)?.name || '—'}
@@ -597,6 +610,21 @@ export default function SanctionsPage() {
                             </TableCell>
                             <TableCell className="text-xs text-[#6b6560] max-w-[200px] truncate">
                               {s.notes || '—'}
+                            </TableCell>
+                            <TableCell>
+                              {relatedDecision ? (
+                                <Button
+                                  variant="ghost" size="sm"
+                                  title="Προβολή Απόφασης"
+                                  onClick={() => { setRightTab('decisions'); }}
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </Button>
+                              ) : (
+                                <Button variant="ghost" size="sm" disabled title="Χωρίς απόφαση">
+                                  <ExternalLink className="w-3.5 h-3.5 opacity-30" />
+                                </Button>
+                              )}
                             </TableCell>
                           </TableRow>
                         );
@@ -693,8 +721,8 @@ export default function SanctionsPage() {
                                 {['approved', 'notified', 'paid'].includes(d.status) && (
                                   <Button
                                     variant="ghost" size="sm"
-                                    title="Εξαγωγή OPS"
-                                    onClick={() => handleExportDecision(d.id)}
+                                    title="Εξαγωγή Βεβαίωσης Εσόδου"
+                                    onClick={() => setOpsExportDialog({ open: true, decisionId: d.id })}
                                   >
                                     <Download className="w-3.5 h-3.5" />
                                   </Button>
@@ -712,6 +740,42 @@ export default function SanctionsPage() {
           )}
         </div>
       </div>
+
+      {/* OPS Export Confirmation Dialog */}
+      <AlertDialog open={opsExportDialog.open} onOpenChange={(open) => setOpsExportDialog({ open, decisionId: open ? opsExportDialog.decisionId : null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Εξαγωγή Βεβαίωσης Εσόδου</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Θα εξαχθεί αρχείο JSON με τα στοιχεία της απόφασης για καταχώρηση
+                  στο Ολοκληρωμένο Πληροφοριακό Σύστημα (TAXIS/ΑΑΔΕ).
+                </p>
+                <p className="text-sm">Το αρχείο περιλαμβάνει:</p>
+                <ul className="text-sm list-disc pl-5 space-y-1">
+                  <li>Αριθμό απόφασης & ημερομηνία έγκρισης</li>
+                  <li>Στοιχεία υπόχρεου (ΑΦΜ, ΔΟΥ, διεύθυνση)</li>
+                  <li>Ποσά ανά ΚΑΕ (κρατικός & περιφερειακός προϋπολογισμός)</li>
+                  <li>Νομική βάση επιβολής</li>
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Ακύρωση</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-[#1a3aa3] hover:bg-[#152e82] text-white"
+              onClick={() => {
+                handleExportDecision(opsExportDialog.decisionId);
+                setOpsExportDialog({ open: false, decisionId: null });
+              }}
+            >
+              Εξαγωγή
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
