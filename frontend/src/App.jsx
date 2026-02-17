@@ -14,7 +14,8 @@ import {
   User,
   Shield,
   Database,
-  ClipboardList
+  ClipboardList,
+  FileText
 } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFolder, faComments, faRobot, faEnvelope, faMobileAlt, faBuilding } from '@fortawesome/free-solid-svg-icons';
@@ -50,6 +51,8 @@ import AdvisorReportPage from '@/features/registry/pages/AdvisorReportPage';
 import SanctionsPage from '@/features/registry/pages/SanctionsPage';
 import SanctionDecisionPage from '@/features/registry/pages/SanctionDecisionPage';
 import DecisionApprovalPage from '@/features/registry/pages/DecisionApprovalPage';
+import DocumentRegistryPage from '@/pages/DocumentRegistryPage';
+import DocumentComposePage from '@/pages/DocumentComposePage';
 
 import './App.css';
 
@@ -67,6 +70,7 @@ function Navigation() {
     { path: '/forum', label: 'Φόρουμ', icon: MessageSquare },
     { path: '/assistant', label: 'AI Βοηθός', icon: Bot },
     { path: '/registry', label: 'Εποπτεία', icon: ClipboardList },
+    { path: '/documents', label: 'Έγγραφα', icon: FileText },
   ];
 
   // Add admin-only navigation items
@@ -517,6 +521,21 @@ function AppContent() {
               } showFallback={true}>
                 <KnowledgeBasePage />
               </PermissionGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/documents" element={
+            <ProtectedRoute>
+              <DocumentRegistryPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/documents/new" element={
+            <ProtectedRoute>
+              <DocumentComposePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/documents/:id/edit" element={
+            <ProtectedRoute>
+              <DocumentComposePage />
             </ProtectedRoute>
           } />
         </Routes>
