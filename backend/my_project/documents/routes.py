@@ -224,6 +224,57 @@ def set_protocol(decision_id):
     return jsonify(record.to_dict()), 200
 
 
+# --- ΙΡΙΔΑ Integration ---
+
+@documents_bp.route(
+    '/api/decisions/<int:decision_id>/send-to-irida', methods=['POST'])
+@jwt_required()
+def send_to_irida(decision_id):
+    """Send a decision to ΙΡΙΔΑ for protocol assignment."""
+    user_id = int(get_jwt_identity())
+    record = DecisionRecord.query.get_or_404(decision_id)
+
+    if record.status not in ('draft',):
+        return jsonify({'error': 'Μόνο πρόχειρα έγγραφα μπορούν να '
+                        'σταλούν'}), 400
+
+    from ..integrations.irida_client import (send_document,
+                                             is_configured)
+    if not is_configured():
+        return jsonify({'error': 'Η σύνδεση ΙΡΙΔΑ δεν έχει '
+                        'ρυθμιστεί'}), 503
+
+    # Generate PDF
+    recipients = (record.template.recipients_template
+                  if record.template else [])
+    title = record.template.title if record.template else 'Έγγραφο'
+    pdf_bytes = generate_decision_pdf(
+        record.rendered_body, title, recipients)
+
+    try:
+        result = send_document(
+            subject=title,
+            pdf_bytes=pdf_bytes,
+            filename=f'decision_{record.id}.pdf',
+        )
+        record.status = 'sent_to_irida'
+        record.sent_to_irida_at = datetime.utcnow()
+
+        # If ΙΡΙΔΑ returns protocol number immediately
+        if result.get('protocol_number'):
+            record.protocol_number = result['protocol_number']
+            record.status = 'protocol_received'
+            record.protocol_received_at = datetime.utcnow()
+
+        _audit(user_id, 'send_to_irida', 'decision_record',
+               record.id, result)
+        db.session.commit()
+        return jsonify(record.to_dict()), 200
+
+    except Exception as e:
+        return jsonify({'error': f'Σφάλμα ΙΡΙΔΑ: {str(e)}'}), 502
+
+
 # --- Document Registry (unified view) ---
 
 @documents_bp.route('/api/document-registry', methods=['GET'])
