@@ -259,15 +259,19 @@ function DocumentRegistryPage() {
                         <div className="flex justify-end gap-1">
                           {doc.source === 'decision_record' && (
                             <>
-                              <Link to={`/documents/${doc.id}/edit`}>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Προβολή/Επεξεργασία">
-                                  {doc.status === 'draft' ? (
+                              {doc.status === 'draft' ? (
+                                <Link to={`/documents/${doc.id}/edit`}>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Επεξεργασία">
                                     <Edit className="w-4 h-4 text-[#6b6560]" />
-                                  ) : (
+                                  </Button>
+                                </Link>
+                              ) : (
+                                <Link to={`/documents/${doc.id}/preview`}>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Προβολή">
                                     <Eye className="w-4 h-4 text-[#6b6560]" />
-                                  )}
-                                </Button>
-                              </Link>
+                                  </Button>
+                                </Link>
+                              )}
                               <Button
                                 variant="ghost" size="sm" className="h-8 w-8 p-0"
                                 onClick={() => handleDownloadDocx(doc)}

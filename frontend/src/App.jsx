@@ -53,6 +53,7 @@ import SanctionDecisionPage from '@/features/registry/pages/SanctionDecisionPage
 import DecisionApprovalPage from '@/features/registry/pages/DecisionApprovalPage';
 import DocumentRegistryPage from '@/pages/DocumentRegistryPage';
 import DocumentComposePage from '@/pages/DocumentComposePage';
+import DocumentPreviewPage from '@/pages/DocumentPreviewPage';
 
 import './App.css';
 
@@ -536,6 +537,11 @@ function AppContent() {
           <Route path="/documents/:id/edit" element={
             <ProtectedRoute>
               <DocumentComposePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/documents/:id/preview" element={
+            <ProtectedRoute>
+              <DocumentPreviewPage />
             </ProtectedRoute>
           } />
         </Routes>

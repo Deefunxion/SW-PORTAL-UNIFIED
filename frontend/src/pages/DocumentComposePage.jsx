@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import DocumentPreview from '@/components/DocumentPreview';
 
 const STEPS = [
   { id: 'template', label: 'Πρότυπο' },
@@ -462,17 +463,17 @@ function DocumentComposePage() {
       {/* Step 3: Preview */}
       {step === 3 && (
         <div className="space-y-4">
-          <Card className="border-[#e8e2d8]">
-            <CardHeader>
-              <CardTitle className="text-lg text-[#2a2520]">Προεπισκόπηση — {previewTitle}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div
-                className="prose prose-sm max-w-none bg-white p-8 border border-[#e8e2d8] rounded-lg min-h-[400px]"
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
-              />
-            </CardContent>
-          </Card>
+          <div className="overflow-auto bg-[#f0ece6] p-8 rounded-lg">
+            <DocumentPreview
+              title={previewTitle}
+              renderedBody={previewHtml}
+              protocolNumber={null}
+              date={null}
+              legalReferences={selectedTemplate?.legal_references || []}
+              recipients={selectedTemplate?.recipients_template || []}
+              status={decisionStatus}
+            />
+          </div>
 
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setStep(2)} className="min-h-[44px] border-[#e8e2d8]">
