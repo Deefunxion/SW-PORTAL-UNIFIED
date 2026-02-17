@@ -1421,4 +1421,283 @@ def _seed_decision_templates(db, DecisionTemplate):
         version=1,
     ))
     db.session.flush()
-    print("[seed]   Camp license template seeded")
+
+    # ── License templates for other structure types ──
+    license_types = [
+        ('mfh_license', 'Άδεια Λειτουργίας ΜΦΗ',
+         'Άδεια λειτουργίας Μονάδας Φροντίδας Ηλικιωμένων.', 'MFH'),
+        ('kdap_license', 'Άδεια Λειτουργίας ΚΔΑΠ',
+         'Άδεια λειτουργίας Κέντρου Δημιουργικής Απασχόλησης Παιδιών.', 'KDAP'),
+        ('syd_license', 'Άδεια Λειτουργίας ΣΥΔ',
+         'Άδεια λειτουργίας Στέγης Υποστηριζόμενης Διαβίωσης.', 'SYD'),
+        ('kdhf_license', 'Άδεια Λειτουργίας ΚΔΗΦ-ΚΑΑ',
+         'Άδεια λειτουργίας Κέντρου Διημέρευσης-Ημερήσιας Φροντίδας.', 'KDHF-KAA'),
+        ('mfpad_license', 'Άδεια Λειτουργίας ΜΦΠΑΔ',
+         'Άδεια λειτουργίας Μονάδας Φροντίδας Προσχολικής Αγωγής.', 'MFPAD'),
+    ]
+
+    license_schema = {
+        'fields': [
+            {'key': 'όνομα_δομής', 'label': 'Επωνυμία δομής', 'type': 'text', 'required': True},
+            {'key': 'εκπρόσωπος', 'label': 'Νόμιμος εκπρόσωπος', 'type': 'text', 'required': True},
+            {'key': 'ΑΦΜ_εκπροσώπου', 'label': 'ΑΦΜ εκπροσώπου', 'type': 'text', 'required': True},
+            {'key': 'οδός', 'label': 'Οδός', 'type': 'text', 'required': True},
+            {'key': 'πόλη', 'label': 'Πόλη', 'type': 'text', 'required': True},
+            {'key': 'ΤΚ', 'label': 'Τ.Κ.', 'type': 'text', 'required': True},
+            {'key': 'δυναμικότητα', 'label': 'Δυναμικότητα', 'type': 'number', 'required': True},
+            {'key': 'αριθμός_αίτησης', 'label': 'Αρ. αίτησης', 'type': 'text', 'required': False},
+            {'key': 'ημερομηνία_αίτησης', 'label': 'Ημερομηνία αίτησης', 'type': 'date', 'required': False},
+            {'key': 'αριθμός_πυρασφάλειας', 'label': 'Αρ. πυρασφάλειας', 'type': 'text', 'required': False},
+            {'key': 'λήξη_πυρασφάλειας', 'label': 'Λήξη πυρασφάλειας', 'type': 'date', 'required': False},
+            {'key': 'ονοματεπώνυμο_αντιπεριφερειάρχη', 'label': 'Αντιπεριφερειάρχης', 'type': 'text', 'required': False},
+        ]
+    }
+
+    license_body = """<p>ΘΕΜΑ: Χορήγηση άδειας λειτουργίας {{τύπος_δομής}} με την επωνυμία «{{όνομα_δομής}}»</p>
+
+<p><strong>ΑΠΟΦΑΣΗ</strong></p>
+
+<p>Έχοντας υπόψη τις κείμενες διατάξεις και τα δικαιολογητικά που υποβλήθηκαν,</p>
+
+<p><strong>ΑΠΟΦΑΣΙΖΟΥΜΕ</strong></p>
+
+<p>Χορηγούμε στον/στην {{εκπρόσωπος}} (ΑΦΜ: {{ΑΦΜ_εκπροσώπου}}) άδεια λειτουργίας {{τύπος_δομής}} με την επωνυμία «{{όνομα_δομής}}» στη διεύθυνση {{οδός}}, {{πόλη}}, Τ.Κ. {{ΤΚ}}, δυναμικότητας {{δυναμικότητα}} ωφελούμενων.</p>
+
+<p>Η παρούσα ισχύει υπό τους εξής όρους:</p>
+<p>Α) Τήρηση των κανόνων υγιεινής και ασφάλειας.</p>
+<p>Β) Πρόσληψη του απαιτούμενου προσωπικού σύμφωνα με την κείμενη νομοθεσία.</p>
+<p>Γ) Βεβαίωση πυρασφάλειας σε ισχύ (Αρ. {{αριθμός_πυρασφάλειας}}, λήξη: {{λήξη_πυρασφάλειας}}).</p>
+
+<p>Τυχόν παραβάσεις συνεπάγονται κυρώσεις κατά τις σχετικές διατάξεις.</p>
+
+<p>{{ονοματεπώνυμο_αντιπεριφερειάρχη}}<br/>Αντιπεριφερειάρχης</p>"""
+
+    license_legal = [
+        'Ν.3852/2010 «Πρόγραμμα Καλλικράτης»',
+        'Π.Δ. 145/2010 «Οργανισμός Περιφέρειας Αττικής»',
+        'Ν. 2345/1995 «Οργανωμένες υπηρεσίες παροχής προστασίας»',
+        'Ν.3861/10 «Πρόγραμμα ΔΙΑΥΓΕΙΑ»',
+    ]
+
+    license_recipients = [
+        {'name': 'Υπουργείο Κοινωνικής Συνοχής και Οικογένειας'},
+        {'name': 'Ε.Α.Δ. – Σώμα Επιθεωρητών Υγείας και Πρόνοιας'},
+    ]
+
+    for ltype, ltitle, ldesc, lcode in license_types:
+        db.session.add(DecisionTemplate(
+            type=ltype, title=ltitle, description=ldesc,
+            body_template=license_body, legal_references=license_legal,
+            schema=license_schema, recipients_template=license_recipients,
+            structure_type_code=lcode, is_active=True, version=1,
+        ))
+
+    # ── Sanction templates ──
+    sanction_schema = {
+        'fields': [
+            {'key': 'όνομα_δομής', 'label': 'Δομή', 'type': 'text', 'required': True},
+            {'key': 'εκπρόσωπος', 'label': 'Υπόχρεος', 'type': 'text', 'required': True},
+            {'key': 'ΑΦΜ_εκπροσώπου', 'label': 'ΑΦΜ υπόχρεου', 'type': 'text', 'required': True},
+            {'key': 'κωδικός_παράβασης', 'label': 'Κωδικός παράβασης', 'type': 'text', 'required': True},
+            {'key': 'περιγραφή_παράβασης', 'label': 'Περιγραφή παράβασης', 'type': 'text', 'required': True},
+            {'key': 'ποσό', 'label': 'Ποσό κύρωσης (€)', 'type': 'number', 'required': True},
+            {'key': 'αιτιολόγηση', 'label': 'Αιτιολόγηση', 'type': 'text', 'required': True},
+            {'key': 'ημερομηνία_ελέγχου', 'label': 'Ημερομηνία ελέγχου', 'type': 'date', 'required': False},
+            {'key': 'προθεσμία_πληρωμής_ημέρες', 'label': 'Προθεσμία πληρωμής (ημέρες)', 'type': 'number', 'required': False},
+        ]
+    }
+
+    sanction_fine_body = """<p>ΘΕΜΑ: Επιβολή προστίμου στη δομή «{{όνομα_δομής}}»</p>
+
+<p><strong>ΑΠΟΦΑΣΗ</strong></p>
+
+<p>Έχοντας υπόψη τα ευρήματα ελέγχου της {{ημερομηνία_ελέγχου}} και τις κείμενες διατάξεις,</p>
+
+<p><strong>ΑΠΟΦΑΣΙΖΟΥΜΕ</strong></p>
+
+<p>Επιβάλλουμε στον/στην {{εκπρόσωπος}} (ΑΦΜ: {{ΑΦΜ_εκπροσώπου}}), υπεύθυνο/η της δομής «{{όνομα_δομής}}», πρόστιμο {{ποσό}}€ για την παράβαση: {{περιγραφή_παράβασης}} (Κωδ. {{κωδικός_παράβασης}}).</p>
+
+<p>Αιτιολόγηση: {{αιτιολόγηση}}</p>
+
+<p>Το πρόστιμο καταβάλλεται εντός {{προθεσμία_πληρωμής_ημέρες}} ημερών. Σε περίπτωση μη καταβολής εφαρμόζονται οι διατάξεις του Κ.Ε.Δ.Ε.</p>"""
+
+    db.session.add(DecisionTemplate(
+        type='sanction_fine', title='Απόφαση Επιβολής Προστίμου',
+        description='Απόφαση επιβολής χρηματικού προστίμου σε δομή κοινωνικής φροντίδας.',
+        body_template=sanction_fine_body,
+        legal_references=['Ν.5041/2023 «Κώδικας Κυρώσεων»', 'Ν.3852/2010', 'Ν.3861/10 «ΔΙΑΥΓΕΙΑ»'],
+        schema=sanction_schema,
+        recipients_template=[
+            {'name': 'Υπόχρεος'},
+            {'name': 'Υπουργείο Κοινωνικής Συνοχής'},
+            {'name': 'Α.Α.Δ.Ε. – ΔΟΥ αρμόδια'},
+        ],
+        structure_type_code=None, is_active=True, version=1,
+    ))
+
+    sanction_suspension_body = """<p>ΘΕΜΑ: Αναστολή λειτουργίας δομής «{{όνομα_δομής}}»</p>
+
+<p><strong>ΑΠΟΦΑΣΗ</strong></p>
+
+<p>Λόγω σοβαρών παραβάσεων που διαπιστώθηκαν κατά τον έλεγχο της {{ημερομηνία_ελέγχου}},</p>
+
+<p><strong>ΑΠΟΦΑΣΙΖΟΥΜΕ</strong></p>
+
+<p>Αναστέλλουμε τη λειτουργία της δομής «{{όνομα_δομής}}» (υπεύθυνος: {{εκπρόσωπος}}, ΑΦΜ: {{ΑΦΜ_εκπροσώπου}}) για λόγους δημόσιας ασφάλειας.</p>
+
+<p>Παράβαση: {{περιγραφή_παράβασης}} (Κωδ. {{κωδικός_παράβασης}})</p>
+<p>Αιτιολόγηση: {{αιτιολόγηση}}</p>
+
+<p>Η αναστολή ισχύει μέχρι πλήρους συμμόρφωσης και νέου ελέγχου.</p>"""
+
+    db.session.add(DecisionTemplate(
+        type='sanction_suspension', title='Απόφαση Αναστολής Λειτουργίας',
+        description='Απόφαση αναστολής λειτουργίας δομής λόγω σοβαρών παραβάσεων.',
+        body_template=sanction_suspension_body,
+        legal_references=['Ν.5041/2023', 'Ν.3852/2010', 'Ν.3861/10 «ΔΙΑΥΓΕΙΑ»'],
+        schema=sanction_schema,
+        recipients_template=[
+            {'name': 'Υπόχρεος'},
+            {'name': 'Υπουργείο Κοινωνικής Συνοχής'},
+            {'name': 'Αστυνομική Αρχή'},
+        ],
+        structure_type_code=None, is_active=True, version=1,
+    ))
+
+    # ── Committee Formation ──
+    committee_schema = {
+        'fields': [
+            {'key': 'τίτλος_επιτροπής', 'label': 'Τίτλος επιτροπής', 'type': 'text', 'required': True},
+            {'key': 'σκοπός', 'label': 'Σκοπός', 'type': 'text', 'required': True},
+            {'key': 'μέλη', 'label': 'Μέλη (ονόματα, ιδιότητες)', 'type': 'text', 'required': True},
+            {'key': 'πρόεδρος', 'label': 'Πρόεδρος', 'type': 'text', 'required': True},
+            {'key': 'ημερομηνία_συγκρότησης', 'label': 'Ημερομηνία συγκρότησης', 'type': 'date', 'required': True},
+            {'key': 'διάρκεια_θητείας', 'label': 'Διάρκεια θητείας', 'type': 'text', 'required': False},
+        ]
+    }
+
+    db.session.add(DecisionTemplate(
+        type='committee_formation', title='Απόφαση Συγκρότησης Επιτροπής',
+        description='Απόφαση συγκρότησης ελεγκτικής ή γνωμοδοτικής επιτροπής.',
+        body_template="""<p>ΘΕΜΑ: Συγκρότηση {{τίτλος_επιτροπής}}</p>
+
+<p><strong>ΑΠΟΦΑΣΗ</strong></p>
+
+<p>Έχοντας υπόψη τις κείμενες διατάξεις,</p>
+
+<p><strong>ΑΠΟΦΑΣΙΖΟΥΜΕ</strong></p>
+
+<p>Τη συγκρότηση {{τίτλος_επιτροπής}} με σκοπό: {{σκοπός}}</p>
+
+<p>Πρόεδρος: {{πρόεδρος}}</p>
+<p>Μέλη: {{μέλη}}</p>
+
+<p>Ημερομηνία συγκρότησης: {{ημερομηνία_συγκρότησης}}</p>
+<p>Διάρκεια θητείας: {{διάρκεια_θητείας}}</p>""",
+        legal_references=['Ν.3852/2010', 'Ν.3861/10 «ΔΙΑΥΓΕΙΑ»'],
+        schema=committee_schema,
+        recipients_template=[
+            {'name': 'Μέλη επιτροπής'},
+            {'name': 'Υπουργείο Κοινωνικής Συνοχής'},
+        ],
+        structure_type_code=None, is_active=True, version=1,
+    ))
+
+    # ── Transmittal (Διαβιβαστικό) ──
+    transmittal_schema = {
+        'fields': [
+            {'key': 'θέμα', 'label': 'Θέμα', 'type': 'text', 'required': True},
+            {'key': 'αποδέκτης', 'label': 'Αποδέκτης', 'type': 'text', 'required': True},
+            {'key': 'περιεχόμενο', 'label': 'Κείμενο διαβιβαστικού', 'type': 'text', 'required': True},
+            {'key': 'συνημμένα', 'label': 'Συνημμένα έγγραφα', 'type': 'text', 'required': False},
+        ]
+    }
+
+    db.session.add(DecisionTemplate(
+        type='transmittal', title='Διαβιβαστικό Έγγραφο',
+        description='Διαβιβαστικό έγγραφο για αποστολή σε φορέα ή υπηρεσία.',
+        body_template="""<p>ΘΕΜΑ: {{θέμα}}</p>
+
+<p>ΠΡΟΣ: {{αποδέκτης}}</p>
+
+<p>{{περιεχόμενο}}</p>
+
+<p>Συνημμένα: {{συνημμένα}}</p>""",
+        legal_references=[],
+        schema=transmittal_schema,
+        recipients_template=[],
+        structure_type_code=None, is_active=True, version=1,
+    ))
+
+    # ── Advisor Report Template ──
+    advisor_schema = {
+        'fields': [
+            {'key': 'όνομα_δομής', 'label': 'Δομή', 'type': 'text', 'required': True},
+            {'key': 'τύπος_έκθεσης', 'label': 'Τύπος', 'type': 'select', 'required': True,
+             'options': ['Τακτική', 'Έκτακτη', 'Παρακολούθησης']},
+            {'key': 'αξιολόγηση', 'label': 'Αξιολόγηση', 'type': 'text', 'required': True},
+            {'key': 'προτάσεις', 'label': 'Προτάσεις', 'type': 'text', 'required': True},
+            {'key': 'ημερομηνία_επίσκεψης', 'label': 'Ημερομηνία επίσκεψης', 'type': 'date', 'required': True},
+        ]
+    }
+
+    db.session.add(DecisionTemplate(
+        type='advisor_report', title='Έκθεση Κοινωνικού Συμβούλου',
+        description='Πρότυπο έκθεσης κοινωνικού συμβούλου μετά από επίσκεψη σε δομή.',
+        body_template="""<p>ΕΚΘΕΣΗ ΚΟΙΝΩΝΙΚΟΥ ΣΥΜΒΟΥΛΟΥ</p>
+
+<p>Δομή: {{όνομα_δομής}}</p>
+<p>Τύπος: {{τύπος_έκθεσης}} Έκθεση</p>
+<p>Ημερομηνία επίσκεψης: {{ημερομηνία_επίσκεψης}}</p>
+
+<p><strong>Αξιολόγηση:</strong></p>
+<p>{{αξιολόγηση}}</p>
+
+<p><strong>Προτάσεις:</strong></p>
+<p>{{προτάσεις}}</p>""",
+        legal_references=['Ν.3852/2010', 'Π.Δ. 145/2010'],
+        schema=advisor_schema,
+        recipients_template=[{'name': 'Δ/νση Δημόσιας Υγείας και Κοινωνικής Μέριμνας'}],
+        structure_type_code=None, is_active=True, version=1,
+    ))
+
+    # ── Inspection Report Template ──
+    inspection_schema = {
+        'fields': [
+            {'key': 'όνομα_δομής', 'label': 'Δομή', 'type': 'text', 'required': True},
+            {'key': 'ημερομηνία_ελέγχου', 'label': 'Ημερομηνία ελέγχου', 'type': 'date', 'required': True},
+            {'key': 'τύπος_ελέγχου', 'label': 'Τύπος ελέγχου', 'type': 'select', 'required': True,
+             'options': ['Τακτικός', 'Έκτακτος', 'Επανέλεγχος']},
+            {'key': 'ευρήματα', 'label': 'Ευρήματα', 'type': 'text', 'required': True},
+            {'key': 'προτάσεις', 'label': 'Προτάσεις', 'type': 'text', 'required': True},
+            {'key': 'μέλη_επιτροπής', 'label': 'Μέλη ελεγκτικής επιτροπής', 'type': 'text', 'required': True},
+        ]
+    }
+
+    db.session.add(DecisionTemplate(
+        type='inspection_report', title='Έκθεση Επιθεώρησης Δομής',
+        description='Πρότυπο έκθεσης ελέγχου δομής κοινωνικής φροντίδας.',
+        body_template="""<p>ΕΚΘΕΣΗ ΕΠΙΘΕΩΡΗΣΗΣ</p>
+
+<p>Δομή: {{όνομα_δομής}}</p>
+<p>Ημερομηνία ελέγχου: {{ημερομηνία_ελέγχου}}</p>
+<p>Τύπος: {{τύπος_ελέγχου}}</p>
+
+<p>Μέλη επιτροπής: {{μέλη_επιτροπής}}</p>
+
+<p><strong>Ευρήματα:</strong></p>
+<p>{{ευρήματα}}</p>
+
+<p><strong>Προτάσεις:</strong></p>
+<p>{{προτάσεις}}</p>""",
+        legal_references=['Ν.3852/2010', 'Ν.5041/2023'],
+        schema=inspection_schema,
+        recipients_template=[
+            {'name': 'Δ/νση Δημόσιας Υγείας και Κοινωνικής Μέριμνας'},
+            {'name': 'Υπουργείο Κοινωνικής Συνοχής'},
+        ],
+        structure_type_code=None, is_active=True, version=1,
+    ))
+
+    db.session.flush()
+    print(f"[seed]   {DecisionTemplate.query.count()} decision templates seeded")
