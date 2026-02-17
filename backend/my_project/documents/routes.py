@@ -424,3 +424,32 @@ def list_audit_log():
     logs = DocumentAuditLog.query.order_by(
         DocumentAuditLog.created_at.desc()).limit(100).all()
     return jsonify([l.to_dict() for l in logs]), 200
+
+
+# --- ΙΡΙΔΑ Inbox ---
+
+@documents_bp.route('/api/irida/inbox', methods=['GET'])
+@jwt_required()
+def irida_inbox():
+    """Fetch pending items from ΙΡΙΔΑ inbox."""
+    from ..integrations.irida_client import get_inbox, is_configured
+    if not is_configured():
+        return jsonify({'error': 'Η σύνδεση ΙΡΙΔΑ δεν έχει '
+                        'ρυθμιστεί', 'items': []}), 503
+    try:
+        page = request.args.get('page', 1, type=int)
+        size = request.args.get('size', 20, type=int)
+        result = get_inbox(received=False, page=page, size=size)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': str(e), 'items': []}), 502
+
+
+@documents_bp.route('/api/irida/status', methods=['GET'])
+@jwt_required()
+def irida_status():
+    """Check if ΙΡΙΔΑ integration is configured and reachable."""
+    from ..integrations.irida_client import is_configured
+    return jsonify({
+        'configured': is_configured(),
+    }), 200
