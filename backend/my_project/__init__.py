@@ -112,6 +112,9 @@ def create_app():
     from .interop import interop_bp
     app.register_blueprint(interop_bp)
 
+    from .documents import documents_bp
+    app.register_blueprint(documents_bp)
+
     # Create database tables and seed data
     with app.app_context():
         # Import models to ensure they are registered
@@ -123,6 +126,7 @@ def create_app():
         from .oversight.models import UserRole, SocialAdvisorReport
         from .sanctions.models import SanctionRule, SanctionDecision
         from .interop.models import InteropLog
+        from .documents.models import DecisionTemplate, DecisionRecord, DocumentAuditLog
 
         # Enable pgvector extension (required for Vector columns)
         try:

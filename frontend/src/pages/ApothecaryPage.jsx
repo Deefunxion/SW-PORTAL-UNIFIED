@@ -34,7 +34,7 @@ function ApothecaryPage() {
   // NEW STATE: Track which category dropdown is open and its content
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownContent, setDropdownContent] = useState({});
-  const [expandedSubfolder, setExpandedSubfolder] = useState(null); // For 3rd level navigation
+  const [expandedSubfolders, setExpandedSubfolders] = useState(new Set()); // For 3rd level navigation
 
   const fetchFiles = useCallback(async () => {
     try {
@@ -55,14 +55,14 @@ function ApothecaryPage() {
     if (activeDropdown === index) {
       // Close if already open
       setActiveDropdown(null);
-      setExpandedSubfolder(null); // Close any expanded subfolders
+      setExpandedSubfolders(new Set()); // Close any expanded subfolders
       return;
     }
 
     try {
       // Set active dropdown immediately for UI feedback
       setActiveDropdown(index);
-      setExpandedSubfolder(null); // Reset expanded subfolders when opening new category
+      setExpandedSubfolders(new Set()); // Reset expanded subfolders when opening new category
       
       console.log('Looking for category:', categoryTitle);
       console.log('Available files:', files);
@@ -98,6 +98,13 @@ function ApothecaryPage() {
             folderName: matchingFolder.category || matchingFolder.name
           }
         });
+        // Auto-expand first subfolder when category has no root files
+        const rootFiles = matchingFolder.files || [];
+        const subs = matchingFolder.subfolders || [];
+        if (rootFiles.length === 0 && subs.length >= 1) {
+          const autoKey = `${index}_${subs[0].category || subs[0].name}`;
+          setExpandedSubfolders(new Set([autoKey]));
+        }
       } else {
         // Show available folders to help user understand structure
         setDropdownContent({
@@ -186,27 +193,16 @@ function ApothecaryPage() {
   // NEW FUNCTION: Handle subfolder click (3rd level navigation)
   const handleSubfolderClick = async (subfolder, categoryIndex) => {
     const subfolderKey = `${categoryIndex}_${subfolder.category || subfolder.name}`;
-    
-    if (expandedSubfolder === subfolderKey) {
-      // Close if already open
-      setExpandedSubfolder(null);
-      return;
-    }
 
-    setExpandedSubfolder(subfolderKey);
-    
-    // Update dropdown content to include expanded subfolder files
-    const currentContent = dropdownContent[categoryIndex];
-    if (currentContent) {
-      setDropdownContent({
-        ...dropdownContent,
-        [categoryIndex]: {
-          ...currentContent,
-          expandedSubfolder: subfolderKey,
-          expandedFiles: subfolder.files || []
-        }
-      });
-    }
+    setExpandedSubfolders(prev => {
+      const next = new Set(prev);
+      if (next.has(subfolderKey)) {
+        next.delete(subfolderKey);
+      } else {
+        next.add(subfolderKey);
+      }
+      return next;
+    });
   };
 
   // NEW FUNCTION: Handle file download
@@ -223,7 +219,7 @@ function ApothecaryPage() {
       console.log('Downloading file:', file);
       console.log('Constructed file path:', filePath);
       
-      const downloadUrl = `/api/files/download/${encodeURIComponent(filePath)}`;
+      const downloadUrl = `/api/files/download/${filePath.split('/').map(encodeURIComponent).join('/')}`;
       
       // Create a temporary link and trigger download
       const link = document.createElement('a');
@@ -299,6 +295,15 @@ function ApothecaryPage() {
           </div>
         )}
 
+        {/* Summary when root has no files but subfolders do */}
+        {(!content.files || content.files.length === 0) && content.subfolders && content.subfolders.length > 0 && (
+          <div className="bg-[#eef1f8] border-2 border-[#d0d8ee] rounded-xl p-4 text-center">
+            <p className="text-sm text-[#6b6560]">
+              Τα αρχεία βρίσκονται στους υποφακέλους παρακάτω. Κάντε κλικ σε έναν υποφάκελο για να δείτε τα αρχεία.
+            </p>
+          </div>
+        )}
+
         {/* Subfolders */}
         {content.subfolders && content.subfolders.length > 0 && (
           <div>
@@ -309,7 +314,7 @@ function ApothecaryPage() {
             <div className="space-y-4">
               {content.subfolders.map((subfolder, idx) => {
                 const subfolderKey = `${categoryIndex}_${subfolder.category || subfolder.name}`;
-                const isExpanded = expandedSubfolder === subfolderKey;
+                const isExpanded = expandedSubfolders.has(subfolderKey);
                 
                 return (
                   <div key={idx} className="group/subfolder border-2 border-[#d0d8ee] rounded-xl overflow-hidden">

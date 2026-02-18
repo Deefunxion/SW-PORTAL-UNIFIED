@@ -489,6 +489,8 @@ def get_file_structure():
 def download_file(file_path):
     """Download a file"""
     content_dir = current_app.config['UPLOAD_FOLDER']
+    if not os.path.isabs(content_dir):
+        content_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), content_dir)
     full_path = os.path.join(content_dir, file_path)
     
     if not os.path.exists(full_path) or not os.path.isfile(full_path):

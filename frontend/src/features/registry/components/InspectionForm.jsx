@@ -17,12 +17,12 @@ import {
 } from '../lib/constants';
 import InspectionChecklist from './InspectionChecklist';
 
-export default function InspectionForm({ inspection, onSuccess }) {
-  const [findings, setFindings] = useState('');
-  const [recommendations, setRecommendations] = useState('');
-  const [conclusion, setConclusion] = useState('');
-  const [protocolNumber, setProtocolNumber] = useState('');
-  const [checklistData, setChecklistData] = useState(null);
+export default function InspectionForm({ inspection, existingReport, onSuccess }) {
+  const [findings, setFindings] = useState(existingReport?.findings || '');
+  const [recommendations, setRecommendations] = useState(existingReport?.recommendations || '');
+  const [conclusion, setConclusion] = useState(existingReport?.conclusion || inspection?.conclusion || '');
+  const [protocolNumber, setProtocolNumber] = useState(existingReport?.protocol_number || '');
+  const [checklistData, setChecklistData] = useState(existingReport?.checklist_data || null);
   const [file, setFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -63,6 +63,7 @@ export default function InspectionForm({ inspection, onSuccess }) {
       formData.append('findings', findings);
       formData.append('recommendations', recommendations);
       formData.append('protocol_number', protocolNumber);
+      formData.append('status', submitStatus);
       if (conclusion) formData.append('conclusion', conclusion);
       if (checklistData) formData.append('checklist_data', JSON.stringify(checklistData));
       if (file) formData.append('file', file);
