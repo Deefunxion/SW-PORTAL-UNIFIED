@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from . import documents_bp
 from ..extensions import db
 from .models import DecisionTemplate, DecisionRecord, DocumentAuditLog
-from .generator import resolve_placeholders, generate_decision_pdf
+from .generator import resolve_placeholders, generate_decision_pdf, generate_decision_docx
 
 
 def _audit(user_id, action, entity_type, entity_id, details=None):
@@ -13,6 +13,21 @@ def _audit(user_id, action, entity_type, entity_id, details=None):
                            entity_type=entity_type, entity_id=entity_id,
                            details=details)
     db.session.add(log)
+
+
+def _next_internal_number():
+    """Generate next internal document number: ΠΚΜ-YYYY/NNNN."""
+    year = datetime.utcnow().year
+    prefix = f'ΠΚΜ-{year}/'
+    last = (DecisionRecord.query
+            .filter(DecisionRecord.internal_number.like(f'{prefix}%'))
+            .order_by(DecisionRecord.internal_number.desc())
+            .first())
+    if last and last.internal_number:
+        seq = int(last.internal_number.split('/')[1]) + 1
+    else:
+        seq = 1
+    return f'{prefix}{seq:04d}'
 
 
 # --- Templates ---
@@ -42,6 +57,35 @@ def list_templates():
 def get_template(template_id):
     template = DecisionTemplate.query.get_or_404(template_id)
     return jsonify(template.to_dict()), 200
+
+
+@documents_bp.route('/api/templates/<int:template_id>/new-version',
+                     methods=['POST'])
+@jwt_required()
+def create_new_version(template_id):
+    """Clone a template as a new version, deactivating the old one."""
+    old = DecisionTemplate.query.get_or_404(template_id)
+    data = request.get_json() or {}
+
+    new_template = DecisionTemplate(
+        type=old.type,
+        title=data.get('title', old.title),
+        description=data.get('description', old.description),
+        body_template=data.get('body_template', old.body_template),
+        legal_references=data.get('legal_references', old.legal_references),
+        schema=data.get('schema', old.schema),
+        recipients_template=data.get('recipients_template',
+                                      old.recipients_template),
+        structure_type_code=old.structure_type_code,
+        is_active=True,
+        version=old.version + 1,
+    )
+    old.is_active = False
+
+    db.session.add(new_template)
+    db.session.commit()
+
+    return jsonify(new_template.to_dict()), 201
 
 
 # --- Decision Records ---
@@ -112,6 +156,7 @@ def create_decision():
         rendered_body=rendered,
         status='draft',
         created_by=user_id,
+        internal_number=_next_internal_number(),
     )
     db.session.add(record)
     db.session.flush()
@@ -120,6 +165,54 @@ def create_decision():
     db.session.commit()
 
     return jsonify(record.to_dict()), 201
+
+
+@documents_bp.route('/api/decisions/bulk', methods=['POST'])
+@jwt_required()
+def create_decisions_bulk():
+    """Create multiple decision records in a single transaction."""
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+
+    template = DecisionTemplate.query.get_or_404(data['template_id'])
+    records_data = data.get('records', [])
+
+    if not records_data:
+        return jsonify({'error': 'Δεν δόθηκαν εγγραφές'}), 400
+
+    from ..registry.models import Structure
+
+    created = []
+    for item in records_data:
+        structure = None
+        if item.get('structure_id'):
+            structure = Structure.query.get(item['structure_id'])
+
+        user_data = item.get('data', {})
+        rendered = resolve_placeholders(
+            template.body_template, structure, user_data)
+
+        record = DecisionRecord(
+            template_id=template.id,
+            structure_id=item.get('structure_id'),
+            data=user_data,
+            rendered_body=rendered,
+            status='draft',
+            created_by=user_id,
+            internal_number=_next_internal_number(),
+        )
+        db.session.add(record)
+        db.session.flush()
+        created.append(record)
+
+    _audit(user_id, 'bulk_create', 'decision_record', created[0].id,
+           {'count': len(created)})
+    db.session.commit()
+
+    return jsonify({
+        'decisions': [r.to_dict() for r in created],
+        'count': len(created),
+    }), 201
 
 
 @documents_bp.route('/api/decisions/<int:decision_id>', methods=['GET'])
@@ -203,6 +296,38 @@ def generate_pdf(decision_id):
     )
 
 
+@documents_bp.route('/api/decisions/<int:decision_id>/docx',
+                     methods=['GET'])
+@jwt_required()
+def generate_docx(decision_id):
+    """Generate and return DOCX for a decision."""
+    user_id = int(get_jwt_identity())
+    record = DecisionRecord.query.get_or_404(decision_id)
+
+    recipients = (record.template.recipients_template
+                  if record.template else [])
+    title = record.template.title if record.template else 'Έγγραφο'
+    legal_refs = (record.template.legal_references
+                  if record.template else [])
+
+    docx_bytes = generate_decision_docx(
+        record.rendered_body, title, recipients, legal_refs,
+        protocol_number=record.protocol_number)
+
+    _audit(user_id, 'generate_docx', 'decision_record', record.id)
+    db.session.commit()
+
+    return Response(
+        docx_bytes,
+        mimetype='application/vnd.openxmlformats-officedocument'
+                 '.wordprocessingml.document',
+        headers={
+            'Content-Disposition':
+                f'attachment; filename="decision_{record.id}.docx"'
+        },
+    )
+
+
 @documents_bp.route(
     '/api/decisions/<int:decision_id>/set-protocol', methods=['PATCH'])
 @jwt_required()
@@ -244,18 +369,21 @@ def send_to_irida(decision_id):
         return jsonify({'error': 'Η σύνδεση ΙΡΙΔΑ δεν έχει '
                         'ρυθμιστεί'}), 503
 
-    # Generate PDF
+    # Generate DOCX for ΙΡΙΔΑ (ΙΡΙΔΑ converts to PDF internally)
     recipients = (record.template.recipients_template
                   if record.template else [])
     title = record.template.title if record.template else 'Έγγραφο'
-    pdf_bytes = generate_decision_pdf(
-        record.rendered_body, title, recipients)
+    legal_refs = (record.template.legal_references
+                  if record.template else [])
+    docx_bytes = generate_decision_docx(
+        record.rendered_body, title, recipients, legal_refs,
+        protocol_number=record.protocol_number)
 
     try:
         result = send_document(
             subject=title,
-            pdf_bytes=pdf_bytes,
-            filename=f'decision_{record.id}.pdf',
+            pdf_bytes=docx_bytes,
+            filename=f'decision_{record.id}.docx',
         )
         record.status = 'sent_to_irida'
         record.sent_to_irida_at = datetime.utcnow()
@@ -280,7 +408,7 @@ def send_to_irida(decision_id):
 @documents_bp.route('/api/document-registry', methods=['GET'])
 @jwt_required()
 def document_registry():
-    """Unified view of all documents across all types."""
+    """Unified view of all documents — single-table query on DecisionRecords."""
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     doc_type = request.args.get('type')
@@ -290,122 +418,58 @@ def document_registry():
     date_from = request.args.get('date_from')
     date_to = request.args.get('date_to')
 
-    documents = []
+    query = DecisionRecord.query
 
-    # 1. DecisionRecords (composed documents)
-    if not doc_type or doc_type == 'all' or doc_type == 'decision':
-        for rec in DecisionRecord.query.all():
-            documents.append({
-                'id': rec.id,
-                'source': 'decision_record',
-                'type': rec.template.type if rec.template else 'unknown',
-                'type_label': rec.template.title if rec.template else '',
-                'protocol_number': rec.protocol_number,
-                'structure_id': rec.structure_id,
-                'structure_name': (rec.structure.name
-                                   if rec.structure else None),
-                'date': (rec.created_at.isoformat()
-                         if rec.created_at else None),
-                'status': rec.status,
-                'author': (rec.author.username
-                           if rec.author else None),
-            })
-
-    # 2. InspectionReports
-    if not doc_type or doc_type == 'all' or doc_type == 'inspection_report':
-        from ..inspections.models import InspectionReport
-        for rpt in InspectionReport.query.all():
-            insp = rpt.inspection
-            documents.append({
-                'id': rpt.id,
-                'source': 'inspection_report',
-                'type': 'inspection_report',
-                'type_label': 'Έκθεση Επιθεώρησης',
-                'protocol_number': rpt.protocol_number,
-                'structure_id': insp.structure_id if insp else None,
-                'structure_name': (insp.structure.name
-                                   if insp and insp.structure else None),
-                'date': (rpt.drafted_date.isoformat()
-                         if rpt.drafted_date else None),
-                'status': rpt.status,
-                'author': None,
-            })
-
-    # 3. SocialAdvisorReports
-    if not doc_type or doc_type == 'all' or doc_type == 'advisor_report':
-        from ..oversight.models import SocialAdvisorReport
-        for rpt in SocialAdvisorReport.query.all():
-            documents.append({
-                'id': rpt.id,
-                'source': 'advisor_report',
-                'type': 'advisor_report',
-                'type_label': 'Έκθεση Κοιν. Συμβούλου',
-                'protocol_number': None,
-                'structure_id': rpt.structure_id,
-                'structure_name': (rpt.structure.name
-                                   if rpt.structure else None),
-                'date': (rpt.drafted_date.isoformat()
-                         if rpt.drafted_date else None),
-                'status': rpt.status,
-                'author': (rpt.author.username
-                           if rpt.author else None),
-            })
-
-    # 4. SanctionDecisions (existing workflow)
-    if not doc_type or doc_type == 'all' or doc_type == 'sanction_decision':
-        from ..sanctions.models import SanctionDecision
-        for dec in SanctionDecision.query.all():
-            sanction = dec.sanction
-            structure = (sanction.structure if sanction else None)
-            documents.append({
-                'id': dec.id,
-                'source': 'sanction_decision',
-                'type': 'sanction_decision',
-                'type_label': 'Απόφαση Κύρωσης',
-                'protocol_number': dec.protocol_number,
-                'structure_id': (structure.id if structure else None),
-                'structure_name': (structure.name
-                                   if structure else None),
-                'date': (dec.drafted_at.isoformat()
-                         if dec.drafted_at else None),
-                'status': dec.status,
-                'author': None,
-            })
-
-    # Apply filters
+    if doc_type and doc_type != 'all':
+        query = query.join(DecisionTemplate).filter(
+            DecisionTemplate.type == doc_type)
     if status:
-        documents = [d for d in documents if d['status'] == status]
+        query = query.filter(DecisionRecord.status == status)
     if structure_id:
-        documents = [d for d in documents
-                     if d['structure_id'] == structure_id]
+        query = query.filter(DecisionRecord.structure_id == structure_id)
     if search:
-        s = search.lower()
-        documents = [d for d in documents
-                     if s in (d.get('protocol_number') or '').lower()
-                     or s in (d.get('structure_name') or '').lower()
-                     or s in (d.get('type_label') or '').lower()]
+        search_term = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                DecisionRecord.protocol_number.ilike(search_term),
+                DecisionRecord.internal_number.ilike(search_term),
+                DecisionRecord.rendered_body.ilike(search_term),
+            )
+        )
     if date_from:
-        documents = [d for d in documents
-                     if d['date'] and d['date'] >= date_from]
+        query = query.filter(DecisionRecord.created_at >= date_from)
     if date_to:
-        documents = [d for d in documents
-                     if d['date'] and d['date'] <= date_to]
+        query = query.filter(DecisionRecord.created_at <= date_to)
 
-    # Sort newest first
-    documents.sort(key=lambda d: d['date'] or '', reverse=True)
+    query = query.order_by(DecisionRecord.created_at.desc())
+    pagination = query.paginate(page=page, per_page=per_page,
+                                error_out=False)
 
-    # Paginate
-    total = len(documents)
-    start = (page - 1) * per_page
-    end = start + per_page
-    page_docs = documents[start:end]
+    documents = []
+    for rec in pagination.items:
+        documents.append({
+            'id': rec.id,
+            'source': rec.source_type or 'decision_record',
+            'type': rec.template.type if rec.template else 'unknown',
+            'type_label': rec.template.title if rec.template else '',
+            'internal_number': rec.internal_number,
+            'protocol_number': rec.protocol_number,
+            'structure_id': rec.structure_id,
+            'structure_name': (rec.structure.name
+                               if rec.structure else None),
+            'date': (rec.created_at.isoformat()
+                     if rec.created_at else None),
+            'status': rec.status,
+            'author': (rec.author.username
+                       if rec.author else None),
+        })
 
     return jsonify({
-        'documents': page_docs,
-        'total': total,
+        'documents': documents,
+        'total': pagination.total,
         'page': page,
         'per_page': per_page,
-        'pages': (total + per_page - 1) // per_page,
+        'pages': pagination.pages,
     }), 200
 
 

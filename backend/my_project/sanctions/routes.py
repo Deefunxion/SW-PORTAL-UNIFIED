@@ -291,6 +291,9 @@ def approve_decision(decision_id):
             SanctionDecision.protocol_number.like(f'{year}/%'),
         ).count()
         decision.protocol_number = f'{year}/{count + 1:04d}'
+        # Bridge: create document record for the registry
+        from ..documents.bridge import create_decision_from_sanction
+        create_decision_from_sanction(decision)
     elif action == 'return':
         decision.status = 'returned'
         decision.return_comments = data.get('comments', '')

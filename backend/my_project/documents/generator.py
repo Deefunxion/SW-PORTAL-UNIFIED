@@ -161,3 +161,156 @@ def generate_decision_pdf(rendered_html, title, recipients=None):
     doc.build(story)
     buf.seek(0)
     return buf.read()
+
+
+def generate_decision_docx(rendered_html, title, recipients=None,
+                           legal_references=None, protocol_number=None,
+                           internal_number=None, doc_date=None):
+    """
+    Generate a DOCX from rendered HTML decision text.
+
+    Args:
+        rendered_html: HTML string (rendered template)
+        title: Document title for ΘΕΜΑ line
+        recipients: list of recipient dicts [{"name": "..."}]
+        legal_references: list of legal reference strings
+        protocol_number: protocol number string (or None)
+        internal_number: internal number string (or None)
+        doc_date: date string (or None, defaults to today)
+
+    Returns:
+        DOCX bytes
+    """
+    from docx import Document
+    from docx.shared import Pt, Cm
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.enum.table import WD_TABLE_ALIGNMENT
+
+    doc = Document()
+
+    # A4 page setup
+    section = doc.sections[0]
+    section.page_width = Cm(21.0)
+    section.page_height = Cm(29.7)
+    section.left_margin = Cm(2.5)
+    section.right_margin = Cm(2.5)
+    section.top_margin = Cm(2.0)
+    section.bottom_margin = Cm(2.0)
+
+    font_name = 'Arial'
+
+    # ── 1. Header table (two columns) ─────────────────────────
+    header_table = doc.add_table(rows=1, cols=2)
+    header_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+    # Left column: ministry hierarchy
+    left_cell = header_table.cell(0, 0)
+    left_cell.width = Cm(9.0)
+    left_p = left_cell.paragraphs[0]
+    run = left_p.add_run('ΕΛΛΗΝΙΚΗ ΔΗΜΟΚΡΑΤΙΑ')
+    run.bold = True
+    run.font.size = Pt(8)
+    run.font.name = font_name
+    for line in [
+        'ΠΕΡΙΦΕΡΕΙΑ ΑΤΤΙΚΗΣ',
+        'ΓΕΝΙΚΗ Δ/ΝΣΗ ΔΗΜΟΣΙΑΣ ΥΓΕΙΑΣ',
+        '& ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ',
+        'Δ/ΝΣΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ',
+        'ΤΜΗΜΑ ΚΟΙΝΩΝΙΚΗΣ ΑΛΛΗΛΕΓΓΥΗΣ',
+    ]:
+        run = left_p.add_run('\n' + line)
+        run.font.size = Pt(8)
+        run.font.name = font_name
+
+    # Right column: date + protocol
+    right_cell = header_table.cell(0, 1)
+    right_cell.width = Cm(7.0)
+    right_p = right_cell.paragraphs[0]
+    right_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+    if not doc_date:
+        from datetime import date as _date
+        doc_date = _date.today().strftime('%d/%m/%Y')
+    run = right_p.add_run(f'Αθήνα, {doc_date}')
+    run.font.size = Pt(9)
+    run.font.name = font_name
+    if protocol_number:
+        run = right_p.add_run(f'\nΑρ. Πρωτ.: {protocol_number}')
+        run.font.size = Pt(9)
+        run.font.name = font_name
+    if internal_number:
+        run = right_p.add_run(f'\nΕσωτ. Αρ.: {internal_number}')
+        run.font.size = Pt(9)
+        run.font.name = font_name
+
+    doc.add_paragraph()  # spacer
+
+    # ── 2. Title (ΘΕΜΑ) ───────────────────────────────────────
+    theme_p = doc.add_paragraph()
+    theme_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = theme_p.add_run(f'ΘΕΜΑ: {title}')
+    run.bold = True
+    run.font.size = Pt(11)
+    run.font.name = font_name
+
+    doc.add_paragraph()  # spacer
+
+    # ── 3. Legal references (Έχοντας υπόψη) ──────────────────
+    if legal_references:
+        ref_p = doc.add_paragraph()
+        run = ref_p.add_run('Έχοντας υπόψη:')
+        run.bold = True
+        run.font.size = Pt(10)
+        run.font.name = font_name
+
+        for i, ref in enumerate(legal_references, 1):
+            p = doc.add_paragraph()
+            p.paragraph_format.left_indent = Cm(1.0)
+            run = p.add_run(f'{i}. {ref}')
+            run.font.size = Pt(9)
+            run.font.name = font_name
+
+        doc.add_paragraph()  # spacer
+
+    # ── 4. Body text ──────────────────────────────────────────
+    clean = re.sub(r'<br\s*/?>', '\n', rendered_html)
+    clean = re.sub(r'<p>', '', clean)
+    clean = re.sub(r'</p>', '\n\n', clean)
+    clean = re.sub(r'<[^>]+>', '', clean)
+    clean = html.unescape(clean)
+
+    for para_text in clean.split('\n\n'):
+        text = para_text.strip()
+        if text:
+            p = doc.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            run = p.add_run(text)
+            run.font.size = Pt(10)
+            run.font.name = font_name
+
+    # ── 5. Recipients table ───────────────────────────────────
+    if recipients:
+        doc.add_paragraph()  # spacer
+        recip_p = doc.add_paragraph()
+        recip_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = recip_p.add_run('ΠΙΝΑΚΑΣ ΑΠΟΔΕΚΤΩΝ')
+        run.bold = True
+        run.font.size = Pt(10)
+        run.font.name = font_name
+
+        recip_table = doc.add_table(rows=len(recipients), cols=2)
+        recip_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for i, r in enumerate(recipients):
+            recip_table.cell(i, 0).text = str(i + 1) + '.'
+            recip_table.cell(i, 1).text = r.get('name', '')
+            for cell in recip_table.row_cells(i):
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.size = Pt(9)
+                        run.font.name = font_name
+
+    # Save to bytes
+    buf = BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    return buf.read()

@@ -1816,6 +1816,8 @@ def _seed_decision_records(db, DecisionTemplate, DecisionRecord, users, today):
             status=rec_data['status'],
             created_by=users['mpapadopoulou'].id,
             created_at=datetime.utcnow() - timedelta(days=30 - i * 5),
+            internal_number=f'ΠΚΜ-{today.year}/{i + 1:04d}',
+            source_type='template',
         )
         if rec_data['status'] == 'protocol_received':
             record.protocol_number = rec_data.get('protocol_number')

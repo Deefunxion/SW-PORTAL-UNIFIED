@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import DocumentPreview from '@/components/DocumentPreview';
 
 const STEPS = [
   { id: 'template', label: 'Πρότυπο' },
@@ -178,6 +179,26 @@ function DocumentComposePage() {
     }
   };
 
+  const handleDownloadDocx = async () => {
+    if (!decisionId) return;
+    try {
+      const response = await api.get(`/api/decisions/${decisionId}/docx`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `decision_${decisionId}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('DOCX δημιουργήθηκε');
+    } catch (error) {
+      toast.error('Σφάλμα δημιουργίας DOCX');
+    }
+  };
+
   const handleSendToIrida = async () => {
     if (!decisionId) return;
     try {
@@ -280,6 +301,7 @@ function DocumentComposePage() {
                 <div className="flex items-center gap-2 text-xs text-[#8a8580]">
                   <FileText className="w-3 h-3" />
                   <span>{(t.schema?.fields || []).length} πεδία</span>
+                  <span className="ml-2">v{t.version || 1}</span>
                   {t.structure_type_code && (
                     <>
                       <Building2 className="w-3 h-3 ml-2" />
@@ -442,17 +464,17 @@ function DocumentComposePage() {
       {/* Step 3: Preview */}
       {step === 3 && (
         <div className="space-y-4">
-          <Card className="border-[#e8e2d8]">
-            <CardHeader>
-              <CardTitle className="text-lg text-[#2a2520]">Προεπισκόπηση — {previewTitle}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div
-                className="prose prose-sm max-w-none bg-white p-8 border border-[#e8e2d8] rounded-lg min-h-[400px]"
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
-              />
-            </CardContent>
-          </Card>
+          <div className="overflow-auto bg-[#f0ece6] p-8 rounded-lg">
+            <DocumentPreview
+              title={previewTitle}
+              renderedBody={previewHtml}
+              protocolNumber={null}
+              date={null}
+              legalReferences={selectedTemplate?.legal_references || []}
+              recipients={selectedTemplate?.recipients_template || []}
+              status={decisionStatus}
+            />
+          </div>
 
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setStep(2)} className="min-h-[44px] border-[#e8e2d8]">
@@ -460,6 +482,14 @@ function DocumentComposePage() {
               Πίσω στα στοιχεία
             </Button>
             <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleDownloadDocx}
+                className="min-h-[44px] border-[#e8e2d8]"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Λήψη DOCX
+              </Button>
               <Button
                 variant="outline"
                 onClick={handleDownloadPdf}

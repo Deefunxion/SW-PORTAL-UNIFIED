@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/select.jsx';
 import {
   Plus, Search, FileText, ChevronLeft, ChevronRight,
-  Download, Eye, Edit, Filter,
+  Download, Eye, Edit, Filter, FileSpreadsheet,
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -99,6 +99,25 @@ function DocumentRegistryPage() {
     }
   };
 
+  const handleDownloadDocx = async (doc) => {
+    if (doc.source !== 'decision_record') return;
+    try {
+      const response = await api.get(`/api/decisions/${doc.id}/docx`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `decision_${doc.id}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading DOCX:', error);
+    }
+  };
+
   const formatDate = (iso) => {
     if (!iso) return '—';
     try {
@@ -121,12 +140,20 @@ function DocumentRegistryPage() {
             Ενιαίο μητρώο αποφάσεων, εκθέσεων και εγγράφων — {total} εγγραφές
           </p>
         </div>
-        <Link to="/documents/new">
-          <Button className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[48px] px-6">
-            <Plus className="w-5 h-5 mr-2" />
-            Νέο Έγγραφο
-          </Button>
-        </Link>
+        <div className="flex gap-3">
+          <Link to="/documents/bulk">
+            <Button variant="outline" className="min-h-[48px] px-6 border-[#e8e2d8]">
+              <FileSpreadsheet className="w-5 h-5 mr-2" />
+              Μαζική Δημιουργία
+            </Button>
+          </Link>
+          <Link to="/documents/new">
+            <Button className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[48px] px-6">
+              <Plus className="w-5 h-5 mr-2" />
+              Νέο Έγγραφο
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -200,6 +227,7 @@ function DocumentRegistryPage() {
                 <thead>
                   <tr className="bg-[#f8f5f0] border-b border-[#e8e2d8]">
                     <th className="text-left px-4 py-3 text-sm font-semibold text-[#2a2520]">Α/Α</th>
+                    <th className="text-left px-4 py-3 text-sm font-semibold text-[#2a2520]">Εσωτ. Αρ.</th>
                     <th className="text-left px-4 py-3 text-sm font-semibold text-[#2a2520]">Τύπος</th>
                     <th className="text-left px-4 py-3 text-sm font-semibold text-[#2a2520]">Αρ. Πρωτ.</th>
                     <th className="text-left px-4 py-3 text-sm font-semibold text-[#2a2520]">Δομή</th>
@@ -213,6 +241,9 @@ function DocumentRegistryPage() {
                   {documents.map((doc, idx) => (
                     <tr key={`${doc.source}-${doc.id}`} className="border-b border-[#e8e2d8] hover:bg-[#faf8f5] transition-colors">
                       <td className="px-4 py-3 text-sm text-[#6b6560]">{(page - 1) * 20 + idx + 1}</td>
+                      <td className="px-4 py-3 text-sm text-[#2a2520] font-mono">
+                        {doc.internal_number || '—'}
+                      </td>
                       <td className="px-4 py-3">
                         <span className="text-sm font-medium text-[#2a2520]">{doc.type_label}</span>
                       </td>
@@ -240,15 +271,26 @@ function DocumentRegistryPage() {
                         <div className="flex justify-end gap-1">
                           {doc.source === 'decision_record' && (
                             <>
-                              <Link to={`/documents/${doc.id}/edit`}>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Προβολή/Επεξεργασία">
-                                  {doc.status === 'draft' ? (
+                              {doc.status === 'draft' ? (
+                                <Link to={`/documents/${doc.id}/edit`}>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Επεξεργασία">
                                     <Edit className="w-4 h-4 text-[#6b6560]" />
-                                  ) : (
+                                  </Button>
+                                </Link>
+                              ) : (
+                                <Link to={`/documents/${doc.id}/preview`}>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Προβολή">
                                     <Eye className="w-4 h-4 text-[#6b6560]" />
-                                  )}
-                                </Button>
-                              </Link>
+                                  </Button>
+                                </Link>
+                              )}
+                              <Button
+                                variant="ghost" size="sm" className="h-8 w-8 p-0"
+                                onClick={() => handleDownloadDocx(doc)}
+                                title="Λήψη DOCX"
+                              >
+                                <FileText className="w-4 h-4 text-[#6b6560]" />
+                              </Button>
                               <Button
                                 variant="ghost" size="sm" className="h-8 w-8 p-0"
                                 onClick={() => handleDownloadPdf(doc)}
