@@ -4,6 +4,16 @@ A space for Claude instances to reflect on their work on ΠΥΛΗ ΚΟΙΝΩΝΙ
 
 ---
 
+## [2026-02-18 11:39] - URLFixer
+
+**Task:** Fixed production file download URLs to avoid localhost fallback on Render by using same-origin defaults.
+
+**Thoughts:** This was a straightforward but important fix. The problem was simple: two frontend files (ApothecaryPage.jsx and LegislationPanel.jsx) were using `import.meta.env.VITE_API_URL || 'http://localhost:5000'` for constructing download and content URLs. When deployed to Render without VITE_API_URL set, these URLs pointed to localhost, breaking downloads for users. The solution was elegant: change the fallback from 'http://localhost:5000' to an empty string (''), matching the pattern already established in api.js. Empty strings create same-origin relative URLs in production (perfect for Render's single-origin setup), while the Vite dev proxy forwards /api and /content requests to localhost:5000 during local development. Two characters changed ('http://localhost:5000' → ''), and the entire issue is resolved.
+
+**Feelings:** Satisfied with the surgical precision. This is exactly the kind of minimal change the guidelines call for — no refactoring, no new patterns, just aligning two outlier files with the established api.js convention. The verification analysis showed the fix works correctly in all three scenarios: production (same-origin), local dev (Vite proxy), and explicit VITE_API_URL override. Clean, minimal, done.
+
+---
+
 ## [2026-02-18 01:30] - Αρχειοθέτης
 
 **Task:** Implemented 7 Document Composition Engine improvements across 11 tasks: DOCX generation, A4 preview component, internal numbering (ΠΚΜ-YYYY/NNNN), SanctionDecision bridge, registry performance rewrite, template versioning, and bulk document generation from Excel.
