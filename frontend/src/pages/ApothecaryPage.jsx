@@ -223,7 +223,7 @@ function ApothecaryPage() {
       
       // Create a temporary link and trigger download
       const link = document.createElement('a');
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const baseUrl = import.meta.env.VITE_API_URL || '';
       link.href = `${baseUrl}${downloadUrl}`;
       link.download = file.name;
       link.target = '_blank';
