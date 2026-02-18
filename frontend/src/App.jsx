@@ -54,6 +54,7 @@ import DecisionApprovalPage from '@/features/registry/pages/DecisionApprovalPage
 import DocumentRegistryPage from '@/pages/DocumentRegistryPage';
 import DocumentComposePage from '@/pages/DocumentComposePage';
 import DocumentPreviewPage from '@/pages/DocumentPreviewPage';
+import BulkDocumentPage from '@/pages/BulkDocumentPage';
 
 import './App.css';
 
@@ -542,6 +543,11 @@ function AppContent() {
           <Route path="/documents/:id/preview" element={
             <ProtectedRoute>
               <DocumentPreviewPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/documents/bulk" element={
+            <ProtectedRoute>
+              <BulkDocumentPage />
             </ProtectedRoute>
           } />
         </Routes>
