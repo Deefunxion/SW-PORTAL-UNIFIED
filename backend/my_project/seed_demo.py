@@ -20,6 +20,13 @@ def seed_demo_data():
     from .oversight.models import UserRole, SocialAdvisorReport
     from .documents.models import DecisionTemplate, DecisionRecord
 
+    # Always ensure templates exist, even if other demo data is already present
+    if DecisionTemplate.query.count() == 0:
+        print("[seed] Decision templates missing — creating...")
+        _seed_decision_templates(db, DecisionTemplate)
+        db.session.commit()
+        print(f"[seed] ✓ Created {DecisionTemplate.query.count()} decision templates.")
+
     # Check if full demo data is already present (structures are the key indicator)
     if Structure.query.count() >= 15:
         print("[seed] Full demo data already exists — skipping.")
