@@ -1539,6 +1539,10 @@ def serve_frontend(path):
     Static assets (js, css, images) are served directly.
     All other paths return index.html for client-side routing.
     """
+    # Never intercept API routes — let Flask blueprints handle them
+    if path.startswith('api/'):
+        return jsonify({'error': 'Not found'}), 404
+
     build_dir = os.path.abspath(current_app.config.get('FRONTEND_DIR', ''))
 
     if not os.path.isdir(build_dir):
