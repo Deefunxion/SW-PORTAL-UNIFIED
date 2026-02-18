@@ -72,6 +72,10 @@ class DecisionRecord(db.Model):
     internal_number = db.Column(db.String(20), unique=True, index=True)
     ada_code = db.Column(db.String(50))
 
+    # Source tracking (for bridged documents)
+    source_type = db.Column(db.String(50))  # e.g. 'sanction_decision', 'template'
+    source_id = db.Column(db.Integer)  # ID in the source table
+
     # Generated files
     pdf_path = db.Column(db.String(300))
     docx_path = db.Column(db.String(300))
@@ -105,6 +109,8 @@ class DecisionRecord(db.Model):
             'ada_code': self.ada_code,
             'pdf_path': self.pdf_path,
             'docx_path': self.docx_path,
+            'source_type': self.source_type,
+            'source_id': self.source_id,
             'created_by': self.created_by,
             'author_name': (self.author.username
                             if self.author else None),

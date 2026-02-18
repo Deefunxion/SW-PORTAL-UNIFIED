@@ -331,7 +331,7 @@ def send_to_irida(decision_id):
 @documents_bp.route('/api/document-registry', methods=['GET'])
 @jwt_required()
 def document_registry():
-    """Unified view of all documents across all types."""
+    """Unified view of all documents — single-table query on DecisionRecords."""
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     doc_type = request.args.get('type')
@@ -341,123 +341,58 @@ def document_registry():
     date_from = request.args.get('date_from')
     date_to = request.args.get('date_to')
 
-    documents = []
+    query = DecisionRecord.query
 
-    # 1. DecisionRecords (composed documents)
-    if not doc_type or doc_type == 'all' or doc_type == 'decision':
-        for rec in DecisionRecord.query.all():
-            documents.append({
-                'id': rec.id,
-                'source': 'decision_record',
-                'type': rec.template.type if rec.template else 'unknown',
-                'type_label': rec.template.title if rec.template else '',
-                'internal_number': rec.internal_number,
-                'protocol_number': rec.protocol_number,
-                'structure_id': rec.structure_id,
-                'structure_name': (rec.structure.name
-                                   if rec.structure else None),
-                'date': (rec.created_at.isoformat()
-                         if rec.created_at else None),
-                'status': rec.status,
-                'author': (rec.author.username
-                           if rec.author else None),
-            })
-
-    # 2. InspectionReports
-    if not doc_type or doc_type == 'all' or doc_type == 'inspection_report':
-        from ..inspections.models import InspectionReport
-        for rpt in InspectionReport.query.all():
-            insp = rpt.inspection
-            documents.append({
-                'id': rpt.id,
-                'source': 'inspection_report',
-                'type': 'inspection_report',
-                'type_label': 'Έκθεση Επιθεώρησης',
-                'protocol_number': rpt.protocol_number,
-                'structure_id': insp.structure_id if insp else None,
-                'structure_name': (insp.structure.name
-                                   if insp and insp.structure else None),
-                'date': (rpt.drafted_date.isoformat()
-                         if rpt.drafted_date else None),
-                'status': rpt.status,
-                'author': None,
-            })
-
-    # 3. SocialAdvisorReports
-    if not doc_type or doc_type == 'all' or doc_type == 'advisor_report':
-        from ..oversight.models import SocialAdvisorReport
-        for rpt in SocialAdvisorReport.query.all():
-            documents.append({
-                'id': rpt.id,
-                'source': 'advisor_report',
-                'type': 'advisor_report',
-                'type_label': 'Έκθεση Κοιν. Συμβούλου',
-                'protocol_number': None,
-                'structure_id': rpt.structure_id,
-                'structure_name': (rpt.structure.name
-                                   if rpt.structure else None),
-                'date': (rpt.drafted_date.isoformat()
-                         if rpt.drafted_date else None),
-                'status': rpt.status,
-                'author': (rpt.author.username
-                           if rpt.author else None),
-            })
-
-    # 4. SanctionDecisions (existing workflow)
-    if not doc_type or doc_type == 'all' or doc_type == 'sanction_decision':
-        from ..sanctions.models import SanctionDecision
-        for dec in SanctionDecision.query.all():
-            sanction = dec.sanction
-            structure = (sanction.structure if sanction else None)
-            documents.append({
-                'id': dec.id,
-                'source': 'sanction_decision',
-                'type': 'sanction_decision',
-                'type_label': 'Απόφαση Κύρωσης',
-                'protocol_number': dec.protocol_number,
-                'structure_id': (structure.id if structure else None),
-                'structure_name': (structure.name
-                                   if structure else None),
-                'date': (dec.drafted_at.isoformat()
-                         if dec.drafted_at else None),
-                'status': dec.status,
-                'author': None,
-            })
-
-    # Apply filters
+    if doc_type and doc_type != 'all':
+        query = query.join(DecisionTemplate).filter(
+            DecisionTemplate.type == doc_type)
     if status:
-        documents = [d for d in documents if d['status'] == status]
+        query = query.filter(DecisionRecord.status == status)
     if structure_id:
-        documents = [d for d in documents
-                     if d['structure_id'] == structure_id]
+        query = query.filter(DecisionRecord.structure_id == structure_id)
     if search:
-        s = search.lower()
-        documents = [d for d in documents
-                     if s in (d.get('protocol_number') or '').lower()
-                     or s in (d.get('structure_name') or '').lower()
-                     or s in (d.get('type_label') or '').lower()]
+        search_term = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                DecisionRecord.protocol_number.ilike(search_term),
+                DecisionRecord.internal_number.ilike(search_term),
+                DecisionRecord.rendered_body.ilike(search_term),
+            )
+        )
     if date_from:
-        documents = [d for d in documents
-                     if d['date'] and d['date'] >= date_from]
+        query = query.filter(DecisionRecord.created_at >= date_from)
     if date_to:
-        documents = [d for d in documents
-                     if d['date'] and d['date'] <= date_to]
+        query = query.filter(DecisionRecord.created_at <= date_to)
 
-    # Sort newest first
-    documents.sort(key=lambda d: d['date'] or '', reverse=True)
+    query = query.order_by(DecisionRecord.created_at.desc())
+    pagination = query.paginate(page=page, per_page=per_page,
+                                error_out=False)
 
-    # Paginate
-    total = len(documents)
-    start = (page - 1) * per_page
-    end = start + per_page
-    page_docs = documents[start:end]
+    documents = []
+    for rec in pagination.items:
+        documents.append({
+            'id': rec.id,
+            'source': rec.source_type or 'decision_record',
+            'type': rec.template.type if rec.template else 'unknown',
+            'type_label': rec.template.title if rec.template else '',
+            'internal_number': rec.internal_number,
+            'protocol_number': rec.protocol_number,
+            'structure_id': rec.structure_id,
+            'structure_name': (rec.structure.name
+                               if rec.structure else None),
+            'date': (rec.created_at.isoformat()
+                     if rec.created_at else None),
+            'status': rec.status,
+            'author': (rec.author.username
+                       if rec.author else None),
+        })
 
     return jsonify({
-        'documents': page_docs,
-        'total': total,
+        'documents': documents,
+        'total': pagination.total,
         'page': page,
         'per_page': per_page,
-        'pages': (total + per_page - 1) // per_page,
+        'pages': pagination.pages,
     }), 200
 
 
