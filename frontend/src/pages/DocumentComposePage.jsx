@@ -60,8 +60,8 @@ function DocumentComposePage() {
 
   const fetchStructures = async () => {
     try {
-      const { data } = await api.get('/api/registry/structures');
-      setStructures(data.structures || data || []);
+      const { data } = await api.get('/api/structures');
+      setStructures(Array.isArray(data.structures) ? data.structures : Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching structures:', error);
     }
