@@ -301,6 +301,7 @@ function DocumentComposePage() {
                 <div className="flex items-center gap-2 text-xs text-[#8a8580]">
                   <FileText className="w-3 h-3" />
                   <span>{(t.schema?.fields || []).length} πεδία</span>
+                  <span className="ml-2">v{t.version || 1}</span>
                   {t.structure_type_code && (
                     <>
                       <Building2 className="w-3 h-3 ml-2" />

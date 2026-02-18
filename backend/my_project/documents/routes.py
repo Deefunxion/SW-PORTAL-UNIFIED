@@ -59,6 +59,35 @@ def get_template(template_id):
     return jsonify(template.to_dict()), 200
 
 
+@documents_bp.route('/api/templates/<int:template_id>/new-version',
+                     methods=['POST'])
+@jwt_required()
+def create_new_version(template_id):
+    """Clone a template as a new version, deactivating the old one."""
+    old = DecisionTemplate.query.get_or_404(template_id)
+    data = request.get_json() or {}
+
+    new_template = DecisionTemplate(
+        type=old.type,
+        title=data.get('title', old.title),
+        description=data.get('description', old.description),
+        body_template=data.get('body_template', old.body_template),
+        legal_references=data.get('legal_references', old.legal_references),
+        schema=data.get('schema', old.schema),
+        recipients_template=data.get('recipients_template',
+                                      old.recipients_template),
+        structure_type_code=old.structure_type_code,
+        is_active=True,
+        version=old.version + 1,
+    )
+    old.is_active = False
+
+    db.session.add(new_template)
+    db.session.commit()
+
+    return jsonify(new_template.to_dict()), 201
+
+
 # --- Decision Records ---
 
 @documents_bp.route('/api/decisions', methods=['GET'])
@@ -136,6 +165,54 @@ def create_decision():
     db.session.commit()
 
     return jsonify(record.to_dict()), 201
+
+
+@documents_bp.route('/api/decisions/bulk', methods=['POST'])
+@jwt_required()
+def create_decisions_bulk():
+    """Create multiple decision records in a single transaction."""
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+
+    template = DecisionTemplate.query.get_or_404(data['template_id'])
+    records_data = data.get('records', [])
+
+    if not records_data:
+        return jsonify({'error': 'Δεν δόθηκαν εγγραφές'}), 400
+
+    from ..registry.models import Structure
+
+    created = []
+    for item in records_data:
+        structure = None
+        if item.get('structure_id'):
+            structure = Structure.query.get(item['structure_id'])
+
+        user_data = item.get('data', {})
+        rendered = resolve_placeholders(
+            template.body_template, structure, user_data)
+
+        record = DecisionRecord(
+            template_id=template.id,
+            structure_id=item.get('structure_id'),
+            data=user_data,
+            rendered_body=rendered,
+            status='draft',
+            created_by=user_id,
+            internal_number=_next_internal_number(),
+        )
+        db.session.add(record)
+        db.session.flush()
+        created.append(record)
+
+    _audit(user_id, 'bulk_create', 'decision_record', created[0].id,
+           {'count': len(created)})
+    db.session.commit()
+
+    return jsonify({
+        'decisions': [r.to_dict() for r in created],
+        'count': len(created),
+    }), 201
 
 
 @documents_bp.route('/api/decisions/<int:decision_id>', methods=['GET'])
