@@ -15,6 +15,21 @@ def _audit(user_id, action, entity_type, entity_id, details=None):
     db.session.add(log)
 
 
+def _next_internal_number():
+    """Generate next internal document number: ΠΚΜ-YYYY/NNNN."""
+    year = datetime.utcnow().year
+    prefix = f'ΠΚΜ-{year}/'
+    last = (DecisionRecord.query
+            .filter(DecisionRecord.internal_number.like(f'{prefix}%'))
+            .order_by(DecisionRecord.internal_number.desc())
+            .first())
+    if last and last.internal_number:
+        seq = int(last.internal_number.split('/')[1]) + 1
+    else:
+        seq = 1
+    return f'{prefix}{seq:04d}'
+
+
 # --- Templates ---
 
 @documents_bp.route('/api/templates', methods=['GET'])
@@ -112,6 +127,7 @@ def create_decision():
         rendered_body=rendered,
         status='draft',
         created_by=user_id,
+        internal_number=_next_internal_number(),
     )
     db.session.add(record)
     db.session.flush()
@@ -335,6 +351,7 @@ def document_registry():
                 'source': 'decision_record',
                 'type': rec.template.type if rec.template else 'unknown',
                 'type_label': rec.template.title if rec.template else '',
+                'internal_number': rec.internal_number,
                 'protocol_number': rec.protocol_number,
                 'structure_id': rec.structure_id,
                 'structure_name': (rec.structure.name

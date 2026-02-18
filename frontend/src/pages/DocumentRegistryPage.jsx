@@ -219,6 +219,7 @@ function DocumentRegistryPage() {
                 <thead>
                   <tr className="bg-[#f8f5f0] border-b border-[#e8e2d8]">
                     <th className="text-left px-4 py-3 text-sm font-semibold text-[#2a2520]">Α/Α</th>
+                    <th className="text-left px-4 py-3 text-sm font-semibold text-[#2a2520]">Εσωτ. Αρ.</th>
                     <th className="text-left px-4 py-3 text-sm font-semibold text-[#2a2520]">Τύπος</th>
                     <th className="text-left px-4 py-3 text-sm font-semibold text-[#2a2520]">Αρ. Πρωτ.</th>
                     <th className="text-left px-4 py-3 text-sm font-semibold text-[#2a2520]">Δομή</th>
@@ -232,6 +233,9 @@ function DocumentRegistryPage() {
                   {documents.map((doc, idx) => (
                     <tr key={`${doc.source}-${doc.id}`} className="border-b border-[#e8e2d8] hover:bg-[#faf8f5] transition-colors">
                       <td className="px-4 py-3 text-sm text-[#6b6560]">{(page - 1) * 20 + idx + 1}</td>
+                      <td className="px-4 py-3 text-sm text-[#2a2520] font-mono">
+                        {doc.internal_number || '—'}
+                      </td>
                       <td className="px-4 py-3">
                         <span className="text-sm font-medium text-[#2a2520]">{doc.type_label}</span>
                       </td>
