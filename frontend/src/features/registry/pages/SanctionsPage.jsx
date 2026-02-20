@@ -91,7 +91,7 @@ export default function SanctionsPage() {
   useEffect(() => {
     const params = selectedStructure ? { structure_id: parseInt(selectedStructure) } : {};
     decisionsApi.list(params)
-      .then(r => setDecisions(r.data))
+      .then(r => setDecisions(r.data.decisions || []))
       .catch(() => setDecisions([]));
   }, [selectedStructure]);
 
