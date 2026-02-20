@@ -79,7 +79,8 @@ class Inspection(db.Model):
     __tablename__ = 'inspections'
     id = db.Column(db.Integer, primary_key=True)
     structure_id = db.Column(db.Integer, db.ForeignKey('structures.id'), nullable=False)
-    committee_id = db.Column(db.Integer, db.ForeignKey('inspection_committees.id'), nullable=False)
+    committee_id = db.Column(db.Integer, db.ForeignKey('inspection_committees.id'), nullable=True)
+    inspector_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     type = db.Column(db.String(50), nullable=False)
     scheduled_date = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(50), default='scheduled')
@@ -88,18 +89,24 @@ class Inspection(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     structure = db.relationship('Structure', backref='inspections')
+    inspector = db.relationship('User', backref='inspections_as_inspector',
+                                foreign_keys=[inspector_id])
     report = db.relationship('InspectionReport', backref='inspection', uselist=False)
 
     def to_dict(self):
-        return {
+        d = {
             'id': self.id, 'structure_id': self.structure_id,
-            'committee_id': self.committee_id, 'type': self.type,
+            'committee_id': self.committee_id,
+            'inspector_id': self.inspector_id,
+            'type': self.type,
             'scheduled_date': self.scheduled_date.isoformat() if self.scheduled_date else None,
             'status': self.status, 'conclusion': self.conclusion,
             'notes': self.notes,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'structure': {'id': self.structure.id, 'name': self.structure.name} if self.structure else None,
         }
+        d['inspector'] = self.inspector.to_dict() if self.inspector else None
+        return d
 
 
 class ChecklistTemplate(db.Model):

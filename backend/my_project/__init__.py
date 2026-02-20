@@ -168,6 +168,8 @@ def create_app():
             ('decision_records', 'internal_number', 'VARCHAR(20)'),
             ('decision_records', 'source_type', 'VARCHAR(50)'),
             ('decision_records', 'source_id', 'INTEGER'),
+            # Inspector body expansion — Κ.Σ. can perform inspections
+            ('inspections', 'inspector_id', 'INTEGER'),
         ]
         for table, column, col_type in _migrate_columns:
             try:
@@ -177,6 +179,15 @@ def create_app():
                 db.session.commit()
             except Exception:
                 db.session.rollback()
+
+        # Make committee_id nullable (inspector body expansion)
+        try:
+            db.session.execute(db.text(
+                "ALTER TABLE inspections ALTER COLUMN committee_id DROP NOT NULL"
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
         # Create unique index for decision_records.internal_number
         try:
