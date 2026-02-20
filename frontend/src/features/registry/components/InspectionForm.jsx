@@ -101,9 +101,13 @@ export default function InspectionForm({ inspection, existingReport, onSuccess }
             <div className="flex items-start gap-2">
               <Users className="w-4 h-4 text-[#8a8580] mt-0.5" />
               <div>
-                <p className="text-xs text-[#8a8580] uppercase tracking-wide">Επιτροπή</p>
+                <p className="text-xs text-[#8a8580] uppercase tracking-wide">
+                  {inspection.inspector ? 'Κοιν. Σύμβουλος' : 'Επιτροπή'}
+                </p>
                 <p className="font-medium text-[#2a2520]">
-                  {inspection.committee?.decision_number || `#${inspection.committee_id}`}
+                  {inspection.inspector
+                    ? inspection.inspector.username
+                    : inspection.committee?.decision_number || `#${inspection.committee_id}`}
                 </p>
               </div>
             </div>

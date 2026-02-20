@@ -87,4 +87,7 @@ export const oversightApi = {
   iridaExport: (documentType, recordId) => api.get(
     `/api/irida-export/${documentType}/${recordId}`, { responseType: 'blob' }
   ),
+  socialAdvisors: () => api.get('/api/user-roles').then(resp => ({
+    data: (resp.data || []).filter(r => r.role === 'social_advisor'),
+  })),
 };
