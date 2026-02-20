@@ -463,6 +463,7 @@ function InspectionsTab({ structureId }) {
             <TableHeader>
               <TableRow className="bg-[#f5f2ec] hover:bg-[#f5f2ec]">
                 <TableHead>Τύπος</TableHead>
+                <TableHead>Ελεγκτικό Όργανο</TableHead>
                 <TableHead>Ημ. Ελέγχου</TableHead>
                 <TableHead>Κατάσταση</TableHead>
                 <TableHead>Συμπέρασμα</TableHead>
@@ -474,6 +475,14 @@ function InspectionsTab({ structureId }) {
                 <TableRow key={insp.id}>
                   <TableCell className="font-medium">
                     {INSPECTION_TYPES[insp.type] || insp.type}
+                  </TableCell>
+                  <TableCell className="text-sm text-[#6b6560]">
+                    {insp.inspector
+                      ? `Κ.Σ. ${insp.inspector.username}`
+                      : insp.committee_id
+                        ? `Επιτρ. #${insp.committee_id}`
+                        : '—'
+                    }
                   </TableCell>
                   <TableCell>{formatDate(insp.scheduled_date)}</TableCell>
                   <TableCell><StatusBadge status={insp.status} map={INSPECTION_STATUS} /></TableCell>
