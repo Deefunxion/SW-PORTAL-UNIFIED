@@ -37,7 +37,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog.jsx';
 import { sanctionsApi, structuresApi, decisionsApi } from '../lib/registryApi';
-import { SANCTION_STATUS, VIOLATION_CATEGORIES, SANCTION_DECISION_STATUSES } from '../lib/constants';
+import { VIOLATION_CATEGORIES, SANCTION_DECISION_STATUSES } from '../lib/constants';
 
 const CATEGORY_ICONS = {
   safety: Shield,
@@ -54,11 +54,7 @@ export default function SanctionsPage() {
   // Data
   const [rules, setRules] = useState([]);
   const [structures, setStructures] = useState([]);
-  const [recentSanctions, setRecentSanctions] = useState([]);
   const [decisions, setDecisions] = useState([]);
-
-  // Right column tab
-  const [rightTab, setRightTab] = useState('sanctions');
 
   // Calculator state
   const [selectedRule, setSelectedRule] = useState('');
@@ -66,7 +62,6 @@ export default function SanctionsPage() {
   const [customAmount, setCustomAmount] = useState(null);
   const [calculation, setCalculation] = useState(null);
   const [calculating, setCalculating] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [opsExportDialog, setOpsExportDialog] = useState({ open: false, decisionId: null });
 
   // Get selected structure's type_id for filtering rules
@@ -91,19 +86,6 @@ export default function SanctionsPage() {
     setCustomAmount(null);
     setCalculation(null);
   }, [selectedStructureObj]);
-
-  // Load sanctions for selected structure (or all)
-  useEffect(() => {
-    if (selectedStructure) {
-      structuresApi.sanctions(selectedStructure)
-        .then(r => setRecentSanctions(r.data))
-        .catch(() => setRecentSanctions([]));
-    } else {
-      sanctionsApi.list()
-        .then(r => setRecentSanctions(r.data))
-        .catch(() => setRecentSanctions([]));
-    }
-  }, [selectedStructure]);
 
   // Load decisions
   useEffect(() => {
@@ -172,29 +154,6 @@ export default function SanctionsPage() {
       setCalculating(false);
     }
   }, [selectedRule, selectedStructure, customAmount, hasRange]);
-
-  const handleCreateSanction = useCallback(async () => {
-    if (!calculation || !selectedStructure) return;
-    setCreating(true);
-    try {
-      await structuresApi.createSanction(selectedStructure, {
-        type: 'fine',
-        amount: calculation.final_amount,
-        violation_code: calculation.violation_code,
-        calculated_amount: calculation.final_amount,
-        notes: `violation_code:${calculation.violation_code} | ${calculation.violation_name} | ${calculation.legal_basis || ''}`,
-        status: 'imposed',
-      });
-      toast.success('Η κύρωση καταχωρήθηκε');
-      setCalculation(null);
-      const resp = await structuresApi.sanctions(selectedStructure);
-      setRecentSanctions(resp.data);
-    } catch (err) {
-      toast.error('Σφάλμα καταχώρησης');
-    } finally {
-      setCreating(false);
-    }
-  }, [calculation, selectedStructure]);
 
   const formatCurrency = (amount) => {
     if (amount == null) return '—';
@@ -453,16 +412,11 @@ export default function SanctionsPage() {
                   </div>
                 )}
 
-                <Button
-                  onClick={handleCreateSanction}
-                  disabled={creating}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white"
-                >
-                  {creating ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Καταχώρηση...</>
-                  ) : (
-                    <><Gavel className="w-4 h-4 mr-2" /> Επιβολή Κύρωσης</>
-                  )}
+                <Button asChild className="w-full bg-blue-700 hover:bg-blue-800 text-white">
+                  <Link to={`/sanctions/decisions/new?structure=${selectedStructure}&rule=${selectedRule}&amount=${calculation.final_amount}`}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Συνέχεια σε Απόφαση
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
@@ -521,134 +475,27 @@ export default function SanctionsPage() {
           </Card>
         </div>
 
-        {/* Right Column: Sanctions / Decisions tabs */}
+        {/* Right Column: Decisions */}
         <div className="lg:col-span-3 space-y-4">
-          {/* Tab switcher */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setRightTab('sanctions')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                ${rightTab === 'sanctions' ? 'bg-[#1a3aa3] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-            >
-              <Scale className="w-4 h-4" />
-              Κυρώσεις ({recentSanctions.length})
-            </button>
-            <button
-              onClick={() => setRightTab('decisions')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                ${rightTab === 'decisions' ? 'bg-[#1a3aa3] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-            >
-              <ClipboardList className="w-4 h-4" />
-              Αποφάσεις ({decisions.length})
-            </button>
-            <Link to="/sanctions/decisions" className="ml-auto">
-              <Button variant="outline" size="sm" className="border-[#e8e2d8] text-[#1a3aa3]">
-                <ExternalLink className="w-3.5 h-3.5 mr-1" />
-                Όλες
-              </Button>
-            </Link>
-          </div>
-
-          {/* Sanctions tab */}
-          {rightTab === 'sanctions' && (
-            <Card className="border-[#e8e2d8]">
+          <Card className="border-[#e8e2d8]">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
-                  <Scale className="w-5 h-5 text-[#1a3aa3]" />
-                  Πρόσφατες Κυρώσεις
-                  <Badge variant="outline" className="ml-2 text-xs">
-                    {selectedStructure
-                      ? selectedStructureObj?.name || ''
-                      : 'Όλες οι Δομές'}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {recentSanctions.length === 0 ? (
-                  <div className="text-center py-12 text-[#8a8580]">
-                    <Scale className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p>Δεν υπάρχουν κυρώσεις{selectedStructure ? ' για αυτή τη δομή' : ''}</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {!selectedStructure && <TableHead>Δομή</TableHead>}
-                        <TableHead>Τύπος</TableHead>
-                        <TableHead>Ποσό</TableHead>
-                        <TableHead>Ημερομηνία</TableHead>
-                        <TableHead>Κατάσταση</TableHead>
-                        <TableHead>Σημειώσεις</TableHead>
-                        <TableHead className="w-[80px]">Ενέργειες</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recentSanctions.map(s => {
-                        const statusInfo = SANCTION_STATUS[s.status] || { label: s.status, color: 'gray' };
-                        const relatedDecision = decisions.find(d => d.sanction_id === s.id);
-                        return (
-                          <TableRow key={s.id} className={relatedDecision ? 'cursor-pointer hover:bg-[#f5f2ec] transition-colors' : ''}>
-                            {!selectedStructure && (
-                              <TableCell className="text-sm font-medium">
-                                {s.structure_name || structures.find(st => st.id === s.structure_id)?.name || '—'}
-                              </TableCell>
-                            )}
-                            <TableCell className="font-medium capitalize">{s.type}</TableCell>
-                            <TableCell>
-                              {s.amount ? formatCurrency(s.amount) : '—'}
-                            </TableCell>
-                            <TableCell className="text-sm">{formatDate(s.imposed_date)}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={
-                                statusInfo.color === 'red' ? 'bg-red-50 text-red-700 border-red-200' :
-                                statusInfo.color === 'green' ? 'bg-green-50 text-green-700 border-green-200' :
-                                statusInfo.color === 'orange' ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                                'bg-gray-50 text-gray-700 border-gray-200'
-                              }>
-                                {statusInfo.label}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-xs text-[#6b6560] max-w-[200px] truncate">
-                              {s.notes || '—'}
-                            </TableCell>
-                            <TableCell>
-                              {relatedDecision ? (
-                                <Button
-                                  variant="ghost" size="sm"
-                                  title="Προβολή Απόφασης"
-                                  onClick={() => { setRightTab('decisions'); }}
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </Button>
-                              ) : (
-                                <Button variant="ghost" size="sm" disabled title="Χωρίς απόφαση">
-                                  <ExternalLink className="w-3.5 h-3.5 opacity-30" />
-                                </Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Decisions tab */}
-          {rightTab === 'decisions' && (
-            <Card className="border-[#e8e2d8]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
-                  <ClipboardList className="w-5 h-5 text-[#1a3aa3]" />
-                  Αποφάσεις
-                  <Badge variant="outline" className="ml-2 text-xs">
-                    {selectedStructure
-                      ? selectedStructureObj?.name || ''
-                      : 'Όλες οι Δομές'}
-                  </Badge>
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
+                    <ClipboardList className="w-5 h-5 text-[#1a3aa3]" />
+                    Αποφάσεις
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      {selectedStructure
+                        ? selectedStructureObj?.name || ''
+                        : 'Όλες οι Δομές'}
+                    </Badge>
+                  </CardTitle>
+                  <Link to="/sanctions/decisions">
+                    <Button variant="outline" size="sm" className="border-[#e8e2d8] text-[#1a3aa3]">
+                      <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                      Όλες
+                    </Button>
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent>
                 {decisions.length === 0 ? (
@@ -737,7 +584,6 @@ export default function SanctionsPage() {
                 )}
               </CardContent>
             </Card>
-          )}
         </div>
       </div>
 

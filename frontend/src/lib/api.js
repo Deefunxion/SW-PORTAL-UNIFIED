@@ -12,4 +12,19 @@ api.interceptors.request.use(config => {
   return config;
 });
 
+// auto-redirect to login on 401 (expired/invalid JWT)
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      Cookies.remove('token');
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login' && currentPath !== '/ΟΠΣΚΜ-UNIFIED/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

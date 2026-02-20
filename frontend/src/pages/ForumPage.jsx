@@ -154,7 +154,6 @@ function ForumPage() {
 
   const handleCategoryClick = (categoryName) => {
     setSelectedCategory(selectedCategory === categoryName ? '' : categoryName);
-    console.log('Selected category:', categoryName);
   };
 
   const filteredDiscussions = Array.isArray(discussions) ? discussions.map(category => ({

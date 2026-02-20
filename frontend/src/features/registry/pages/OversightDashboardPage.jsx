@@ -16,6 +16,7 @@ import {
 } from '../lib/constants';
 import StatsCards from '../components/StatsCards';
 import OversightCharts from '../components/OversightCharts';
+import DailyAgenda from '../components/DailyAgenda';
 
 const SEVERITY_STYLES = {
   critical: { icon: 'triangle-exclamation', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
@@ -105,6 +106,11 @@ export default function OversightDashboardPage() {
             </Button>
           </Link>
         </div>
+      </div>
+
+      {/* Daily Agenda */}
+      <div className="mb-8">
+        <DailyAgenda />
       </div>
 
       {/* Stats Cards */}

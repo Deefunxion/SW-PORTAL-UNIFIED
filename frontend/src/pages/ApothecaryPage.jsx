@@ -64,9 +64,6 @@ function ApothecaryPage() {
       setActiveDropdown(index);
       setExpandedSubfolders(new Set()); // Reset expanded subfolders when opening new category
       
-      console.log('Looking for category:', categoryTitle);
-      console.log('Available files:', files);
-      
       // Create mapping for category titles to folder names
       const categoryMappings = {
         'Αποφάσεις Αδειοδότησης': ['ΑΠΟΦΑΣΕΙΣ_ΑΔΕΙΟΔΟΤΗΣΗΣ', 'αδειοδότησης', 'αποφάσεις'],
@@ -87,8 +84,6 @@ function ApothecaryPage() {
           term.toLowerCase().includes(folderName)
         );
       });
-
-      console.log('Found matching folder:', matchingFolder);
 
       if (matchingFolder) {
         setDropdownContent({
@@ -215,9 +210,6 @@ function ApothecaryPage() {
       if (folderPath && !file.path) {
         filePath = `${folderPath}/${file.name}`;
       }
-      
-      console.log('Downloading file:', file);
-      console.log('Constructed file path:', filePath);
       
       const downloadUrl = `/api/files/download/${filePath.split('/').map(encodeURIComponent).join('/')}`;
       

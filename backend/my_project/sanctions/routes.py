@@ -164,26 +164,36 @@ def create_decision():
 @jwt_required()
 def list_decisions():
     """List sanction decisions with optional filters."""
-    q = SanctionDecision.query
+    from sqlalchemy.orm import joinedload
+    q = SanctionDecision.query.options(
+        joinedload(SanctionDecision.sanction).joinedload(Sanction.structure)
+    )
     status = request.args.get('status')
     if status:
         q = q.filter_by(status=status)
     structure_id = request.args.get('structure_id', type=int)
     if structure_id:
         q = q.join(Sanction).filter(Sanction.structure_id == structure_id)
-    decisions = q.order_by(SanctionDecision.created_at.desc()).all()
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 20, type=int), 100)
+    pagination = q.order_by(SanctionDecision.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False)
 
     result = []
-    for d in decisions:
+    for d in pagination.items:
         data = d.to_dict()
-        data['structure_id'] = d.sanction.structure_id if d.sanction else None
+        sanction = d.sanction
+        data['structure_id'] = sanction.structure_id if sanction else None
         data['structure_name'] = (
-            d.sanction.structure.name
-            if d.sanction and hasattr(d.sanction, 'structure') and d.sanction.structure
-            else None
+            sanction.structure.name if sanction and sanction.structure else None
         )
         result.append(data)
-    return jsonify(result), 200
+    return jsonify({
+        'decisions': result,
+        'total': pagination.total,
+        'page': page,
+        'pages': pagination.pages,
+    }), 200
 
 
 @sanctions_bp.route('/api/sanction-decisions/<int:decision_id>', methods=['GET'])

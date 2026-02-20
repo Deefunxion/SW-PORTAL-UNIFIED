@@ -199,8 +199,7 @@ const NotificationBell = () => {
                 size="sm"
                 className="w-full text-xs"
                 onClick={() => {
-                  // In a real app, this would navigate to a full notifications page
-                  console.log('Navigate to all notifications');
+                  // TODO: navigate to full notifications page
                 }}
               >
                 Προβολή όλων των ειδοποιήσεων

@@ -46,8 +46,17 @@ def list_inspections():
     query = query.order_by(Inspection.scheduled_date.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
+    inspections_data = []
+    for i in pagination.items:
+        d = i.to_dict()
+        if i.report:
+            d['report'] = {'id': i.report.id, 'file_path': i.report.file_path, 'status': i.report.status}
+        else:
+            d['report'] = None
+        inspections_data.append(d)
+
     return jsonify({
-        'inspections': [i.to_dict() for i in pagination.items],
+        'inspections': inspections_data,
         'total': pagination.total,
         'page': page,
         'per_page': per_page,
@@ -78,7 +87,11 @@ def create_inspection():
         notes=data.get('notes'),
     )
     db.session.add(inspection)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Σφάλμα αποθήκευσης επιθεώρησης'}), 500
     return jsonify(inspection.to_dict()), 201
 
 
@@ -111,7 +124,11 @@ def update_inspection(inspection_id):
             setattr(inspection, field, data[field])
     if 'scheduled_date' in data:
         inspection.scheduled_date = _parse_date(data['scheduled_date'])
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Σφάλμα ενημέρωσης επιθεώρησης'}), 500
     return jsonify(inspection.to_dict()), 200
 
 
@@ -168,7 +185,11 @@ def submit_report(inspection_id):
             if conclusion:
                 inspection.conclusion = conclusion
                 inspection.status = 'completed'
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            return jsonify({'error': 'Σφάλμα αποθήκευσης έκθεσης'}), 500
         return jsonify(existing_report.to_dict()), 200
 
     report = InspectionReport(
@@ -193,7 +214,11 @@ def submit_report(inspection_id):
         from ..oversight.notifications import notify_report_submitted
         notify_report_submitted(report, report_kind='inspection')
 
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Σφάλμα αποθήκευσης έκθεσης'}), 500
     return jsonify(report.to_dict()), 201
 
 
@@ -248,6 +273,7 @@ def create_committee():
         appointed_date=_parse_date(data['appointed_date']),
         expiry_date=_parse_date(data.get('expiry_date')),
         status=data.get('status', 'active'),
+        structure_type_id=data.get('structure_type_id'),
         notes=data.get('notes'),
     )
     db.session.add(committee)

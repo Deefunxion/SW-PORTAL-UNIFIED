@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
@@ -16,6 +16,7 @@ import {
   Plus, Users, Trash2, UserPlus, Building2, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 import { committeesApi } from '../lib/registryApi';
 import { COMMITTEE_ROLES } from '../lib/constants';
 
@@ -24,8 +25,16 @@ function CreateCommitteeDialog({ open, onOpenChange, onCreated }) {
   const [decisionNumber, setDecisionNumber] = useState('');
   const [appointedDate, setAppointedDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
+  const [structureTypeId, setStructureTypeId] = useState('');
+  const [structureTypes, setStructureTypes] = useState([]);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      api.get('/api/structure-types').then(r => setStructureTypes(r.data)).catch(() => {});
+    }
+  }, [open]);
 
   const handleCreate = async () => {
     if (!decisionNumber || !appointedDate) {
@@ -38,12 +47,13 @@ function CreateCommitteeDialog({ open, onOpenChange, onCreated }) {
         decision_number: decisionNumber,
         appointed_date: appointedDate,
         expiry_date: expiryDate || null,
+        structure_type_id: structureTypeId ? parseInt(structureTypeId, 10) : null,
         notes: notes || null,
       });
       toast.success('Η επιτροπή δημιουργήθηκε.');
       onCreated();
       onOpenChange(false);
-      setDecisionNumber(''); setAppointedDate(''); setExpiryDate(''); setNotes('');
+      setDecisionNumber(''); setAppointedDate(''); setExpiryDate(''); setStructureTypeId(''); setNotes('');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Σφάλμα δημιουργίας.');
     } finally {
@@ -66,6 +76,19 @@ function CreateCommitteeDialog({ open, onOpenChange, onCreated }) {
               placeholder="π.χ. ΑΠ-2026/123"
               className="mt-1 min-h-[44px] border-[#e8e2d8]"
             />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-[#2a2520]">Τύπος Δομής</label>
+            <Select value={structureTypeId} onValueChange={setStructureTypeId}>
+              <SelectTrigger className="mt-1 min-h-[44px] border-[#e8e2d8]">
+                <SelectValue placeholder="Επιλέξτε τύπο δομής..." />
+              </SelectTrigger>
+              <SelectContent>
+                {structureTypes.map(t => (
+                  <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -193,13 +216,27 @@ function AddMemberDialog({ open, onOpenChange, committeeId, onAdded }) {
 }
 
 // ---- Assign Structure Dialog ----
-function AssignStructureDialog({ open, onOpenChange, committeeId, onAssigned }) {
+function AssignStructureDialog({ open, onOpenChange, committeeId, structureTypeId, onAssigned }) {
   const [structureId, setStructureId] = useState('');
+  const [structures, setStructures] = useState([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      api.get('/api/structures', { params: { per_page: 200 } }).then(r => {
+        const all = r.data.structures || r.data;
+        if (structureTypeId) {
+          setStructures(all.filter(s => (s.type_id || s.type?.id) === structureTypeId));
+        } else {
+          setStructures(all);
+        }
+      }).catch(() => {});
+    }
+  }, [open, structureTypeId]);
 
   const handleAssign = async () => {
     if (!structureId) {
-      toast.error('Εισάγετε ID δομής.');
+      toast.error('Επιλέξτε δομή.');
       return;
     }
     setSaving(true);
@@ -226,14 +263,19 @@ function AssignStructureDialog({ open, onOpenChange, committeeId, onAssigned }) 
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div>
-            <label className="text-sm font-medium text-[#2a2520]">ID Δομής *</label>
-            <Input
-              type="number"
-              value={structureId}
-              onChange={(e) => setStructureId(e.target.value)}
-              placeholder="π.χ. 1"
-              className="mt-1 min-h-[44px] border-[#e8e2d8]"
-            />
+            <label className="text-sm font-medium text-[#2a2520]">Δομή *</label>
+            <Select value={structureId} onValueChange={setStructureId}>
+              <SelectTrigger className="mt-1 min-h-[44px] border-[#e8e2d8]">
+                <SelectValue placeholder="Επιλέξτε δομή..." />
+              </SelectTrigger>
+              <SelectContent>
+                {structures.map(s => (
+                  <SelectItem key={s.id} value={String(s.id)}>
+                    {s.name} ({s.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter>
@@ -283,6 +325,11 @@ function CommitteeDetail({ committee, onRefresh }) {
             <CardTitle className="text-lg text-[#2a2520] flex items-center gap-2">
               <Users className="w-5 h-5 text-[#1a3aa3]" />
               {committee.decision_number}
+              {committee.structure_type_name && (
+                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-800 border-blue-200 ml-1">
+                  {committee.structure_type_name}
+                </Badge>
+              )}
             </CardTitle>
             <p className="text-sm text-[#8a8580] mt-1">
               Ορισμός: {committee.appointed_date ? new Date(committee.appointed_date).toLocaleDateString('el-GR') : '—'}
@@ -409,6 +456,7 @@ function CommitteeDetail({ committee, onRefresh }) {
         open={showAssignStructure}
         onOpenChange={setShowAssignStructure}
         committeeId={committee.id}
+        structureTypeId={committee.structure_type_id}
         onAssigned={onRefresh}
       />
     </Card>
