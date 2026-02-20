@@ -172,17 +172,50 @@ def create_license(structure_id):
     if not can_edit_structure(user_id):
         return jsonify({'error': 'Insufficient permissions'}), 403
     Structure.query.get_or_404(structure_id)
-    data = request.get_json()
+
+    # Support both JSON and multipart
+    if request.content_type and 'multipart' in request.content_type:
+        data = request.form
+    else:
+        data = request.get_json()
+
     lic = License(
-        structure_id=structure_id, type=data['type'],
+        structure_id=structure_id, type=data.get('type', ''),
         protocol_number=data.get('protocol_number'),
         issued_date=_parse_date(data.get('issued_date')),
         expiry_date=_parse_date(data.get('expiry_date')),
         status=data.get('status', 'active'), notes=data.get('notes'),
     )
     db.session.add(lic)
+    db.session.flush()  # Get ID for filename
+
+    # Handle file upload
+    if 'file' in request.files:
+        file = request.files['file']
+        if file and file.filename:
+            from werkzeug.utils import secure_filename
+            filename = secure_filename(file.filename)
+            upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'licenses')
+            os.makedirs(upload_dir, exist_ok=True)
+            full_path = os.path.join(upload_dir, f'{lic.id}_{filename}')
+            file.save(full_path)
+            lic.file_path = f'licenses/{lic.id}_{filename}'
+
     db.session.commit()
     return jsonify(lic.to_dict()), 201
+
+
+@registry_bp.route('/api/licenses/<int:license_id>/file', methods=['GET'])
+@jwt_required()
+def download_license_file(license_id):
+    from flask import send_file
+    lic = License.query.get_or_404(license_id)
+    if not lic.file_path:
+        return jsonify({'error': 'No file attached'}), 404
+    content_dir = current_app.config['UPLOAD_FOLDER']
+    if not os.path.isabs(content_dir):
+        content_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), content_dir)
+    return send_file(os.path.join(content_dir, lic.file_path), as_attachment=True)
 
 
 # Sanction endpoints

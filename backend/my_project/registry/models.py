@@ -89,6 +89,8 @@ class License(db.Model):
     expiry_date = db.Column(db.Date)
     status = db.Column(db.String(50), default='active')
     notes = db.Column(db.Text, nullable=True)
+    file_path = db.Column(db.String(500), nullable=True)
+    decision_record_id = db.Column(db.Integer, db.ForeignKey('decision_records.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -98,6 +100,8 @@ class License(db.Model):
             'issued_date': self.issued_date.isoformat() if self.issued_date else None,
             'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
             'status': self.status, 'notes': self.notes,
+            'file_path': self.file_path,
+            'decision_record_id': self.decision_record_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 

@@ -121,7 +121,7 @@ function Navigation() {
           <Link to="/" className="flex items-center space-x-2 min-w-0">
             <img src={`${import.meta.env.BASE_URL}favicon.ico`} alt="ΠΥΛΗ ΚΟΙΝΩΝΙΚΗΣ ΜΕΡΙΜΝΑΣ" className="w-8 h-8 rounded-lg flex-shrink-0" />
             <span className="text-sm sm:text-lg md:text-xl font-bold truncate" style={{fontFamily: "'Literata', serif"}}>ΠΥΛΗ ΚΟΙΝ. ΜΕΡΙΜΝΑΣ</span>
-            <Badge variant="secondary" className="hidden lg:inline-flex flex-shrink-0">
+            <Badge variant="secondary" className="hidden xl:inline-flex">
               Περιφέρεια Αττικής
             </Badge>
           </Link>
@@ -134,14 +134,15 @@ function Navigation() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  className={`flex items-center space-x-1 xl:space-x-2 px-2 xl:px-3 py-2 rounded-lg transition-all duration-200 ${
                     isActive(item.path)
                       ? 'bg-white/20 text-white'
                       : 'text-blue-100 hover:bg-white/10 hover:text-white'
                   }`}
+                  title={item.label}
                 >
                   <Icon size={18} />
-                  <span>{item.label}</span>
+                  <span className="hidden xl:inline text-sm">{item.label}</span>
                 </Link>
               );
             })}

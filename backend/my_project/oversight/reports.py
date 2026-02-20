@@ -163,7 +163,8 @@ def generate_registry_xlsx():
 # ---------------------------------------------------------------------------
 
 def _inspections_data(date_from=None, date_to=None):
-    query = Inspection.query.order_by(Inspection.scheduled_date.desc())
+    from sqlalchemy.orm import joinedload
+    query = Inspection.query.options(joinedload(Inspection.structure)).order_by(Inspection.scheduled_date.desc())
     if date_from:
         query = query.filter(Inspection.scheduled_date >= date.fromisoformat(date_from))
     if date_to:
@@ -173,7 +174,7 @@ def _inspections_data(date_from=None, date_to=None):
     headers = ['Ημ/νία', 'Τύπος', 'Κατάσταση', 'Συμπέρασμα', 'Δομή']
     rows = []
     for insp in inspections:
-        structure = Structure.query.get(insp.structure_id)
+        structure = insp.structure
         rows.append([
             _fmt_date(insp.scheduled_date),
             insp.type,
@@ -231,7 +232,8 @@ def generate_inspections_xlsx(date_from=None, date_to=None):
 # ---------------------------------------------------------------------------
 
 def _sanctions_data(date_from=None, date_to=None):
-    query = Sanction.query.order_by(Sanction.imposed_date.desc())
+    from sqlalchemy.orm import joinedload
+    query = Sanction.query.options(joinedload(Sanction.structure)).order_by(Sanction.imposed_date.desc())
     if date_from:
         query = query.filter(Sanction.imposed_date >= date.fromisoformat(date_from))
     if date_to:
@@ -241,7 +243,7 @@ def _sanctions_data(date_from=None, date_to=None):
     headers = ['Ημ/νία', 'Τύπος', 'Ποσό', 'Κατάσταση', 'Δομή']
     rows = []
     for s in sanctions:
-        structure = Structure.query.get(s.structure_id)
+        structure = s.structure
         rows.append([
             _fmt_date(s.imposed_date),
             s.type,
@@ -312,7 +314,10 @@ DECISION_STATUS_LABELS = {
 
 
 def _decisions_data(date_from=None, date_to=None):
-    query = SanctionDecision.query.order_by(SanctionDecision.created_at.desc())
+    from sqlalchemy.orm import joinedload
+    query = SanctionDecision.query.options(
+        joinedload(SanctionDecision.sanction).joinedload(Sanction.structure)
+    ).order_by(SanctionDecision.created_at.desc())
     if date_from:
         query = query.filter(SanctionDecision.created_at >= date.fromisoformat(date_from))
     if date_to:
@@ -323,7 +328,7 @@ def _decisions_data(date_from=None, date_to=None):
     rows = []
     for d in decisions:
         sanction = d.sanction
-        structure = Structure.query.get(sanction.structure_id) if sanction else None
+        structure = sanction.structure if sanction else None
         rows.append([
             d.id,
             d.protocol_number or '—',

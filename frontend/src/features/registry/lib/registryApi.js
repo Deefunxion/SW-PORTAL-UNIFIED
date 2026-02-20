@@ -72,6 +72,7 @@ export const checklistApi = {
 export const oversightApi = {
   dashboard: () => api.get('/api/oversight/dashboard'),
   alerts: () => api.get('/api/oversight/alerts'),
+  dailyAgenda: () => api.get('/api/oversight/daily-agenda'),
   reports: (type, params) => api.get(`/api/oversight/reports/${type}`, { params, responseType: 'blob' }),
   userRoles: () => api.get('/api/user-roles'),
   assignRole: (data) => api.post('/api/user-roles', data),

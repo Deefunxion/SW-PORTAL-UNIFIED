@@ -418,7 +418,12 @@ def document_registry():
     date_from = request.args.get('date_from')
     date_to = request.args.get('date_to')
 
-    query = DecisionRecord.query
+    from sqlalchemy.orm import joinedload
+    query = DecisionRecord.query.options(
+        joinedload(DecisionRecord.template),
+        joinedload(DecisionRecord.structure),
+        joinedload(DecisionRecord.author),
+    )
 
     if doc_type and doc_type != 'all':
         query = query.join(DecisionTemplate).filter(

@@ -14,11 +14,12 @@ db = SQLAlchemy()
 # Initialize Flask-Migrate (Alembic)
 migrate = Migrate()
 
-# Initialize rate limiter (no default limits — applied per-route)
+# Initialize rate limiter with sensible defaults
+import os
 limiter = Limiter(
     key_func=get_remote_address,
-    storage_uri="memory://",
-    default_limits=[]
+    storage_uri=os.getenv('REDIS_URL', 'memory://'),
+    default_limits=["200 per minute", "2000 per hour"],
 )
 
 # Initialize Celery (optional — only needed for background tasks)

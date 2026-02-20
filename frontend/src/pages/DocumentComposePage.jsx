@@ -112,8 +112,53 @@ function DocumentComposePage() {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleStructureContinue = async () => {
+    if (selectedStructureId === '_none') {
+      setSelectedStructureId('');
+      setStep(2);
+      return;
+    }
+    if (selectedStructureId) {
+      try {
+        const { data: structure } = await api.get(`/api/structures/${selectedStructureId}`);
+        // Map structure fields to template form field keys
+        const mapping = {
+          'όνομα_δομής': structure.name,
+          'κωδικός_δομής': structure.code,
+          'πόλη': structure.city,
+          'οδός': structure.street,
+          'ΤΚ': structure.postal_code,
+          'εκπρόσωπος': structure.representative_name,
+          'ΑΦΜ_εκπροσώπου': structure.representative_afm,
+          'τηλέφωνο_εκπροσώπου': structure.representative_phone,
+          'email_εκπροσώπου': structure.representative_email,
+          'δυναμικότητα': structure.capacity ? String(structure.capacity) : '',
+          'κατάσταση': structure.status,
+          'ιδιοκτησία': structure.ownership,
+          'αριθμός_αδείας': structure.license_number,
+          'ημερομηνία_αδείας': structure.license_date,
+          'λήξη_αδείας': structure.license_expiry,
+          'τύπος_δομής': structure.type?.name,
+        };
+        // Pre-fill form fields that match
+        setFormData(prev => {
+          const updated = { ...prev };
+          for (const [key, value] of Object.entries(mapping)) {
+            if (value && key in updated && !updated[key]) {
+              updated[key] = value;
+            }
+          }
+          return updated;
+        });
+      } catch (error) {
+        console.error('Error fetching structure details:', error);
+      }
+    }
+    setStep(2);
+  };
+
   const handleSaveDraft = async () => {
-    if (!selectedTemplate) return;
+    if (!selectedTemplate) return null;
     setIsSaving(true);
     try {
       if (decisionId) {
@@ -123,6 +168,7 @@ function DocumentComposePage() {
         });
         setDecisionStatus(data.status);
         toast.success('Αποθηκεύτηκε');
+        return decisionId;
       } else {
         // Create new
         const { data } = await api.post('/api/decisions', {
@@ -135,21 +181,24 @@ function DocumentComposePage() {
         toast.success('Δημιουργήθηκε ως πρόχειρο');
         // Update URL without reload
         window.history.replaceState(null, '', `/documents/${data.id}/edit`);
+        return data.id;
       }
     } catch (error) {
       console.error('Error saving:', error);
       toast.error('Σφάλμα αποθήκευσης');
+      return null;
     } finally {
       setIsSaving(false);
     }
   };
 
   const handlePreview = async () => {
-    // Save first if needed
-    await handleSaveDraft();
-    if (decisionId) {
+    // Save first and get the ID directly (avoids stale state)
+    const savedId = await handleSaveDraft();
+    const activeId = savedId || decisionId;
+    if (activeId) {
       try {
-        const { data } = await api.get(`/api/decisions/${decisionId}/preview`);
+        const { data } = await api.get(`/api/decisions/${activeId}/preview`);
         setPreviewHtml(data.html);
         setPreviewTitle(data.title);
         setStep(3);
@@ -344,10 +393,7 @@ function DocumentComposePage() {
                 Πίσω
               </Button>
               <Button
-                onClick={() => {
-                  if (selectedStructureId === '_none') setSelectedStructureId('');
-                  setStep(2);
-                }}
+                onClick={handleStructureContinue}
                 className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[44px]"
               >
                 Συνέχεια

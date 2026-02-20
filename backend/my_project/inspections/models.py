@@ -9,6 +9,7 @@ class InspectionCommittee(db.Model):
     appointed_date = db.Column(db.Date, nullable=False)
     expiry_date = db.Column(db.Date, nullable=True)
     status = db.Column(db.String(50), default='active')
+    structure_type_id = db.Column(db.Integer, db.ForeignKey('structure_types.id'), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -18,6 +19,7 @@ class InspectionCommittee(db.Model):
                                             backref='committee', lazy=True,
                                             cascade='all, delete-orphan')
     inspections = db.relationship('Inspection', backref='committee', lazy=True)
+    structure_type = db.relationship('StructureType', backref='committees')
 
     def to_dict(self, include_members=False, include_structures=False):
         d = {
@@ -25,6 +27,8 @@ class InspectionCommittee(db.Model):
             'appointed_date': self.appointed_date.isoformat() if self.appointed_date else None,
             'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
             'status': self.status, 'notes': self.notes,
+            'structure_type_id': self.structure_type_id,
+            'structure_type_name': self.structure_type.name if self.structure_type else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
         if include_members:

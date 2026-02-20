@@ -180,7 +180,7 @@ def login():
         })
     else:
         log_action('login_failed', resource='auth', details=f'username={username}')
-        return jsonify({'error': 'Invalid credentials'}), 401
+        return jsonify({'error': 'Λανθασμένα στοιχεία σύνδεσης'}), 401
 
 
 @main_bp.route('/api/auth/register', methods=['POST'])
@@ -288,7 +288,8 @@ def get_users():
 @main_bp.route('/api/categories', methods=['GET'])
 def get_categories():
     """Get all forum categories"""
-    categories = Category.query.all()
+    from sqlalchemy.orm import selectinload
+    categories = Category.query.options(selectinload(Category.discussions)).all()
     return jsonify([{
         'id': cat.id,
         'title': cat.title,
@@ -300,7 +301,11 @@ def get_categories():
 @main_bp.route('/api/discussions', methods=['GET'])
 def get_discussions():
     """Get all discussions grouped by category"""
-    discussions = Discussion.query.all()
+    from sqlalchemy.orm import joinedload, selectinload
+    discussions = Discussion.query.options(
+        joinedload(Discussion.category),
+        selectinload(Discussion.posts).joinedload(Post.user)
+    ).all()
     
     categorized_discussions = {}
     for discussion in discussions:
@@ -620,21 +625,29 @@ def create_conversation():
 @main_bp.route('/api/conversations/<int:conversation_id>/messages', methods=['GET'])
 @jwt_required()
 def get_messages(conversation_id):
-    """Get messages in a conversation"""
-    messages = PrivateMessage.query.filter_by(
+    """Get messages in a conversation (paginated)"""
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 50, type=int), 100)
+    pagination = PrivateMessage.query.filter_by(
         conversation_id=conversation_id,
         is_deleted=False
-    ).order_by(PrivateMessage.created_at).all()
-    
-    return jsonify([{
-        'id': msg.id,
-        'content': msg.content,
-        'sender_id': msg.sender_id,
-        'sender': msg.sender.username,
-        'created_at': msg.created_at.isoformat(),
-        'message_type': msg.message_type,
-        'attachment_count': len(msg.attachments)
-    } for msg in messages])
+    ).order_by(PrivateMessage.created_at).paginate(
+        page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        'messages': [{
+            'id': msg.id,
+            'content': msg.content,
+            'sender_id': msg.sender_id,
+            'sender': msg.sender.username,
+            'created_at': msg.created_at.isoformat(),
+            'message_type': msg.message_type,
+            'attachment_count': len(msg.attachments)
+        } for msg in pagination.items],
+        'total': pagination.total,
+        'page': page,
+        'pages': pagination.pages,
+    })
 
 
 @main_bp.route('/api/conversations/<int:conversation_id>/messages', methods=['POST'])
@@ -778,23 +791,32 @@ def ai_chat():
             db.session.add(ChatMessage(
                 session_id=session.id, role='user', content=message, sources='[]'
             ))
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     user_context = {
         'username': user.username,
         'role': user.role,
     } if user else None
 
-    from my_project.ai.copilot import get_chat_reply
-    model_override = data.get('model')  # allows frontend to switch model on the fly
-    result = get_chat_reply(
-        user_message=message,
-        chat_history=chat_history,
-        use_rag=True,
-        user_context=user_context,
-        model_override=model_override,
-    )
+    try:
+        from my_project.ai.copilot import get_chat_reply
+        model_override = data.get('model')
+        result = get_chat_reply(
+            user_message=message,
+            chat_history=chat_history,
+            use_rag=True,
+            user_context=user_context,
+            model_override=model_override,
+        )
+    except Exception:
+        result = {
+            'reply': 'Λυπάμαι, αντιμετώπισα τεχνικό πρόβλημα. Παρακαλώ δοκιμάστε ξανά.',
+            'sources': [],
+        }
 
     # Store assistant reply in session
     if session:
@@ -805,7 +827,10 @@ def ai_chat():
             content=result['reply'],
             sources=json.dumps(result.get('sources', [])),
         ))
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
     return jsonify(result), 200
 
@@ -1416,7 +1441,8 @@ def get_dashboard_analytics():
             'discussions_by_category': {}
         }
         
-        categories = Category.query.all()
+        from sqlalchemy.orm import selectinload
+        categories = Category.query.options(selectinload(Category.discussions)).all()
         for category in categories:
             discussion_stats['discussions_by_category'][category.title] = len(category.discussions)
         

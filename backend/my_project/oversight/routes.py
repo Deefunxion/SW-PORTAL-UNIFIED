@@ -62,7 +62,7 @@ def create_advisor_report(structure_id):
         assessment=assessment,
         recommendations=recommendations,
         file_path=file_path,
-        status='draft',
+        status='approved',
     )
     db.session.add(report)
     db.session.commit()
@@ -305,24 +305,129 @@ def oversight_dashboard():
     }), 200
 
 
+@oversight_bp.route('/api/oversight/daily-agenda', methods=['GET'])
+@jwt_required()
+def daily_agenda():
+    from datetime import timedelta
+    from sqlalchemy.orm import joinedload
+    from ..registry.models import Structure, License
+    from ..inspections.models import Inspection
+    from ..sanctions.models import SanctionDecision
+
+    today = date.today()
+    agenda = []
+
+    # 1. Inspections scheduled today or this week — eager-load structure
+    upcoming_inspections = Inspection.query.options(
+        joinedload(Inspection.structure)
+    ).filter(
+        Inspection.scheduled_date >= today,
+        Inspection.scheduled_date <= today + timedelta(days=7),
+        Inspection.status.in_(['scheduled', 'pending'])
+    ).order_by(Inspection.scheduled_date).all()
+
+    for insp in upcoming_inspections:
+        structure = insp.structure
+        agenda.append({
+            'type': 'inspection',
+            'priority': 'high' if insp.scheduled_date == today else 'medium',
+            'title': f'Έλεγχος: {structure.name if structure else "N/A"}',
+            'subtitle': f'{insp.type} - {insp.scheduled_date.strftime("%d/%m/%Y")}',
+            'date': insp.scheduled_date.isoformat(),
+            'link': f'/inspections/{insp.id}/report',
+            'structure_id': insp.structure_id
+        })
+
+    # 2. Licenses expiring within 30 days — eager-load structure
+    expiring_licenses = License.query.options(
+        joinedload(License.structure)
+    ).filter(
+        License.expiry_date >= today,
+        License.expiry_date <= today + timedelta(days=30),
+        License.status == 'active'
+    ).order_by(License.expiry_date).all()
+
+    for lic in expiring_licenses:
+        structure = lic.structure
+        days_left = (lic.expiry_date - today).days
+        agenda.append({
+            'type': 'license_expiring',
+            'priority': 'high' if days_left <= 7 else 'medium',
+            'title': f'Λήξη Άδειας: {structure.name if structure else "N/A"}',
+            'subtitle': f'{lic.type} - σε {days_left} ημέρες ({lic.expiry_date.strftime("%d/%m/%Y")})',
+            'date': lic.expiry_date.isoformat(),
+            'link': f'/registry/{lic.structure_id}',
+            'structure_id': lic.structure_id
+        })
+
+    # 3. Pending decision approvals
+    pending_decisions = SanctionDecision.query.filter(
+        SanctionDecision.status == 'submitted'
+    ).order_by(SanctionDecision.created_at).all()
+
+    for dec in pending_decisions:
+        agenda.append({
+            'type': 'pending_approval',
+            'priority': 'high',
+            'title': f'Εκκρεμεί Έγκριση: {dec.obligor_name or "N/A"}',
+            'subtitle': f'Ποσό: {dec.final_amount}€',
+            'date': dec.created_at.isoformat() if dec.created_at else today.isoformat(),
+            'link': f'/sanctions/decisions/{dec.id}',
+            'structure_id': dec.structure_id
+        })
+
+    # 4. Overdue payments
+    overdue = SanctionDecision.query.filter(
+        SanctionDecision.status == 'notified',
+        SanctionDecision.payment_deadline < today
+    ).all()
+
+    for dec in overdue:
+        agenda.append({
+            'type': 'overdue_payment',
+            'priority': 'critical',
+            'title': f'Εκπρόθεσμη Πληρωμή: {dec.obligor_name or "N/A"}',
+            'subtitle': f'Ποσό: {dec.final_amount}€ - Προθεσμία: {dec.payment_deadline.strftime("%d/%m/%Y")}',
+            'date': dec.payment_deadline.isoformat(),
+            'link': f'/sanctions/decisions/{dec.id}',
+            'structure_id': dec.structure_id
+        })
+
+    # Sort by priority then date
+    priority_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+    agenda.sort(key=lambda x: (priority_order.get(x['priority'], 9), x['date']))
+
+    return jsonify({
+        'date': today.isoformat(),
+        'items': agenda,
+        'summary': {
+            'total': len(agenda),
+            'critical': sum(1 for a in agenda if a['priority'] == 'critical'),
+            'high': sum(1 for a in agenda if a['priority'] == 'high'),
+        }
+    })
+
+
 @oversight_bp.route('/api/oversight/alerts', methods=['GET'])
 @jwt_required()
 def oversight_alerts():
-    from ..registry.models import Structure, License
+    from ..registry.models import Structure, License, Sanction as SanctionModel
     from ..inspections.models import InspectionReport
     from datetime import timedelta
 
+    from sqlalchemy.orm import joinedload
+    from ..sanctions.models import SanctionDecision
     alerts = []
 
-    # Expiring licenses (within 3 months)
+    # Expiring licenses (within 3 months) — eager-load structure
     cutoff = date.today() + timedelta(days=90)
-    expiring = License.query.filter(
+    expiring = License.query.options(joinedload(License.structure)).filter(
         License.expiry_date <= cutoff,
         License.expiry_date >= date.today(),
         License.status == 'active'
     ).all()
     for lic in expiring:
-        structure = Structure.query.get(lic.structure_id)
+        structure = lic.structure
         alerts.append({
             'type': 'license_expiring',
             'severity': 'warning',
@@ -331,13 +436,13 @@ def oversight_alerts():
             'date': lic.expiry_date.isoformat(),
         })
 
-    # Expired licenses
-    expired = License.query.filter(
+    # Expired licenses — eager-load structure
+    expired = License.query.options(joinedload(License.structure)).filter(
         License.expiry_date < date.today(),
         License.status == 'active'
     ).all()
     for lic in expired:
-        structure = Structure.query.get(lic.structure_id)
+        structure = lic.structure
         alerts.append({
             'type': 'license_expired',
             'severity': 'critical',
@@ -357,15 +462,17 @@ def oversight_alerts():
             'report_id': report.id,
         })
 
-    # Overdue sanction payments (notified + past payment deadline)
-    from ..sanctions.models import SanctionDecision
-    overdue_decisions = SanctionDecision.query.filter(
-        SanctionDecision.status == 'notified',
-        SanctionDecision.payment_deadline < date.today()
+    # Batch-load all decisions with sanction→structure in one query
+    all_decisions = SanctionDecision.query.options(
+        joinedload(SanctionDecision.sanction).joinedload(SanctionModel.structure)
     ).all()
-    for dec in overdue_decisions:
+
+    # Overdue sanction payments (notified + past payment deadline)
+    for dec in all_decisions:
+        if dec.status != 'notified' or not dec.payment_deadline or dec.payment_deadline >= date.today():
+            continue
         sanction = dec.sanction
-        structure = Structure.query.get(sanction.structure_id) if sanction else None
+        structure = sanction.structure if sanction else None
         alerts.append({
             'type': 'payment_overdue',
             'severity': 'critical',
@@ -376,14 +483,13 @@ def oversight_alerts():
 
     # Approaching payment deadlines (within 7 days)
     payment_soon = date.today() + timedelta(days=7)
-    approaching_payment = SanctionDecision.query.filter(
-        SanctionDecision.status == 'notified',
-        SanctionDecision.payment_deadline >= date.today(),
-        SanctionDecision.payment_deadline <= payment_soon,
-    ).all()
-    for dec in approaching_payment:
+    for dec in all_decisions:
+        if dec.status != 'notified' or not dec.payment_deadline:
+            continue
+        if dec.payment_deadline < date.today() or dec.payment_deadline > payment_soon:
+            continue
         sanction = dec.sanction
-        structure = Structure.query.get(sanction.structure_id) if sanction else None
+        structure = sanction.structure if sanction else None
         alerts.append({
             'type': 'payment_approaching',
             'severity': 'warning',
@@ -394,14 +500,13 @@ def oversight_alerts():
 
     # Approaching appeal deadlines (within 3 days)
     appeal_soon = date.today() + timedelta(days=3)
-    approaching_appeal = SanctionDecision.query.filter(
-        SanctionDecision.status == 'notified',
-        SanctionDecision.appeal_deadline >= date.today(),
-        SanctionDecision.appeal_deadline <= appeal_soon,
-    ).all()
-    for dec in approaching_appeal:
+    for dec in all_decisions:
+        if dec.status != 'notified' or not dec.appeal_deadline:
+            continue
+        if dec.appeal_deadline < date.today() or dec.appeal_deadline > appeal_soon:
+            continue
         sanction = dec.sanction
-        structure = Structure.query.get(sanction.structure_id) if sanction else None
+        structure = sanction.structure if sanction else None
         alerts.append({
             'type': 'appeal_deadline_approaching',
             'severity': 'warning',
@@ -411,10 +516,11 @@ def oversight_alerts():
         })
 
     # Returned decisions requiring revision
-    returned = SanctionDecision.query.filter_by(status='returned').all()
-    for dec in returned:
+    for dec in all_decisions:
+        if dec.status != 'returned':
+            continue
         sanction = dec.sanction
-        structure = Structure.query.get(sanction.structure_id) if sanction else None
+        structure = sanction.structure if sanction else None
         alerts.append({
             'type': 'decision_returned',
             'severity': 'info',

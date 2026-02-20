@@ -18,10 +18,11 @@ import { Label } from '@/components/ui/label.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
 import {
   ArrowLeft, Edit, Building2, FileText, Shield, Scale, Clock,
-  User, Phone, Mail, MapPin, Plus, Loader2, Send, CheckCircle, RotateCcw,
-  ExternalLink, Download
+  User, Phone, Mail, MapPin, Plus, Loader2, CheckCircle,
+  ExternalLink, Download, Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 import { structuresApi, inspectionsApi, committeesApi, oversightApi } from '../lib/registryApi';
 import {
   STRUCTURE_STATUS, OWNERSHIP_TYPES, LICENSE_STATUS, SANCTION_STATUS,
@@ -29,7 +30,6 @@ import {
   ADVISOR_REPORT_TYPES, REPORT_STATUS,
 } from '../lib/constants';
 import LicenseBadge from '../components/LicenseBadge';
-import SanctionForm from '../components/SanctionForm';
 import StructureTimeline from '../components/StructureTimeline';
 import LegislationPanel from '../components/LegislationPanel';
 
@@ -189,6 +189,7 @@ function LicensesTab({ structureId }) {
                 <TableHead>Ημ. Έκδοσης</TableHead>
                 <TableHead>Λήξη</TableHead>
                 <TableHead>Κατάσταση</TableHead>
+                <TableHead className="w-24">Αρχείο</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -199,6 +200,31 @@ function LicensesTab({ structureId }) {
                   <TableCell>{formatDate(lic.issued_date)}</TableCell>
                   <TableCell><LicenseBadge expiryDate={lic.expiry_date} /></TableCell>
                   <TableCell><StatusBadge status={lic.status} map={LICENSE_STATUS} /></TableCell>
+                  <TableCell>
+                    {lic.file_path ? (
+                      <div className="flex gap-1">
+                        <a
+                          href={`/content/${lic.file_path}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-[#1a3aa3] hover:text-[#152e82] transition-colors"
+                          title="Προεπισκόπηση"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </a>
+                        <a
+                          href={`/api/licenses/${lic.id}/file`}
+                          download
+                          className="inline-flex items-center text-[#8a8580] hover:text-[#2a2520] transition-colors"
+                          title="Λήψη"
+                        >
+                          <Download className="w-4 h-4" />
+                        </a>
+                      </div>
+                    ) : (
+                      <span className="text-[#8a8580]">—</span>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -223,25 +249,30 @@ function CreateLicenseDialog({ open, onOpenChange, structureId, onCreated }) {
   const [expiryDate, setExpiryDate] = useState('');
   const [status, setStatus] = useState('active');
   const [notes, setNotes] = useState('');
+  const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const handleCreate = async () => {
     if (!type) { toast.error('Επιλέξτε τύπο αδείας.'); return; }
     setSaving(true);
     try {
-      await structuresApi.createLicense(structureId, {
-        type,
-        protocol_number: protocolNumber || null,
-        issued_date: issuedDate || null,
-        expiry_date: expiryDate || null,
-        status,
-        notes: notes || null,
+      const formData = new FormData();
+      formData.append('type', type);
+      if (protocolNumber) formData.append('protocol_number', protocolNumber);
+      if (issuedDate) formData.append('issued_date', issuedDate);
+      if (expiryDate) formData.append('expiry_date', expiryDate);
+      formData.append('status', status);
+      if (notes) formData.append('notes', notes);
+      if (file) formData.append('file', file);
+
+      await api.post(`/api/structures/${structureId}/licenses`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       toast.success('Η άδεια δημιουργήθηκε.');
       onCreated();
       onOpenChange(false);
       setType(''); setProtocolNumber(''); setIssuedDate(''); setExpiryDate('');
-      setStatus('active'); setNotes('');
+      setStatus('active'); setNotes(''); setFile(null);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Σφάλμα δημιουργίας αδείας.');
     } finally { setSaving(false); }
@@ -295,6 +326,15 @@ function CreateLicenseDialog({ open, onOpenChange, structureId, onCreated }) {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-[#2a2520]">Αρχείο Απόφασης (PDF)</label>
+            <Input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={(e) => setFile(e.target.files[0] || null)}
+              className="mt-1 min-h-[44px] border-[#e8e2d8]"
+            />
           </div>
           <div>
             <label className="text-sm font-medium text-[#2a2520]">Σημειώσεις</label>
@@ -424,25 +464,40 @@ function InspectionsTab({ structureId }) {
                     }
                   </TableCell>
                   <TableCell>
-                    {insp.report ? (
-                      <Link
-                        to={`/inspections/${insp.id}/report`}
-                        className="inline-flex items-center text-[#1a3aa3] hover:text-[#152e82] text-sm transition-colors"
-                      >
-                        <FileText className="w-3 h-3 mr-1" />
-                        Προβολή
-                      </Link>
-                    ) : insp.status === 'scheduled' ? (
-                      <Link
-                        to={`/inspections/${insp.id}/report`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1a3aa3] text-white text-sm rounded-md hover:bg-[#152e82] transition-colors font-medium"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        Σύνταξη Έκθεσης
-                      </Link>
-                    ) : (
-                      <span className="text-[#8a8580] text-sm">—</span>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {insp.report ? (
+                        <>
+                          <Link
+                            to={`/inspections/${insp.id}/report`}
+                            className="inline-flex items-center text-[#1a3aa3] hover:text-[#152e82] text-sm transition-colors"
+                          >
+                            <FileText className="w-3 h-3 mr-1" />
+                            Προβολή
+                          </Link>
+                          {insp.report?.file_path && (
+                            <a
+                              href={`/content/${insp.report.file_path}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-[#8a8580] hover:text-[#2a2520] text-sm transition-colors ml-1"
+                              title="Λήψη Αρχείου"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </>
+                      ) : insp.status === 'scheduled' ? (
+                        <Link
+                          to={`/inspections/${insp.id}/report`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1a3aa3] text-white text-sm rounded-md hover:bg-[#152e82] transition-colors font-medium"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          Σύνταξη Έκθεσης
+                        </Link>
+                      ) : (
+                        <span className="text-[#8a8580] text-sm">—</span>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -535,7 +590,6 @@ function ReportsTab({ structureId }) {
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(null);
 
   const fetchReports = useCallback(() => {
     setLoading(true);
@@ -546,39 +600,6 @@ function ReportsTab({ structureId }) {
   }, [structureId]);
 
   useEffect(() => { fetchReports(); }, [fetchReports]);
-
-  const handleSubmit = async (reportId) => {
-    setActionLoading(reportId);
-    try {
-      await oversightApi.updateAdvisorReport(reportId, { status: 'submitted' });
-      toast.success('Η έκθεση υποβλήθηκε.');
-      fetchReports();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Σφάλμα υποβολής.');
-    } finally { setActionLoading(null); }
-  };
-
-  const handleApprove = async (reportId) => {
-    setActionLoading(reportId);
-    try {
-      await oversightApi.approveReport(reportId, 'approve');
-      toast.success('Η έκθεση εγκρίθηκε.');
-      fetchReports();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Σφάλμα έγκρισης.');
-    } finally { setActionLoading(null); }
-  };
-
-  const handleReturn = async (reportId) => {
-    setActionLoading(reportId);
-    try {
-      await oversightApi.approveReport(reportId, 'return');
-      toast.success('Η έκθεση επιστράφηκε.');
-      fetchReports();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Σφάλμα επιστροφής.');
-    } finally { setActionLoading(null); }
-  };
 
   const handleIridaExport = async (reportId) => {
     try {
@@ -636,57 +657,36 @@ function ReportsTab({ structureId }) {
               </TableCell>
               <TableCell>
                 <div className="flex gap-1">
-                  {r.status === 'draft' && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleSubmit(r.id)}
-                      disabled={actionLoading === r.id}
-                      className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+                  <Link
+                    to={`/registry/${structureId}/advisor-report/${r.id}`}
+                    target="_blank"
+                    className="inline-flex items-center h-7 px-2 text-xs border border-blue-200 text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                    title="Προβολή"
+                  >
+                    <FileText className="w-3 h-3 mr-1" />
+                    Προβολή
+                  </Link>
+                  {r.file_path && (
+                    <a
+                      href={`/content/${r.file_path}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center h-7 px-2 text-xs border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                      title="Λήψη Αρχείου"
                     >
-                      {actionLoading === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
-                      Υποβολή
-                    </Button>
+                      <Download className="w-3 h-3" />
+                    </a>
                   )}
-                  {r.status === 'submitted' && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleApprove(r.id)}
-                        disabled={actionLoading === r.id}
-                        className="h-7 text-xs border-green-200 text-green-700 hover:bg-green-50"
-                      >
-                        {actionLoading === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3 mr-1" />}
-                        Έγκριση
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleReturn(r.id)}
-                        disabled={actionLoading === r.id}
-                        className="h-7 text-xs border-orange-200 text-orange-700 hover:bg-orange-50"
-                      >
-                        <RotateCcw className="w-3 h-3 mr-1" />
-                        Επιστροφή
-                      </Button>
-                    </>
-                  )}
-                  {r.status === 'approved' && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleIridaExport(r.id)}
-                      className="h-7 text-xs border-purple-200 text-purple-700 hover:bg-purple-50"
-                      title="Εξαγωγή για Ίριδα"
-                    >
-                      <Download className="w-3 h-3 mr-1" />
-                      Ίριδα
-                    </Button>
-                  )}
-                  {r.status === 'returned' && (
-                    <span className="text-xs text-[#8a8580]">—</span>
-                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleIridaExport(r.id)}
+                    className="h-7 text-xs border-purple-200 text-purple-700 hover:bg-purple-50"
+                    title="Εξαγωγή για Ίριδα"
+                  >
+                    <Download className="w-3 h-3 mr-1" />
+                    Ίριδα
+                  </Button>
                 </div>
               </TableCell>
             </TableRow>
@@ -703,7 +703,6 @@ function ReportsTab({ structureId }) {
 function SanctionsTab({ structureId }) {
   const [sanctions, setSanctions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
 
   const fetchSanctions = useCallback(() => {
@@ -736,19 +735,11 @@ function SanctionsTab({ structureId }) {
         <p className="text-sm text-[#8a8580]">{sanctions.length} κυρώσεις</p>
         <div className="flex gap-2">
           <Link to={`/sanctions?structure=${structureId}`}>
-            <Button variant="outline" className="border-[#e8e2d8] min-h-[40px]" size="sm">
+            <Button className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[40px]" size="sm">
               <Scale className="w-4 h-4 mr-1.5" />
-              Υπολογισμός Προστίμου
+              Νέα Κύρωση
             </Button>
           </Link>
-          <Button
-            onClick={() => setShowCreate(true)}
-            className="bg-[#1a3aa3] hover:bg-[#152e82] text-white min-h-[40px]"
-            size="sm"
-          >
-            <Plus className="w-4 h-4 mr-1.5" />
-            Νέα Κύρωση
-          </Button>
         </div>
       </div>
 
@@ -834,12 +825,6 @@ function SanctionsTab({ structureId }) {
         </div>
       )}
 
-      <SanctionForm
-        open={showCreate}
-        onOpenChange={setShowCreate}
-        structureId={structureId}
-        onCreated={fetchSanctions}
-      />
     </div>
   );
 }

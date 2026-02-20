@@ -91,7 +91,7 @@ class TestOversightAPI:
         )
         assert response.status_code == 201
         result = response.get_json()
-        assert result['status'] == 'draft'
+        assert result['status'] == 'approved'
         assert result['type'] == 'regular'
 
     def test_list_advisor_reports(self, client, admin_headers, app):

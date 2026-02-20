@@ -75,17 +75,15 @@ export default function OversightCharts({
           {structuresByType.length === 0 ? (
             <p className="text-sm text-[#8a8580] text-center py-8">Δεν υπάρχουν δεδομένα.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={340}>
               <PieChart>
                 <Pie
                   data={structuresByType}
                   dataKey="count"
                   nameKey="name"
                   cx="50%"
-                  cy="50%"
-                  outerRadius={75}
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                  labelLine={false}
+                  cy="35%"
+                  outerRadius={65}
                 >
                   {structuresByType.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -93,6 +91,17 @@ export default function OversightCharts({
                 </Pie>
                 <Tooltip
                   contentStyle={{ border: '1px solid #e8e2d8', borderRadius: 8, fontSize: 13 }}
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  iconSize={10}
+                  wrapperStyle={{ fontSize: 11, lineHeight: '18px' }}
+                  formatter={(value, entry) => {
+                    const item = structuresByType.find(d => d.name === value);
+                    const total = structuresByType.reduce((s, d) => s + d.count, 0);
+                    const pct = total > 0 ? ((item?.count || 0) / total * 100).toFixed(0) : 0;
+                    return `${value} (${pct}%)`;
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -109,17 +118,15 @@ export default function OversightCharts({
           {sanctionData.length === 0 ? (
             <p className="text-sm text-[#8a8580] text-center py-8">Δεν υπάρχουν δεδομένα.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={340}>
               <PieChart>
                 <Pie
                   data={sanctionData}
                   dataKey="count"
                   nameKey="name"
                   cx="50%"
-                  cy="50%"
-                  outerRadius={75}
-                  label={({ name, count }) => `${name}: ${count}`}
-                  labelLine={false}
+                  cy="35%"
+                  outerRadius={65}
                 >
                   <Cell fill="#dc2626" />
                   <Cell fill="#059669" />
@@ -128,6 +135,15 @@ export default function OversightCharts({
                 </Pie>
                 <Tooltip
                   contentStyle={{ border: '1px solid #e8e2d8', borderRadius: 8, fontSize: 13 }}
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  iconSize={10}
+                  wrapperStyle={{ fontSize: 11, lineHeight: '18px' }}
+                  formatter={(value, entry) => {
+                    const item = sanctionData.find(d => d.name === value);
+                    return `${value}: ${item?.count || 0}`;
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>

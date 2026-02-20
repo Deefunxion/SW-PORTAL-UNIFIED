@@ -159,6 +159,15 @@ def create_app():
             ('sanction_rules', 'revenue_split_state_ale', "VARCHAR(20) DEFAULT '1560989001'"),
             ('sanction_rules', 'revenue_split_region_pct', 'INTEGER DEFAULT 50'),
             ('sanction_rules', 'revenue_split_region_kae', "VARCHAR(20) DEFAULT '64008'"),
+            # Committee → structure type link
+            ('inspection_committees', 'structure_type_id', 'INTEGER'),
+            # License file columns
+            ('licenses', 'file_path', 'VARCHAR(500)'),
+            ('licenses', 'decision_record_id', 'INTEGER'),
+            # Decision records — missing columns causing 500 on POST /api/decisions
+            ('decision_records', 'internal_number', 'VARCHAR(20)'),
+            ('decision_records', 'source_type', 'VARCHAR(50)'),
+            ('decision_records', 'source_id', 'INTEGER'),
         ]
         for table, column, col_type in _migrate_columns:
             try:
@@ -168,6 +177,16 @@ def create_app():
                 db.session.commit()
             except Exception:
                 db.session.rollback()
+
+        # Create unique index for decision_records.internal_number
+        try:
+            db.session.execute(db.text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_decision_records_internal_number "
+                "ON decision_records (internal_number) WHERE internal_number IS NOT NULL"
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
         # Seed comprehensive demo data (users, structures, inspections, forum, etc.)
         # Runs in development OR when SEED_DEMO=true (for Render)
