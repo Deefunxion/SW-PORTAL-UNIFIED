@@ -170,6 +170,11 @@ def create_app():
             ('decision_records', 'source_id', 'INTEGER'),
             # Inspector body expansion — Κ.Σ. can perform inspections
             ('inspections', 'inspector_id', 'INTEGER'),
+            # IRIDA per-user credentials (Phase 1)
+            ('users', 'irida_username', 'TEXT'),
+            ('users', 'irida_password', 'TEXT'),
+            ('users', 'irida_x_profile', 'VARCHAR(50)'),
+            ('users', 'irida_base_url', 'VARCHAR(200)'),
         ]
         for table, column, col_type in _migrate_columns:
             try:
