@@ -5,7 +5,7 @@ Consolidated routes file containing all Flask endpoints organized in a Blueprint
 
 from flask import Blueprint, jsonify, request, send_from_directory, send_file, current_app
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 
@@ -1236,11 +1236,15 @@ def knowledge_reindex():
 @main_bp.route('/api/admin/users', methods=['GET'])
 @jwt_required()
 def admin_list_users():
-    """List all users. Admin only."""
+    """List users. Admin only. Defaults to active users."""
     admin_check = require_admin()
     if admin_check:
         return admin_check
-    users = User.query.order_by(User.created_at.desc()).all()
+    include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
+    query = User.query
+    if not include_inactive:
+        query = query.filter(User.is_active != False)
+    users = query.order_by(User.created_at.desc()).all()
     return jsonify({'users': [u.to_dict() for u in users]}), 200
 
 
@@ -1251,15 +1255,36 @@ def admin_stats():
     admin_check = require_admin()
     if admin_check:
         return admin_check
-    total_users = User.query.count()
-    active_users = User.query.filter(User.presence_status != 'offline').count()
-    total_discussions = Discussion.query.count()
-    total_posts = Post.query.count()
+
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+
+    total_users = User.query.filter(User.is_active != False).count()
+    active_users = User.query.filter(
+        User.is_active != False,
+        User.presence_status != 'offline'
+    ).count()
+    recent_users = User.query.filter(
+        User.is_active != False,
+        User.created_at >= thirty_days_ago
+    ).count()
+
+    from sqlalchemy import func
+    role_counts = dict(
+        db.session.query(User.role, func.count(User.id))
+        .filter(User.is_active != False)
+        .group_by(User.role)
+        .all()
+    )
+
     return jsonify({
-        'total_users': total_users,
-        'active_users': active_users,
-        'total_discussions': total_discussions,
-        'total_posts': total_posts,
+        'users': {
+            'total': total_users,
+            'active': active_users,
+            'recent': recent_users,
+            'by_role': role_counts,
+        },
+        'total_discussions': Discussion.query.count(),
+        'total_posts': Post.query.count(),
     }), 200
 
 

@@ -217,3 +217,39 @@ def test_inactive_user_cannot_login(client, app):
     })
     assert response.status_code == 403
     assert 'απενεργοποιηθεί' in response.get_json()['error']
+
+
+def test_admin_list_filters_inactive(client, admin_headers, app):
+    """Admin list should exclude inactive users by default."""
+    from my_project.models import User
+    from my_project.extensions import db
+
+    with app.app_context():
+        user = User(username='invisible_user', email='invis@test.com',
+                    role='guest', is_active=False)
+        user.set_password('pass123')
+        db.session.add(user)
+        db.session.commit()
+
+    # Default: active only
+    response = client.get('/api/admin/users', headers=admin_headers)
+    assert response.status_code == 200
+    usernames = [u['username'] for u in response.get_json()['users']]
+    assert 'invisible_user' not in usernames
+
+    # With include_inactive=true: shows all
+    response = client.get('/api/admin/users?include_inactive=true', headers=admin_headers)
+    usernames = [u['username'] for u in response.get_json()['users']]
+    assert 'invisible_user' in usernames
+
+
+def test_admin_stats_structure(client, admin_headers):
+    """Stats should return nested users object."""
+    response = client.get('/api/admin/stats', headers=admin_headers)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert 'users' in data
+    assert 'total' in data['users']
+    assert 'active' in data['users']
+    assert 'recent' in data['users']
+    assert 'by_role' in data['users']
