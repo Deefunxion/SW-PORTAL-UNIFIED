@@ -329,6 +329,149 @@ def delete_irida_credentials():
     return jsonify({'configured': False}), 200
 
 
+# --- Send Advisor Report to ΙΡΙΔΑ ---
+
+@oversight_bp.route('/api/advisor-reports/<int:report_id>/send-to-irida', methods=['POST'])
+@jwt_required()
+def send_advisor_report_to_irida(report_id):
+    """Send an approved advisor report to ΙΡΙΔΑ as Υπηρεσιακό Σημείωμα."""
+    import json as _json
+    user_id = int(get_jwt_identity())
+    from ..models import User
+    user = User.query.get_or_404(user_id)
+
+    report = SocialAdvisorReport.query.get_or_404(report_id)
+
+    # Validate report status
+    if report.status not in ('submitted', 'approved'):
+        return jsonify({'error': 'Μόνο εγκεκριμένες αναφορές μπορούν να '
+                        'σταλούν στο ΙΡΙΔΑ'}), 400
+
+    # Validate request body
+    data = request.get_json() or {}
+    recipients = data.get('recipients', [])
+    if not recipients:
+        return jsonify({'error': 'Απαιτούνται αποδέκτες (recipients)'}), 400
+
+    # Check IRIDA credentials
+    if not user.irida_username or not user.irida_password:
+        return jsonify({
+            'error': 'Δεν έχετε ρυθμίσει σύνδεση ΙΡΙΔΑ. '
+                     'Μεταβείτε στο Προφίλ → Σύνδεση ΙΡΙΔΑ.'
+        }), 400
+
+    from ..integrations.irida_crypto import decrypt_credential
+    from ..integrations.irida_client import (
+        authenticate_user, send_document_as_user, get_mode
+    )
+    from ..integrations.models import IridaTransaction
+
+    try:
+        username = decrypt_credential(user.irida_username)
+        password = decrypt_credential(user.irida_password)
+    except Exception:
+        return jsonify({'error': 'Σφάλμα αποκρυπτογράφησης. '
+                        'Αποθηκεύστε ξανά τα στοιχεία ΙΡΙΔΑ.'}), 500
+
+    mode = get_mode()
+    base_url = user.irida_base_url or mode.get('base_url')
+    x_profile = user.irida_x_profile or ''
+
+    # Build subject from report + structure
+    structure = report.structure
+    subject_override = data.get('subject')
+    subject = subject_override or (
+        f'Αναφορά Κοιν. Συμβούλου — {structure.name}'
+        if structure else f'Αναφορά Κοιν. Συμβούλου #{report.id}'
+    )
+
+    # Generate PDF from the report
+    from .pdf_reports import generate_advisor_report_pdf
+    try:
+        pdf_bytes = generate_advisor_report_pdf(report)
+    except Exception:
+        # Fallback: send a simple text file if PDF generation fails
+        pdf_bytes = f'Αναφορά #{report.id}\n{report.assessment}'.encode('utf-8')
+
+    filename = f'advisor_report_{report.id}.pdf'
+
+    # Create pending transaction
+    tx = IridaTransaction(
+        direction='outbound',
+        status='pending',
+        source_type='advisor_report',
+        source_id=report.id,
+        subject=subject,
+        sender=user.username,
+        recipients_json=_json.dumps(recipients),
+        sent_by_id=user_id,
+    )
+    db.session.add(tx)
+    db.session.flush()
+
+    try:
+        token = authenticate_user(username, password, base_url=base_url)
+
+        # Auto-fetch x_profile if missing
+        if not x_profile:
+            import httpx as _httpx
+            from ..integrations.irida_client import _api_prefix
+            prefix = _api_prefix()
+            prof_resp = _httpx.get(
+                f'{base_url}/api/v2/{prefix}/profiles',
+                headers={
+                    'Authorization': f'Bearer {token}',
+                    'Accept': 'application/json',
+                },
+                timeout=30,
+            )
+            if prof_resp.status_code == 200:
+                profiles = prof_resp.json()
+                if profiles:
+                    x_profile = profiles[0].get('xProfile', '')
+                    user.irida_x_profile = x_profile
+
+        result = send_document_as_user(
+            token=token,
+            x_profile=x_profile,
+            base_url=base_url,
+            subject=subject,
+            registration_number='ΑΝΕΥ',
+            sender=user.username,
+            recipients=recipients,
+            files=[(filename, pdf_bytes, 'application/pdf')],
+            demo=mode.get('demo', False),
+        )
+
+        # Extract protocol number from response
+        irida_data = result.get('data', result) if isinstance(result, dict) else result
+        if isinstance(irida_data, list) and irida_data:
+            tx.irida_reg_no = irida_data[0].get('regNo')
+            tx.irida_document_id = str(irida_data[0].get('rootId', ''))
+
+        tx.status = 'sent'
+        db.session.commit()
+
+        return jsonify({
+            'transaction': tx.to_dict(),
+            'message': f'Η αναφορά στάλθηκε στο ΙΡΙΔΑ'
+                       f'{" — Αρ.Πρωτ: " + tx.irida_reg_no if tx.irida_reg_no else ""}',
+        }), 200
+
+    except RuntimeError as e:
+        tx.status = 'failed'
+        tx.error_message = str(e)
+        db.session.commit()
+        return jsonify({'error': str(e), 'transaction': tx.to_dict()}), 502
+
+    except Exception as e:
+        tx.status = 'failed'
+        tx.error_message = str(e)
+        db.session.commit()
+        return jsonify({'error': f'Σφάλμα ΙΡΙΔΑ: {str(e)}',
+                        'transaction': tx.to_dict()}), 502
+
+
 # --- Dashboard & Alerts ---
 
 @oversight_bp.route('/api/oversight/dashboard', methods=['GET'])
