@@ -25,6 +25,7 @@ class User(db.Model):
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     presence_status = db.Column(db.String(50), default='offline')
     role = db.Column(db.String(50), default='guest')
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
     peripheral_unit = db.Column(db.String(100), nullable=True)
 
     # IRIDA integration — encrypted credentials (nullable)
@@ -52,6 +53,7 @@ class User(db.Model):
             'presence_status': self.presence_status,
             'role': self.role,
             'peripheral_unit': self.peripheral_unit,
+            'is_active': self.is_active if self.is_active is not None else True,
             'irida_configured': bool(self.irida_username and self.irida_password),
         }
 
