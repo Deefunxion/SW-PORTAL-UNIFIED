@@ -177,3 +177,43 @@ def test_delete_user_anonymizes_data(client, admin_headers, app):
         user = db.session.get(User, user_id)
         assert user.username.startswith('deleted_')
         assert user.email.startswith('deleted_')
+
+
+def test_delete_user_sets_inactive(client, admin_headers, app):
+    """DELETE should set is_active=False."""
+    from my_project.models import User
+    from my_project.extensions import db
+
+    with app.app_context():
+        user = User(username='to_deactivate', email='deact@test.com', role='guest')
+        user.set_password('pass123')
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    response = client.delete(f'/api/admin/users/{user_id}', headers=admin_headers)
+    assert response.status_code == 200
+
+    with app.app_context():
+        user = db.session.get(User, user_id)
+        assert user.is_active is False
+
+
+def test_inactive_user_cannot_login(client, app):
+    """Deactivated user should get 403, not 401."""
+    from my_project.models import User
+    from my_project.extensions import db
+
+    with app.app_context():
+        user = User(username='blocked_user', email='blocked@test.com', role='guest',
+                    is_active=False)
+        user.set_password('pass123')
+        db.session.add(user)
+        db.session.commit()
+
+    response = client.post('/api/auth/login', json={
+        'username': 'blocked_user',
+        'password': 'pass123'
+    })
+    assert response.status_code == 403
+    assert 'απενεργοποιηθεί' in response.get_json()['error']

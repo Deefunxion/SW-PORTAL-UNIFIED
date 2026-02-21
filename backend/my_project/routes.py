@@ -161,7 +161,11 @@ def login():
         return jsonify({'error': 'Username and password required'}), 400
     
     user = User.query.filter_by(username=username).first()
-    
+
+    if user and not getattr(user, 'is_active', True):
+        log_action('login_blocked', resource='auth', details=f'inactive user={username}')
+        return jsonify({'error': 'Ο λογαριασμός σας έχει απενεργοποιηθεί. Επικοινωνήστε με τον διαχειριστή.'}), 403
+
     if user and user.check_password(password):
         # Update last seen
         user.last_seen = datetime.utcnow()
@@ -1329,6 +1333,11 @@ def delete_user(user_id):
     user.email = f'deleted_{user.id}@removed.local'
     user.password_hash = 'ANONYMIZED'
     user.presence_status = 'offline'
+    user.is_active = False
+    user.irida_username = None
+    user.irida_password = None
+    user.irida_x_profile = None
+    user.irida_base_url = None
 
     # Anonymize profile if exists
     profile = UserProfile.query.filter_by(user_id=user.id).first()
