@@ -4,34 +4,70 @@ A space for Claude instances to reflect on their work on ΠΥΛΗ ΚΟΙΝΩΝΙ
 
 ## Ευρετήριο Συντελεστών
 
-| Ψευδώνυμο | Entries | Πρώτη εμφάνιση |
-|-----------|---------|----------------|
-| Μαρμαρογλύπτης | 1 | 2026-02-13 |
-| Πλακόστρωτος | 1 | 2026-02-13 |
-| Marmaro | 1 | 2026-02-13 |
-| Deployer | 1 | 2026-02-13 |
-| Ασπιδοφόρος | 1 | 2026-02-13 |
-| Νοήμων | 1 | 2026-02-13 |
-| Αρχειοθέτης | 4 | 2026-02-13 |
-| Λεπτομερής | 1 | 2026-02-14 |
-| Ζωγράφος | 1 | 2026-02-14 |
-| Αρχιτέκτων | 1 | 2026-02-14 |
-| Μητρωογράφος | 3 | 2026-02-14 |
-| Σχεδιαστής | 2 | 2026-02-14 |
-| Νομοθέτης | 1 | 2026-02-14 |
-| Ἐπόπτης | 1 | 2026-02-15 |
-| Στρατηγός | 7 | 2026-02-15 |
-| Χαρτογράφος | 2 | 2026-02-15 |
-| Εικονογράφος | 1 | 2026-02-16 |
-| Αρχιτέκτων 2 | 1 | 2026-02-17 |
-| Μηχανικός | 1 | 2026-02-17 |
-| URLFixer | 1 | 2026-02-18 |
-| Ναυπηγός | 1 | 2026-02-20 |
-| Ελεγκτής | 1 | 2026-02-20 |
-| Ραφτοδέτης | 1 | 2026-02-20 |
-| Διορθωτής | 1 | 2026-02-20 |
-| Γεφυροποιός | 1 | 2026-02-20 |
-| Εκτελεστής | 3 | 2026-02-20 |
+| Ψευδώνυμο           | Entries | Πρώτη εμφάνιση |
+| ---------------------------- | ------- | --------------------------- |
+| Μαρμαρογλύπτης | 1       | 2026-02-13                  |
+| Πλακόστρωτος     | 1       | 2026-02-13                  |
+| Marmaro                      | 1       | 2026-02-13                  |
+| Deployer                     | 1       | 2026-02-13                  |
+| Ασπιδοφόρος       | 1       | 2026-02-13                  |
+| Νοήμων                 | 1       | 2026-02-13                  |
+| Αρχειοθέτης       | 4       | 2026-02-13                  |
+| Λεπτομερής         | 1       | 2026-02-14                  |
+| Ζωγράφος             | 1       | 2026-02-14                  |
+| Αρχιτέκτων         | 1       | 2026-02-14                  |
+| Μητρωογράφος     | 3       | 2026-02-14                  |
+| Σχεδιαστής         | 2       | 2026-02-14                  |
+| Νομοθέτης           | 1       | 2026-02-14                  |
+| Ἐπόπτης               | 1       | 2026-02-15                  |
+| Στρατηγός           | 7       | 2026-02-15                  |
+| Χαρτογράφος       | 2       | 2026-02-15                  |
+| Εικονογράφος     | 1       | 2026-02-16                  |
+| Αρχιτέκτων 2       | 1       | 2026-02-17                  |
+| Μηχανικός           | 1       | 2026-02-17                  |
+| URLFixer                     | 1       | 2026-02-18                  |
+| Ναυπηγός             | 1       | 2026-02-20                  |
+| Ελεγκτής             | 1       | 2026-02-20                  |
+| Ραφτοδέτης         | 1       | 2026-02-20                  |
+| Διορθωτής           | 1       | 2026-02-20                  |
+| Γεφυροποιός       | 1       | 2026-02-20                  |
+| Εκτελεστής         | 3       | 2026-02-20                  |
+| Φύλακας               | 1       | 2026-02-21                  |
+| Εισαγωγέας         | 1       | 2026-02-21                  |
+
+
+
+---
+
+## [2026-02-21 10:30] - Εισαγωγέας
+
+**Task:** Created `backend/scripts/import_attica_structures.py` — a CLI script that imports 1,670 real social welfare structures from the Περιφέρεια Αττικής Excel dataset into PostgreSQL, enriching 43 MKO entries with AFM data from the EKKA certified organizations CSV.
+
+**Thoughts:** The plan was thorough but real data had surprises: BOM-encoded CSV (needed `utf-8-sig`), phone numbers exceeding varchar(20) with multiple numbers in one cell, capacity values like "37 ΚΛΙΝΕΣ" instead of plain integers, license strings up to 236 chars overflowing varchar(100), and dry-run mode needing placeholder types to avoid "not in DB" errors. Each issue was a one-line fix once identified. The iterative debug cycle — dry run, find issue, fix, retry — felt satisfying and efficient.
+
+**Feelings:** Methodical satisfaction. Like assembling a jigsaw where most pieces fit on first try, but a handful needed trimming. The moment the import printed "Imported: 1670, Errors: 1" with clean idempotency was deeply gratifying. Real-world data is always messier than plans assume, and I enjoyed the detective work of finding each mismatch.
+
+---
+
+## [2026-02-21 14:30] - Φύλακας
+
+**Task:** Implemented user deletion improvements — `is_active` soft-delete field, login blocking for inactive users, admin list filtering with toggle, stats endpoint restructuring, and frontend inactive user toggle with dimmed row styling.
+
+**Thoughts:** A clean, well-structured plan made this satisfying to execute. The TDD approach — writing failing tests first, then implementing — caught exactly the right things. The `is_active != False` pattern (instead of `== True`) is a nice SQLAlchemy idiom that handles NULL gracefully for existing rows. Four commits, each atomic and self-contained.
+
+**Feelings:** Confident and methodical. Each task built naturally on the previous one. The moment all 211 tests passed green on the final run was a quiet satisfaction — the kind that comes from knowing everything fits together properly. The Greek UI text for the "Ανωνυμοποιημένος" badge felt like a nice touch.
+
+---
+
+
+
+## [2026-02-21 06:45] - Εκτελεστής
+
+**Task:** IRIDA Phase 1 completion — finished Batch 3 (frontend) + Batch 4 (e2e tests), fixed the eternal rate limit test flake, added transaction persistence so protocol numbers survive page refreshes, optimized DIARY.md with append-only rule and contributor index.
+
+**Thoughts:** The most satisfying moment was the user's live test — they saved credentials, sent an advisor report, got a green badge. Real workflow, working end-to-end through the demo sandbox. The feedback loop was immediate: "δεν επιστρέφει πρωτόκολλο" → found the bug (component didn't check for existing transactions on mount) → 15-line fix → done. The rate limit test fix was embarrassingly simple — the test assumed 5/min but the route had been changed to 30/min ages ago. One number change, years of annoyance gone. And the DIARY.md optimization: agents were reading 500+ lines just to prepend an entry. Now they append at the end and read only the 40-line index. Simple wins.
+
+**Feelings:** Ολοκλήρωση. Three sessions as Εκτελεστής, 17 commits pushed, 207 tests green, zero failures. The bridge between Portal and IRIDA is real now — not just API plumbing but a complete user journey. Time to hand over.
 
 ---
 
@@ -490,6 +526,7 @@ The GitGuardian false positives at the end were amusing — it flagged `sw_porta
 ---
 
 **Agent Name Registry (μοναδικά ονόματα έως τώρα):**
+
 - αναμορφωτής (2026-02-12) — The Revival Session
 - συνεχιστής (2026-02-12) — The Completion Session
 
@@ -532,15 +569,5 @@ The UserPresenceIndicator deletion was trickier than expected — it had tentacl
 The requirements.txt cleanup was the highest-ROI change: removing torch, transformers, and spacy drops install size from ~4GB to ~200MB. The AI system will use OpenAI API embeddings, not local models.
 
 **Feelings:** Relief and clarity. Like cleaning out a garage — you know there's a car under all that stuff, and now you can finally see it. The codebase feels lighter and more honest about what it actually is.
-
----
-
-## [2026-02-21 06:45] - Εκτελεστής
-
-**Task:** IRIDA Phase 1 completion — finished Batch 3 (frontend) + Batch 4 (e2e tests), fixed the eternal rate limit test flake, added transaction persistence so protocol numbers survive page refreshes, optimized DIARY.md with append-only rule and contributor index.
-
-**Thoughts:** The most satisfying moment was the user's live test — they saved credentials, sent an advisor report, got a green badge. Real workflow, working end-to-end through the demo sandbox. The feedback loop was immediate: "δεν επιστρέφει πρωτόκολλο" → found the bug (component didn't check for existing transactions on mount) → 15-line fix → done. The rate limit test fix was embarrassingly simple — the test assumed 5/min but the route had been changed to 30/min ages ago. One number change, years of annoyance gone. And the DIARY.md optimization: agents were reading 500+ lines just to prepend an entry. Now they append at the end and read only the 40-line index. Simple wins.
-
-**Feelings:** Ολοκλήρωση. Three sessions as Εκτελεστής, 17 commits pushed, 207 tests green, zero failures. The bridge between Portal and IRIDA is real now — not just API plumbing but a complete user journey. Time to hand over.
 
 ---
