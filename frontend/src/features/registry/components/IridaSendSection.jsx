@@ -25,6 +25,17 @@ export default function IridaSendSection({ report, structureName }) {
   useEffect(() => {
     const init = async () => {
       try {
+        // Check for existing transaction first
+        const { data: txs } = await oversightApi.getIridaTransactions(
+          'advisor_report', report.id
+        );
+        const sent = txs.find(t => t.status === 'sent');
+        if (sent) {
+          setTransaction(sent);
+          setLoading(false);
+          return;
+        }
+
         const { data: profile } = await iridaApi.profileStatus();
         setIridaConfigured(profile.configured);
 
@@ -44,7 +55,7 @@ export default function IridaSendSection({ report, structureName }) {
     setSubject(
       `Αναφορά Κοιν. Συμβούλου — ${structureName || 'Δομή'}`
     );
-  }, [structureName]);
+  }, [structureName, report.id]);
 
   const handleSend = async () => {
     if (!selectedRecipient) {

@@ -472,6 +472,24 @@ def send_advisor_report_to_irida(report_id):
                         'transaction': tx.to_dict()}), 502
 
 
+# --- IRIDA Transactions ---
+
+@oversight_bp.route('/api/irida/transactions', methods=['GET'])
+@jwt_required()
+def list_irida_transactions():
+    """List IRIDA transactions, optionally filtered by source."""
+    from ..integrations.models import IridaTransaction
+    q = IridaTransaction.query
+    source_type = request.args.get('source_type')
+    source_id = request.args.get('source_id', type=int)
+    if source_type:
+        q = q.filter_by(source_type=source_type)
+    if source_id:
+        q = q.filter_by(source_id=source_id)
+    txs = q.order_by(IridaTransaction.created_at.desc()).all()
+    return jsonify([tx.to_dict() for tx in txs]), 200
+
+
 # --- Dashboard & Alerts ---
 
 @oversight_bp.route('/api/oversight/dashboard', methods=['GET'])
