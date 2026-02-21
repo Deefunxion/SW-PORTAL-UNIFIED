@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { structuresApi, oversightApi } from '../lib/registryApi';
 import AdvisorReportForm from '../components/AdvisorReportForm';
+import IridaSendSection from '../components/IridaSendSection';
 
 export default function AdvisorReportPage() {
   const { structureId, reportId } = useParams();
@@ -62,6 +63,13 @@ export default function AdvisorReportPage() {
           </p>
         )}
       </div>
+
+      {/* IRIDA send section — only for existing approved/submitted reports */}
+      {report && ['submitted', 'approved'].includes(report.status) && (
+        <div className="mb-6">
+          <IridaSendSection report={report} structureName={structure?.name} />
+        </div>
+      )}
 
       <AdvisorReportForm
         structureId={structureId}

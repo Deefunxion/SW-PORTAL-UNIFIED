@@ -369,28 +369,43 @@ def send_to_irida(decision_id):
         return jsonify({'error': 'Η σύνδεση ΙΡΙΔΑ δεν έχει '
                         'ρυθμιστεί'}), 503
 
-    # Generate DOCX for ΙΡΙΔΑ (ΙΡΙΔΑ converts to PDF internally)
-    recipients = (record.template.recipients_template
-                  if record.template else [])
+    # Generate DOCX for ΙΡΙΔΑ
+    template_recipients = (record.template.recipients_template
+                           if record.template else [])
     title = record.template.title if record.template else 'Έγγραφο'
     legal_refs = (record.template.legal_references
                   if record.template else [])
     docx_bytes = generate_decision_docx(
-        record.rendered_body, title, recipients, legal_refs,
+        record.rendered_body, title, template_recipients, legal_refs,
         protocol_number=record.protocol_number)
 
+    # ΙΡΙΔΑ recipient IDs from request body (or default from config)
+    irida_recipients = request.json.get('irida_recipients', []) \
+        if request.is_json else []
+    if not irida_recipients:
+        return jsonify({'error': 'Απαιτούνται αποδέκτες ΙΡΙΔΑ '
+                        '(irida_recipients)'}), 400
+
+    reg_number = record.protocol_number or f'ΠΚΜ-{record.id}'
+    sender_name = 'Πύλη Κοινωνικής Μέριμνας'
+
     try:
+        filename = f'decision_{record.id}.docx'
+        content_type = ('application/vnd.openxmlformats-officedocument'
+                        '.wordprocessingml.document')
         result = send_document(
             subject=title,
-            pdf_bytes=docx_bytes,
-            filename=f'decision_{record.id}.docx',
+            registration_number=reg_number,
+            sender=sender_name,
+            recipients=irida_recipients,
+            files=[(filename, docx_bytes, content_type)],
         )
         record.status = 'sent_to_irida'
         record.sent_to_irida_at = datetime.utcnow()
 
-        # If ΙΡΙΔΑ returns protocol number immediately
-        if result.get('protocol_number'):
-            record.protocol_number = result['protocol_number']
+        # ΙΡΙΔΑ returns regNo per recipient
+        if result and isinstance(result, list) and result[0].get('regNo'):
+            record.protocol_number = result[0]['regNo']
             record.status = 'protocol_received'
             record.protocol_received_at = datetime.utcnow()
 
@@ -506,9 +521,8 @@ def irida_inbox():
         return jsonify({'error': 'Η σύνδεση ΙΡΙΔΑ δεν έχει '
                         'ρυθμιστεί', 'items': []}), 503
     try:
-        page = request.args.get('page', 1, type=int)
-        size = request.args.get('size', 20, type=int)
-        result = get_inbox(received=False, page=page, size=size)
+        received = request.args.get('received', 'false').lower() == 'true'
+        result = get_inbox(received=received)
         return jsonify(result), 200
     except Exception as e:
         return jsonify({'error': str(e), 'items': []}), 502
@@ -518,7 +532,60 @@ def irida_inbox():
 @jwt_required()
 def irida_status():
     """Check if ΙΡΙΔΑ integration is configured and reachable."""
-    from ..integrations.irida_client import is_configured
-    return jsonify({
-        'configured': is_configured(),
-    }), 200
+    from ..integrations.irida_client import get_mode
+    return jsonify(get_mode()), 200
+
+
+@documents_bp.route('/api/irida/profiles', methods=['GET'])
+@jwt_required()
+def irida_profiles():
+    """Fetch active ΙΡΙΔΑ profiles for the configured user."""
+    from ..integrations.irida_client import get_profiles, is_configured
+    if not is_configured():
+        return jsonify({'error': 'ΙΡΙΔΑ not configured'}), 503
+    try:
+        return jsonify(get_profiles()), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502
+
+
+@documents_bp.route('/api/irida/roots', methods=['GET'])
+@jwt_required()
+def irida_roots():
+    """Fetch list of ΙΡΙΔΑ organisations."""
+    from ..integrations.irida_client import get_roots, is_configured
+    if not is_configured():
+        return jsonify({'error': 'ΙΡΙΔΑ not configured'}), 503
+    try:
+        return jsonify(get_roots()), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502
+
+
+@documents_bp.route('/api/irida/positions', methods=['GET'])
+@jwt_required()
+def irida_positions():
+    """Fetch internal recipients of the user's organisation."""
+    from ..integrations.irida_client import get_positions, is_configured
+    if not is_configured():
+        return jsonify({'error': 'ΙΡΙΔΑ not configured'}), 503
+    try:
+        page = request.args.get('page', 1, type=int)
+        size = request.args.get('size', 50, type=int)
+        filter_text = request.args.get('filter')
+        return jsonify(get_positions(page, size, filter_text)), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502
+
+
+@documents_bp.route('/api/irida/document/<doc_id>/files', methods=['GET'])
+@jwt_required()
+def irida_document_files(doc_id):
+    """Fetch files attached to an ΙΡΙΔΑ document."""
+    from ..integrations.irida_client import get_document_files, is_configured
+    if not is_configured():
+        return jsonify({'error': 'ΙΡΙΔΑ not configured'}), 503
+    try:
+        return jsonify(get_document_files(doc_id)), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502

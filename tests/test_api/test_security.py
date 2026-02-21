@@ -67,13 +67,13 @@ def test_login_rate_limited(app):
     limiter.reset()
     # Use a fresh test client so no prior rate-limit state carries over
     with app.test_client() as fresh_client:
-        # Make 6 rapid failed login attempts (limit is 5/minute)
-        for i in range(6):
+        # Login route is limited to 30/minute — send 31 requests to exceed it
+        for i in range(31):
             response = fresh_client.post('/api/auth/login', json={
                 'username': 'nonexistent',
                 'password': 'wrong'
             })
-        # The 6th request should be rate-limited
+        # The 31st request should be rate-limited
         assert response.status_code == 429
 
 

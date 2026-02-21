@@ -27,6 +27,12 @@ class User(db.Model):
     role = db.Column(db.String(50), default='guest')
     peripheral_unit = db.Column(db.String(100), nullable=True)
 
+    # IRIDA integration — encrypted credentials (nullable)
+    irida_username = db.Column(db.Text, nullable=True)
+    irida_password = db.Column(db.Text, nullable=True)
+    irida_x_profile = db.Column(db.String(50), nullable=True)
+    irida_base_url = db.Column(db.String(200), nullable=True)
+
     # Relationships
     posts = db.relationship('Post', backref='user', lazy=True)
     
@@ -46,6 +52,7 @@ class User(db.Model):
             'presence_status': self.presence_status,
             'role': self.role,
             'peripheral_unit': self.peripheral_unit,
+            'irida_configured': bool(self.irida_username and self.irida_password),
         }
 
 

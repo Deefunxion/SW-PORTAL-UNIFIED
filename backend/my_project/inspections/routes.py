@@ -38,6 +38,9 @@ def list_inspections():
         query = query.filter_by(structure_id=structure_id)
     if committee_id:
         query = query.filter_by(committee_id=committee_id)
+    inspector_id = request.args.get('inspector_id', type=int)
+    if inspector_id:
+        query = query.filter_by(inspector_id=inspector_id)
     if status:
         query = query.filter_by(status=status)
     if inspection_type:
@@ -73,14 +76,23 @@ def create_inspection():
         return jsonify({'error': 'Insufficient permissions'}), 403
 
     data = request.get_json()
-    required = ['structure_id', 'committee_id', 'type', 'scheduled_date']
-    for field in required:
+
+    for field in ['structure_id', 'type', 'scheduled_date']:
         if field not in data:
             return jsonify({'error': f'Missing field: {field}'}), 400
 
+    # Require either committee_id or inspector_id (not neither)
+    has_committee = bool(data.get('committee_id'))
+    has_inspector = bool(data.get('inspector_id'))
+    if not has_committee and not has_inspector:
+        return jsonify({
+            'error': 'Απαιτείται ελεγκτικό όργανο (επιτροπή ή κοιν. σύμβουλος)'
+        }), 400
+
     inspection = Inspection(
         structure_id=data['structure_id'],
-        committee_id=data['committee_id'],
+        committee_id=data.get('committee_id'),
+        inspector_id=data.get('inspector_id'),
         type=data['type'],
         scheduled_date=_parse_date(data['scheduled_date']),
         status=data.get('status', 'scheduled'),
@@ -103,6 +115,7 @@ def get_inspection(inspection_id):
     if inspection.report:
         result['report'] = inspection.report.to_dict()
     result['committee'] = inspection.committee.to_dict(include_members=True) if inspection.committee else None
+    result['inspector'] = inspection.inspector.to_dict() if inspection.inspector else None
     # Include structure type info for checklist selection
     if inspection.structure and inspection.structure.structure_type:
         result['structure']['type'] = inspection.structure.structure_type.to_dict()

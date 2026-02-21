@@ -7,18 +7,213 @@ import { Label } from '@/components/ui/label.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.jsx';
 import { Alert, AlertDescription } from '@/components/ui/alert.jsx';
-import { 
-  User, 
-  Mail, 
-  Shield, 
-  Calendar, 
+import {
+  User,
+  Mail,
+  Shield,
+  Calendar,
   Key,
   Save,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Link2,
+  Unlink,
+  TestTube2,
+  Loader2
 } from 'lucide-react';
 import authService from '../lib/auth';
 import api from '../lib/api';
+
+function IridaProfileCard() {
+  const [iridaUsername, setIridaUsername] = useState('');
+  const [iridaPassword, setIridaPassword] = useState('');
+  const [iridaStatus, setIridaStatus] = useState(null);
+  const [iridaLoading, setIridaLoading] = useState(true);
+  const [iridaSaving, setIridaSaving] = useState(false);
+  const [iridaTesting, setIridaTesting] = useState(false);
+  const [iridaMessage, setIridaMessage] = useState({ type: '', text: '' });
+  const [iridaProfiles, setIridaProfiles] = useState([]);
+
+  useEffect(() => {
+    loadIridaStatus();
+  }, []);
+
+  const loadIridaStatus = async () => {
+    try {
+      const { data } = await api.get('/api/profile/irida');
+      setIridaStatus(data);
+    } catch {
+      setIridaStatus({ configured: false });
+    } finally {
+      setIridaLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!iridaUsername || !iridaPassword) {
+      setIridaMessage({ type: 'error', text: 'Συμπληρώστε username και password.' });
+      return;
+    }
+    setIridaSaving(true);
+    setIridaMessage({ type: '', text: '' });
+    try {
+      const { data } = await api.post('/api/profile/irida', {
+        username: iridaUsername,
+        password: iridaPassword,
+      });
+      setIridaStatus(data);
+      setIridaPassword('');
+      setIridaMessage({ type: 'success', text: 'Τα στοιχεία αποθηκεύτηκαν.' });
+    } catch (err) {
+      setIridaMessage({
+        type: 'error',
+        text: err.response?.data?.error || 'Σφάλμα αποθήκευσης.',
+      });
+    } finally {
+      setIridaSaving(false);
+    }
+  };
+
+  const handleTest = async () => {
+    setIridaTesting(true);
+    setIridaMessage({ type: '', text: '' });
+    setIridaProfiles([]);
+    try {
+      const payload = {};
+      if (iridaUsername) payload.username = iridaUsername;
+      if (iridaPassword) payload.password = iridaPassword;
+      const { data } = await api.post('/api/profile/irida/test', payload);
+      if (data.success) {
+        setIridaProfiles(data.profiles || []);
+        setIridaMessage({ type: 'success', text: 'Σύνδεση επιτυχής!' });
+      } else {
+        setIridaMessage({ type: 'error', text: data.error || 'Αποτυχία σύνδεσης.' });
+      }
+    } catch (err) {
+      setIridaMessage({
+        type: 'error',
+        text: err.response?.data?.error || 'Σφάλμα σύνδεσης.',
+      });
+    } finally {
+      setIridaTesting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await api.delete('/api/profile/irida');
+      setIridaStatus({ configured: false });
+      setIridaUsername('');
+      setIridaPassword('');
+      setIridaProfiles([]);
+      setIridaMessage({ type: 'success', text: 'Τα στοιχεία ΙΡΙΔΑ αφαιρέθηκαν.' });
+    } catch {
+      setIridaMessage({ type: 'error', text: 'Σφάλμα κατά τη διαγραφή.' });
+    }
+  };
+
+  if (iridaLoading) return null;
+
+  return (
+    <Card className="mb-8">
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <Link2 className="w-5 h-5" />
+          <span>Σύνδεση ΙΡΙΔΑ</span>
+        </CardTitle>
+        <CardDescription>
+          Αποθηκεύστε τα στοιχεία σύνδεσής σας στο ΙΡΙΔΑ για αποστολή εγγράφων.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {iridaMessage.text && (
+          <Alert className={iridaMessage.type === 'error' ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}>
+            {iridaMessage.type === 'error' ? (
+              <AlertCircle className="h-4 w-4 text-red-600" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            )}
+            <AlertDescription className={iridaMessage.type === 'error' ? 'text-red-800' : 'text-green-800'}>
+              {iridaMessage.text}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {iridaStatus?.configured && (
+          <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm">
+            <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+            <span className="text-green-800">
+              Συνδεδεμένο — {iridaStatus.username}
+            </span>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="irida-username">Username ΙΡΙΔΑ</Label>
+            <Input
+              id="irida-username"
+              value={iridaUsername}
+              onChange={(e) => setIridaUsername(e.target.value)}
+              placeholder={iridaStatus?.configured ? '(αποθηκευμένο)' : 'user@gov.gr'}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="irida-password">Password ΙΡΙΔΑ</Label>
+            <Input
+              id="irida-password"
+              type="password"
+              value={iridaPassword}
+              onChange={(e) => setIridaPassword(e.target.value)}
+              placeholder={iridaStatus?.configured ? '(αποθηκευμένο)' : 'Εισάγετε κωδικό'}
+            />
+          </div>
+        </div>
+
+        {iridaProfiles.length > 0 && (
+          <div className="p-3 bg-[#f5f2ec] rounded-lg text-sm space-y-1">
+            <p className="font-medium text-[#2a2520]">Προφίλ ΙΡΙΔΑ:</p>
+            {iridaProfiles.map((p, i) => (
+              <p key={i} className="text-[#6b6560]">
+                {p.positionName} / {p.dutyName} [{p.xProfile}]
+              </p>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={handleTest}
+            disabled={iridaTesting}
+            className="min-h-[44px]"
+          >
+            {iridaTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <TestTube2 className="w-4 h-4 mr-2" />}
+            Δοκιμή σύνδεσης
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={iridaSaving}
+            className="min-h-[44px] bg-[#1a3aa3] hover:bg-[#152e82] text-white"
+          >
+            {iridaSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Αποθήκευση
+          </Button>
+          {iridaStatus?.configured && (
+            <Button
+              variant="ghost"
+              onClick={handleDelete}
+              className="min-h-[44px] text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Unlink className="w-4 h-4 mr-2" />
+              Αποσύνδεση
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
@@ -197,6 +392,9 @@ const ProfilePage = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* IRIDA Connection */}
+        <IridaProfileCard />
 
         {/* Update Profile Form */}
         <Card>

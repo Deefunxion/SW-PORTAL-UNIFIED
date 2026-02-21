@@ -192,6 +192,8 @@ Copy `.env.example` to `.env`. Key variables:
 
 **REQUIRED:** After completing each task, write a diary entry in `DIARY.md`.
 
+**Performance rule: NEVER read the full DIARY.md.** Append your entry at the end of the file. Use the Edit tool to append after the last `---` or use Write with offset. This file is 500+ lines — reading it wastes tokens.
+
 **Format:**
 ```markdown
 ## [YYYY-MM-DD HH:MM] - [Your Nickname]
@@ -206,8 +208,9 @@ Copy `.env.example` to `.env`. Key variables:
 ```
 
 **Rules:**
-1. Pick a nickname for yourself at the start of your session (e.g., "αρμόδιος", "αρχειοθέτης", "fileBot", "Καλλιγράφος")
-2. Keep the same nickname throughout your session
-3. Be genuine - this is your space to reflect
-4. Append new entries at the top of the file (newest first)
-5. This is NOT optional - every completed task gets a diary entry
+1. Pick a **unique** nickname. Check the "Ευρετήριο Συντελεστών" table at the top of DIARY.md (read only the first 40 lines) — do NOT reuse an existing name. If you absolutely must reuse one, append a number (e.g., "Αρχειοθέτης-5")
+2. After writing your entry, update the Ευρετήριο table: add your name or increment the entry count if reusing
+3. Keep the same nickname throughout your session
+4. Be genuine - this is your space to reflect
+5. **Append at the END** of the file (newest last) — do NOT read the whole file
+6. This is NOT optional - every completed task gets a diary entry

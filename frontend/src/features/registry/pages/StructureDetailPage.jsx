@@ -368,9 +368,12 @@ function InspectionsTab({ structureId }) {
   const [newInspection, setNewInspection] = useState({
     type: 'regular',
     committee_id: '',
+    inspector_id: '',
     scheduled_date: new Date().toISOString().split('T')[0],
     notes: '',
   });
+  const [inspectorBody, setInspectorBody] = useState('committee'); // 'committee' | 'advisor'
+  const [advisors, setAdvisors] = useState([]);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -386,18 +389,35 @@ function InspectionsTab({ structureId }) {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    oversightApi.socialAdvisors()
+      .then(({ data }) => setAdvisors(data))
+      .catch(() => {});
+  }, []);
+
   const handleCreateInspection = async () => {
-    if (!newInspection.committee_id) {
+    if (inspectorBody === 'committee' && !newInspection.committee_id) {
       toast.error('Επιλέξτε επιτροπή ελέγχου.');
+      return;
+    }
+    if (inspectorBody === 'advisor' && !newInspection.inspector_id) {
+      toast.error('Επιλέξτε κοινωνικό σύμβουλο.');
       return;
     }
     setCreating(true);
     try {
-      const { data } = await inspectionsApi.create({
+      const payload = {
         structure_id: structureId,
-        ...newInspection,
-        committee_id: parseInt(newInspection.committee_id),
-      });
+        type: newInspection.type,
+        scheduled_date: newInspection.scheduled_date,
+        notes: newInspection.notes,
+      };
+      if (inspectorBody === 'committee') {
+        payload.committee_id = parseInt(newInspection.committee_id);
+      } else {
+        payload.inspector_id = parseInt(newInspection.inspector_id);
+      }
+      const { data } = await inspectionsApi.create(payload);
       toast.success('Ο έλεγχος δημιουργήθηκε.');
       setShowCreate(false);
       navigate(`/inspections/${data.id}/report`);
@@ -443,6 +463,7 @@ function InspectionsTab({ structureId }) {
             <TableHeader>
               <TableRow className="bg-[#f5f2ec] hover:bg-[#f5f2ec]">
                 <TableHead>Τύπος</TableHead>
+                <TableHead>Ελεγκτικό Όργανο</TableHead>
                 <TableHead>Ημ. Ελέγχου</TableHead>
                 <TableHead>Κατάσταση</TableHead>
                 <TableHead>Συμπέρασμα</TableHead>
@@ -454,6 +475,14 @@ function InspectionsTab({ structureId }) {
                 <TableRow key={insp.id}>
                   <TableCell className="font-medium">
                     {INSPECTION_TYPES[insp.type] || insp.type}
+                  </TableCell>
+                  <TableCell className="text-sm text-[#6b6560]">
+                    {insp.inspector
+                      ? `Κ.Σ. ${insp.inspector.username}`
+                      : insp.committee_id
+                        ? `Επιτρ. #${insp.committee_id}`
+                        : '—'
+                    }
                   </TableCell>
                   <TableCell>{formatDate(insp.scheduled_date)}</TableCell>
                   <TableCell><StatusBadge status={insp.status} map={INSPECTION_STATUS} /></TableCell>
@@ -530,22 +559,71 @@ function InspectionsTab({ structureId }) {
               </Select>
             </div>
             <div>
-              <Label>Επιτροπή Ελέγχου *</Label>
-              <Select
-                value={newInspection.committee_id}
-                onValueChange={(v) => setNewInspection(prev => ({ ...prev, committee_id: v }))}
-              >
-                <SelectTrigger className="min-h-[44px] border-[#e8e2d8]">
-                  <SelectValue placeholder="Επιλέξτε επιτροπή..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {committees.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.decision_number}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Ελεγκτικό Όργανο *</Label>
+              <div className="flex gap-2 mt-1 mb-2">
+                <Button
+                  type="button"
+                  variant={inspectorBody === 'committee' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setInspectorBody('committee');
+                    setNewInspection(prev => ({ ...prev, inspector_id: '' }));
+                  }}
+                  className={inspectorBody === 'committee'
+                    ? 'bg-[#1a3aa3] hover:bg-[#152e82] text-white'
+                    : 'border-[#e8e2d8]'}
+                >
+                  Επιτροπή
+                </Button>
+                <Button
+                  type="button"
+                  variant={inspectorBody === 'advisor' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setInspectorBody('advisor');
+                    setNewInspection(prev => ({ ...prev, committee_id: '' }));
+                  }}
+                  className={inspectorBody === 'advisor'
+                    ? 'bg-[#1a3aa3] hover:bg-[#152e82] text-white'
+                    : 'border-[#e8e2d8]'}
+                >
+                  Κοιν. Σύμβουλος
+                </Button>
+              </div>
+              {inspectorBody === 'committee' ? (
+                <Select
+                  value={newInspection.committee_id}
+                  onValueChange={(v) => setNewInspection(prev => ({ ...prev, committee_id: v }))}
+                >
+                  <SelectTrigger className="min-h-[44px] border-[#e8e2d8]">
+                    <SelectValue placeholder="Επιλέξτε επιτροπή..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {committees.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.decision_number}
+                        {c.structure_type_name ? ` (${c.structure_type_name})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Select
+                  value={newInspection.inspector_id}
+                  onValueChange={(v) => setNewInspection(prev => ({ ...prev, inspector_id: v }))}
+                >
+                  <SelectTrigger className="min-h-[44px] border-[#e8e2d8]">
+                    <SelectValue placeholder="Επιλέξτε κοιν. σύμβουλο..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {advisors.map((a) => (
+                      <SelectItem key={a.user_id} value={String(a.user_id)}>
+                        {a.user?.username || `User #${a.user_id}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div>
               <Label>Ημερομηνία Ελέγχου *</Label>

@@ -87,4 +87,19 @@ export const oversightApi = {
   iridaExport: (documentType, recordId) => api.get(
     `/api/irida-export/${documentType}/${recordId}`, { responseType: 'blob' }
   ),
+  sendToIrida: (reportId, data) => api.post(
+    `/api/advisor-reports/${reportId}/send-to-irida`, data
+  ),
+  getIridaTransactions: (sourceType, sourceId) => api.get(
+    `/api/irida/transactions`, { params: { source_type: sourceType, source_id: sourceId } }
+  ),
+  socialAdvisors: () => api.get('/api/user-roles').then(resp => ({
+    data: (resp.data || []).filter(r => r.role === 'social_advisor'),
+  })),
+};
+
+export const iridaApi = {
+  status: () => api.get('/api/irida/status'),
+  roots: () => api.get('/api/irida/roots'),
+  profileStatus: () => api.get('/api/profile/irida'),
 };
