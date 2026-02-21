@@ -219,6 +219,64 @@ def create_app():
                 db.session.rollback()
                 print(f"[seed] Warning: {e}")
 
+        # Auto-seed Attica structures from JSON (for Render / fresh deploys)
+        if should_seed:
+            try:
+                from .registry.models import Structure
+                structure_count = Structure.query.count()
+                if structure_count < 2000:
+                    import json
+                    data_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'attica_structures.json')
+                    if os.path.exists(data_file):
+                        from .registry.models import StructureType
+                        existing_types = {st.code: st for st in StructureType.query.all()}
+                        existing_codes = set(r[0] for r in db.session.query(Structure.code).all())
+                        with open(data_file, 'r', encoding='utf-8') as f:
+                            records = json.load(f)
+                        # Ensure new types exist
+                        new_types = {
+                            'KAA': ('Κέντρο Αποκατάστασης-Αποθεραπείας', 'Κέντρα Αποκατάστασης-Αποθεραπείας (ΚΑΑ) και ΚΑΑ ΑΜΕΑ'),
+                            'MPP': ('Μονάδα Παιδικής Προστασίας', 'Μονάδες Παιδικής Προστασίας (ΜΠΠ)'),
+                        }
+                        for code, (name, desc) in new_types.items():
+                            if code not in existing_types:
+                                st = StructureType(code=code, name=name, description=desc)
+                                db.session.add(st)
+                        db.session.flush()
+                        existing_types = {st.code: st for st in StructureType.query.all()}
+                        imported = 0
+                        for r in records:
+                            if r['code'] in existing_codes:
+                                continue
+                            tc = r.get('type_code')
+                            if tc not in existing_types:
+                                continue
+                            s = Structure(
+                                code=r['code'], type_id=existing_types[tc].id,
+                                name=r['name'], street=r.get('street'),
+                                city=r.get('city'), postal_code=r.get('postal_code'),
+                                representative_name=r.get('representative_name'),
+                                representative_afm=r.get('representative_afm'),
+                                representative_phone=r.get('representative_phone'),
+                                representative_email=r.get('representative_email'),
+                                capacity=r.get('capacity'), ownership=r.get('ownership'),
+                                license_number=r.get('license_number'),
+                                peripheral_unit=r.get('peripheral_unit'),
+                                notes=r.get('notes'), status='active',
+                            )
+                            db.session.add(s)
+                            imported += 1
+                            if imported % 200 == 0:
+                                db.session.flush()
+                        if imported:
+                            db.session.commit()
+                            print(f"[seed] Imported {imported} Attica structures from JSON ({structure_count} → {Structure.query.count()})")
+                        else:
+                            print(f"[seed] Attica structures already up to date ({structure_count})")
+            except Exception as e:
+                db.session.rollback()
+                print(f"[seed] Attica import warning: {e}")
+
         # Auto-ingest knowledge base if empty (for Render / fresh deploys)
         try:
             from .models import DocumentIndex, FileChunk
