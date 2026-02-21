@@ -16,15 +16,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Seven Blueprints** registered in `create_app()`:
 
-| Blueprint | Module | Purpose |
-|-----------|--------|---------|
-| `main_bp` | `routes.py` | Auth, forum, files, messaging, notifications, AI chat, knowledge search |
-| `registry_bp` | `registry/` | Structure types, structures CRUD, licenses, legacy sanctions |
-| `inspections_bp` | `inspections/` | Inspection committees, inspections, reports with checklists |
-| `oversight_bp` | `oversight/` | User roles, social advisor reports, dashboard, alerts, PDF/XLSX reports, ΙΡΙΔΑ export |
-| `sanctions_bp` | `sanctions/` | Sanction rules (Ν.5041/2023), decisions workflow (draft→submitted→approved→notified→paid/appealed), fine calculator, PDF generation |
-| `interop_bp` | `interop/` | AADE/GEMI AFM lookup (mock), interop logging |
-| `documents_bp` | `documents/` | Decision templates, document composition, ΙΡΙΔΑ Level 3 send/inbox, document registry, audit log |
+| Blueprint          | Module           | Purpose                                                                                                                                  |
+| ------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `main_bp`        | `routes.py`    | Auth, forum, files, messaging, notifications, AI chat, knowledge search                                                                  |
+| `registry_bp`    | `registry/`    | Structure types, structures CRUD, licenses, legacy sanctions                                                                             |
+| `inspections_bp` | `inspections/` | Inspection committees, inspections, reports with checklists                                                                              |
+| `oversight_bp`   | `oversight/`   | User roles, social advisor reports, dashboard, alerts, PDF/XLSX reports, ΙΡΙΔΑ export                                               |
+| `sanctions_bp`   | `sanctions/`   | Sanction rules (Ν.5041/2023), decisions workflow (draft→submitted→approved→notified→paid/appealed), fine calculator, PDF generation |
+| `interop_bp`     | `interop/`     | AADE/GEMI AFM lookup (mock), interop logging                                                                                             |
+| `documents_bp`   | `documents/`   | Decision templates, document composition, ΙΡΙΔΑ Level 3 send/inbox, document registry, audit log                                    |
 
 Each subpackage follows the pattern: `__init__.py` (blueprint + registration), `models.py`, `routes.py`, plus optional `permissions.py`, `calculator.py`, `pdf_generator.py`, etc.
 
@@ -70,6 +70,7 @@ All protected endpoints use `@jwt_required()` with `get_jwt_identity()` returnin
 ### Default Seed Data
 
 `backend/my_project/seed_demo.py` runs in development or when `SEED_DEMO=true`. Creates:
+
 - 6 users: `admin/admin123` (director), `mpapadopoulou/staff123`, `gnikolaou/staff123`, `kkonstantinou/staff123`, `athanasiou/staff123`, `guest/guest123`
 - 15 structures, 12 licenses, 2 committees with memberships, 13 inspections (7 with reports), 6 sanctions, 5 advisor reports
 - 20 sanction rules from Ν.5041/2023 Article 100, 6 sample sanction decisions in all workflow stages
@@ -79,6 +80,7 @@ All protected endpoints use `@jwt_required()` with `get_jwt_identity()` returnin
 ## Development Commands
 
 ### Infrastructure
+
 ```bash
 # Start PostgreSQL + Redis (required for development)
 docker-compose up -d
@@ -91,6 +93,7 @@ docker exec sw_portal_db psql -U sw_portal -d sw_portal -c "DROP SCHEMA public C
 ```
 
 ### Running the App
+
 ```bash
 # Backend (from backend/)
 python app.py                          # Flask dev server on :5000
@@ -103,6 +106,7 @@ npx pnpm start                         # Runs backend + frontend concurrently
 ```
 
 ### Backend Testing
+
 ```bash
 # From project root
 python scripts/run-tests.py            # All tests
@@ -119,6 +123,7 @@ python -m pytest tests/test_ai/ -v                           # AI module tests
 Test markers: `unit`, `integration`, `slow`, `api`, `auth`
 
 ### Frontend Testing
+
 ```bash
 # From frontend/
 npx pnpm test                          # Run Vitest
@@ -127,6 +132,7 @@ npx pnpm test:coverage                 # Coverage report
 ```
 
 ### Linting and Building
+
 ```bash
 # From frontend/
 npx pnpm lint                          # ESLint
@@ -135,6 +141,7 @@ npx pnpm deploy                        # Build + deploy to GitHub Pages
 ```
 
 ### Document Ingestion
+
 ```bash
 # From backend/
 python scripts/ingest_documents.py                  # Chunk only (no embeddings)
@@ -154,6 +161,7 @@ python scripts/ingest_documents.py --embed --reset   # Clear + re-ingest everyth
 ## UI Design System
 
 Optimized for government workers 30+ years old:
+
 - **Typography:** 20-22px base, up to text-7xl headers
 - **Spacing:** Generous (px-8 py-12 containers, min-h-[60px] buttons, 48px+ click targets)
 - **Colors:** Greek government palette — Navy `#1e3a8a`, Royal Blue `#2563eb`, Teal `#0891b2`
@@ -163,6 +171,7 @@ Optimized for government workers 30+ years old:
 ## Environment Configuration
 
 Copy `.env.example` to `.env`. Key variables:
+
 - `DATABASE_URL` — PostgreSQL connection (default: `postgresql://sw_portal:sw_portal_dev@localhost:5432/sw_portal`)
 - `FLASK_ENV` — development/testing/production
 - `SECRET_KEY`, `JWT_SECRET_KEY` — security keys
@@ -192,9 +201,10 @@ Copy `.env.example` to `.env`. Key variables:
 
 **REQUIRED:** After completing each task, write a diary entry in `DIARY.md`.
 
-**Performance rule: NEVER read the full DIARY.md.** Append your entry at the end of the file. Use the Edit tool to append after the last `---` or use Write with offset. This file is 500+ lines — reading it wastes tokens.
+**Performance rule: NEVER read the full DIARY.md.** Append your entry at the start of the file. Use the Edit tool to append after the last `---` or use Write with offset. This file is 500+ lines — reading it wastes tokens.
 
 **Format:**
+
 ```markdown
 ## [YYYY-MM-DD HH:MM] - [Your Nickname]
 
@@ -208,9 +218,10 @@ Copy `.env.example` to `.env`. Key variables:
 ```
 
 **Rules:**
+
 1. Pick a **unique** nickname. Check the "Ευρετήριο Συντελεστών" table at the top of DIARY.md (read only the first 40 lines) — do NOT reuse an existing name. If you absolutely must reuse one, append a number (e.g., "Αρχειοθέτης-5")
 2. After writing your entry, update the Ευρετήριο table: add your name or increment the entry count if reusing
 3. Keep the same nickname throughout your session
 4. Be genuine - this is your space to reflect
-5. **Append at the END** of the file (newest last) — do NOT read the whole file
+5. **Append at the Start** of the file (newest last) — do NOT read the whole file
 6. This is NOT optional - every completed task gets a diary entry

@@ -32,6 +32,7 @@ const AdminDashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [searchTerm, setSearchTerm] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
@@ -46,22 +47,22 @@ const AdminDashboardPage = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [showInactive]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const [usersRes, statsRes] = await Promise.all([
-        api.get('/api/admin/users'),
+        api.get(`/api/admin/users${showInactive ? '?include_inactive=true' : ''}`),
         api.get('/api/admin/stats'),
       ]);
 
       setUsers(usersRes.data.users || []);
       setStats(statsRes.data);
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: 'Σφάλμα κατά τη φόρτωση δεδομένων: ' + (error.message || 'Άγνωστο ��φάλμα')
+      setMessage({
+        type: 'error',
+        text: 'Σφάλμα κατά τη φόρτωση δεδομένων: ' + (error.message || 'Άγνωστο σφάλμα')
       });
     } finally {
       setLoading(false);
@@ -277,9 +278,9 @@ const AdminDashboardPage = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Search */}
-          <div className="mb-6">
-            <div className="relative">
+          {/* Search + Inactive Toggle */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Αναζήτηση χρηστών..."
@@ -288,6 +289,15 @@ const AdminDashboardPage = () => {
                 className="pl-10"
               />
             </div>
+            <Button
+              variant={showInactive ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowInactive(!showInactive)}
+              className={showInactive ? 'bg-amber-600 hover:bg-amber-700' : ''}
+            >
+              <UserX className="w-4 h-4 mr-1" />
+              {showInactive ? 'Εμφάνιση όλων' : 'Ανενεργοί'}
+            </Button>
           </div>
 
           {/* Create User Form */}
@@ -371,7 +381,7 @@ const AdminDashboardPage = () => {
               </thead>
               <tbody>
                 {filteredUsers.map((userItem) => (
-                  <tr key={userItem.id} className="border-b hover:bg-gray-50">
+                  <tr key={userItem.id} className={`border-b hover:bg-gray-50 ${!userItem.is_active ? 'opacity-50 bg-gray-50' : ''}`}>
                     {editingUser === userItem.id ? (
                       <td colSpan="6" className="p-4">
                         <form onSubmit={(e) => { e.preventDefault(); handleUpdateUser(userItem.id); }} className="space-y-4">
@@ -442,25 +452,29 @@ const AdminDashboardPage = () => {
                         </td>
                         <td className="p-4 text-gray-600">{formatDate(userItem.created_at)}</td>
                         <td className="p-4">
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => startEdit(userItem)}
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                            {userItem.id !== user?.id && (
+                          {userItem.is_active ? (
+                            <div className="flex space-x-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-red-600 hover:text-red-700"
-                                onClick={() => handleDeleteUser(userItem.id, userItem.username)}
+                                onClick={() => startEdit(userItem)}
                               >
-                                <Trash2 className="w-3 h-3" />
+                                <Edit className="w-3 h-3" />
                               </Button>
-                            )}
-                          </div>
+                              {userItem.id !== user?.id && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => handleDeleteUser(userItem.id, userItem.username)}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
+                          ) : (
+                            <Badge className="bg-gray-100 text-gray-500">Ανωνυμοποιημένος</Badge>
+                          )}
                         </td>
                       </>
                     )}

@@ -176,6 +176,8 @@ def create_app():
             ('users', 'irida_password', 'TEXT'),
             ('users', 'irida_x_profile', 'VARCHAR(50)'),
             ('users', 'irida_base_url', 'VARCHAR(200)'),
+            # User active status for soft-delete
+            ('users', 'is_active', 'BOOLEAN DEFAULT true'),
         ]
         for table, column, col_type in _migrate_columns:
             try:
