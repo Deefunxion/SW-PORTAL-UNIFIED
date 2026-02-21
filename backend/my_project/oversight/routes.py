@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from . import oversight_bp
 from ..extensions import db
 from .models import UserRole, SocialAdvisorReport
+from ..integrations.irida_crypto import encrypt_credential, decrypt_credential
 
 
 def _parse_date(value):
@@ -189,6 +190,143 @@ def remove_user_role(role_id):
     db.session.delete(user_role)
     db.session.commit()
     return jsonify({'message': 'Role removed'}), 200
+
+
+# --- IRIDA Profile (per-user credentials) ---
+
+def _mask_username(username):
+    """Mask a username for display: 'user@gov.gr' -> 'us******@gov.gr'."""
+    if not username or '@' not in username:
+        return username[:2] + '****' if username and len(username) > 2 else '****'
+    local, domain = username.rsplit('@', 1)
+    visible = min(2, len(local))
+    return local[:visible] + '******' + '@' + domain
+
+
+@oversight_bp.route('/api/profile/irida', methods=['GET'])
+@jwt_required()
+def get_irida_profile():
+    """Get current user's IRIDA connection status (never exposes password)."""
+    user_id = int(get_jwt_identity())
+    from ..models import User
+    user = User.query.get_or_404(user_id)
+
+    if user.irida_username and user.irida_password:
+        try:
+            plain_username = decrypt_credential(user.irida_username)
+        except Exception:
+            plain_username = '(encrypted)'
+        return jsonify({
+            'configured': True,
+            'username': _mask_username(plain_username),
+            'x_profile': user.irida_x_profile,
+            'base_url': user.irida_base_url,
+        }), 200
+
+    return jsonify({'configured': False}), 200
+
+
+@oversight_bp.route('/api/profile/irida', methods=['POST'])
+@jwt_required()
+def save_irida_credentials():
+    """Save encrypted IRIDA credentials for the current user."""
+    user_id = int(get_jwt_identity())
+    from ..models import User
+    user = User.query.get_or_404(user_id)
+    data = request.get_json()
+
+    username = data.get('username')
+    password = data.get('password')
+    if not username or not password:
+        return jsonify({'error': 'Username και password απαιτούνται'}), 400
+
+    user.irida_username = encrypt_credential(username)
+    user.irida_password = encrypt_credential(password)
+    user.irida_x_profile = data.get('x_profile') or user.irida_x_profile
+    user.irida_base_url = data.get('base_url') or user.irida_base_url
+
+    db.session.commit()
+    return jsonify({
+        'configured': True,
+        'username': _mask_username(username),
+    }), 200
+
+
+@oversight_bp.route('/api/profile/irida/test', methods=['POST'])
+@jwt_required()
+def test_irida_connection():
+    """Test IRIDA connection with user's credentials. Returns profiles on success."""
+    user_id = int(get_jwt_identity())
+    from ..models import User
+    user = User.query.get_or_404(user_id)
+    data = request.get_json() or {}
+
+    # Use provided credentials or stored ones
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username and user.irida_username:
+        try:
+            username = decrypt_credential(user.irida_username)
+            password = decrypt_credential(user.irida_password)
+        except Exception:
+            return jsonify({'error': 'Δεν ήταν δυνατή η αποκρυπτογράφηση'}), 500
+
+    if not username or not password:
+        return jsonify({'error': 'Δεν υπάρχουν στοιχεία σύνδεσης'}), 400
+
+    from ..integrations.irida_client import authenticate_user, get_mode
+    mode = get_mode()
+    base_url = user.irida_base_url or mode.get('base_url')
+
+    try:
+        token = authenticate_user(username, password, base_url=base_url)
+        # Fetch profiles with the user's token
+        import httpx
+        from ..integrations.irida_client import _api_prefix
+        prefix = _api_prefix()
+        resp = httpx.get(
+            f'{base_url}/api/v2/{prefix}/profiles',
+            headers={
+                'Authorization': f'Bearer {token}',
+                'Accept': 'application/json',
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        profiles = resp.json()
+
+        # Auto-set x_profile if not already set
+        if profiles and not user.irida_x_profile:
+            user.irida_x_profile = profiles[0].get('xProfile')
+            db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'profiles': profiles,
+        }), 200
+
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 401
+    except Exception as e:
+        return jsonify({'error': f'Σφάλμα σύνδεσης: {str(e)}'}), 502
+
+
+@oversight_bp.route('/api/profile/irida', methods=['DELETE'])
+@jwt_required()
+def delete_irida_credentials():
+    """Remove stored IRIDA credentials for the current user."""
+    user_id = int(get_jwt_identity())
+    from ..models import User
+    user = User.query.get_or_404(user_id)
+
+    user.irida_username = None
+    user.irida_password = None
+    user.irida_x_profile = None
+    user.irida_base_url = None
+    db.session.commit()
+
+    return jsonify({'configured': False}), 200
 
 
 # --- Dashboard & Alerts ---
