@@ -127,6 +127,7 @@ def create_app():
         from .sanctions.models import SanctionRule, SanctionDecision
         from .interop.models import InteropLog
         from .documents.models import DecisionTemplate, DecisionRecord, DocumentAuditLog
+        from .integrations.models import IridaTransaction
 
         # Enable pgvector extension (required for Vector columns)
         try:
