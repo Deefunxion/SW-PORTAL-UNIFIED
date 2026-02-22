@@ -204,22 +204,24 @@ function LicensesTab({ structureId }) {
                     {lic.file_path ? (
                       <div className="flex gap-1">
                         <a
-                          href={`/content/${lic.file_path}`}
+                          href={lic.file_path.startsWith('http') ? lic.file_path : `/content/${lic.file_path}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center text-[#1a3aa3] hover:text-[#152e82] transition-colors"
-                          title="Προεπισκόπηση"
+                          title={lic.file_path.startsWith('http') ? 'Διαύγεια' : 'Προεπισκόπηση'}
                         >
                           <Eye className="w-4 h-4" />
                         </a>
-                        <a
-                          href={`/api/licenses/${lic.id}/file`}
-                          download
-                          className="inline-flex items-center text-[#8a8580] hover:text-[#2a2520] transition-colors"
-                          title="Λήψη"
-                        >
-                          <Download className="w-4 h-4" />
-                        </a>
+                        {!lic.file_path.startsWith('http') && (
+                          <a
+                            href={`/api/licenses/${lic.id}/file`}
+                            download
+                            className="inline-flex items-center text-[#8a8580] hover:text-[#2a2520] transition-colors"
+                            title="Λήψη"
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                        )}
                       </div>
                     ) : (
                       <span className="text-[#8a8580]">—</span>

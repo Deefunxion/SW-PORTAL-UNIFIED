@@ -17,11 +17,13 @@ if sys.platform == 'win32':
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
+from datetime import date
 from my_project import create_app
 from my_project.extensions import db
-from my_project.registry.models import Structure, StructureType
+from my_project.registry.models import Structure, StructureType, License
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'attica_structures.json')
+LICENSES_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'diavgeia_licenses.json')
 
 NEW_TYPES = {
     'DS': ('Δημοτικός Παιδικός Σταθμός', 'Δημοτικοί βρεφονηπιακοί και παιδικοί σταθμοί'),
@@ -153,6 +155,78 @@ def main():
 
         print(f"\n  Imported: {imported}")
         print(f"  Skipped:  {skipped} (already exist)")
+
+        # --- Import Diavgeia licenses ---
+        if os.path.exists(LICENSES_FILE):
+            print(f"\n{'=' * 50}")
+            print("Diavgeia Licenses")
+            print(f"{'=' * 50}")
+
+            with open(LICENSES_FILE, 'r', encoding='utf-8') as f:
+                lic_records = json.load(f)
+            print(f"Loaded {len(lic_records)} license records from JSON")
+
+            # Build code → structure_id mapping
+            code_to_id = {s.code: s.id for s in Structure.query.all()}
+
+            # Find existing ADAs to avoid duplicates
+            existing_adas = set()
+            for lic in License.query.all():
+                if lic.notes and 'ADA:' in lic.notes:
+                    import re
+                    m = re.search(r'ADA:\s*(\S+)', lic.notes)
+                    if m:
+                        existing_adas.add(m.group(1))
+
+            lic_imported = 0
+            lic_skipped = 0
+
+            for r in lic_records:
+                # Check for duplicate ADA
+                if r.get('notes'):
+                    import re
+                    m = re.search(r'ADA:\s*(\S+)', r['notes'])
+                    if m and m.group(1) in existing_adas:
+                        lic_skipped += 1
+                        continue
+
+                struct_id = code_to_id.get(r['structure_code'])
+                if not struct_id:
+                    lic_skipped += 1
+                    continue
+
+                issued = None
+                if r.get('issued_date'):
+                    try:
+                        issued = date.fromisoformat(r['issued_date'])
+                    except ValueError:
+                        pass
+
+                if args.dry_run:
+                    if lic_imported < 3:
+                        print(f"  [DRY] {r['structure_code']} | {r['type']} | {r.get('issued_date', '')}")
+                    elif lic_imported == 3:
+                        print(f"  ... ({len(lic_records)} total)")
+                    lic_imported += 1
+                    continue
+
+                lic = License(
+                    structure_id=struct_id,
+                    type=r.get('type', ''),
+                    protocol_number=r.get('protocol_number', ''),
+                    issued_date=issued,
+                    status=r.get('status', 'active'),
+                    notes=r.get('notes', ''),
+                    file_path=r.get('file_path'),
+                )
+                db.session.add(lic)
+                lic_imported += 1
+
+            if not args.dry_run and lic_imported:
+                db.session.commit()
+
+            print(f"\n  Imported: {lic_imported}")
+            print(f"  Skipped:  {lic_skipped} (duplicate ADA or missing structure)")
 
     print("\nDone.")
 
